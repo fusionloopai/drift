@@ -284,6 +284,16 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 
 /* On-screen controls. Only shown on touch devices — a phone player had no way
    of knowing the screen thirds were the controls. */
+#muteBtn{
+  position:fixed; z-index:7; left:clamp(16px,3vw,32px);
+  top:calc(clamp(16px,3vw,32px) + 62px);
+  background:none; border:0; color:var(--ink-faint); font-family:inherit;
+  font-size:clamp(8px,1.3vw,10px); cursor:pointer; padding:6px 0;
+  opacity:0; pointer-events:none; transition:opacity .4s ease;
+}
+#muteBtn.on{ opacity:.6; pointer-events:auto; }
+#muteBtn:hover{ opacity:1; color:var(--ink); }
+
 #pad{
   position:fixed; z-index:7; left:0; right:0; bottom:0;
   display:none; justify-content:space-between; align-items:flex-end;
@@ -555,6 +565,8 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
 <canvas id="minimap" width="1120" height="104"></canvas>
 <button id="skipBtn" class="tracked-sm">Skip level &nbsp;&rarr;</button>
 
+<button id="muteBtn" class="tracked-sm" aria-label="Toggle sound">Sound on</button>
+
 <div id="pad">
   <div class="padgrp">
     <button class="padbtn" id="padL" aria-label="Move left">&#9664;</button>
@@ -718,6 +730,7 @@ const S = {
   freeCam : false,       // climbing worlds let the camera track left as well as right
   descend : false,       // Declaration Land goes down, so camY may go positive
   camX : 0, camY : 0, camVel : CFG.DRIFT_SPEED,
+  showMap : false,
   flashT : 0, turnT : 0, confronted : false,
   walkStart : 0, lastCheck : null, floorY : 720,
 };
@@ -980,19 +993,38 @@ function buildObstacleLand(startX, startY, obstacles, goalText){
 // one collected makes the light bigger.
 function buildThingLand(startX, startY, things, goalText){
   launchPad(startX, startY); clearProps(); spikes = []; flags = [];
-  const GY = 430, SKY = 320;
+  const GY = 430, HIGH = 268, LOW = 468;
   let x = startX + 240;
+
+  // Supplies alternate: one up in the air, the next down in a dip. You climb
+  // for one and drop for the next, the whole way across.
   things.forEach(function(th, i){
-    const w = rnd(170, 230);
+    const up = (i % 2 === 0);
+    const w = rnd(180, 240);
     plats.push({ x:x, y:GY, w:w, h:BASE_H + 80 - GY });
-    if (i % 2 === 1){
-      plats.push({ x:x + 40, y:SKY, w:130, h:12, float:true });
-      orbs.push({ x:x + 105, y:SKY - 40, label:th.text, got:false });
+    x += w + rnd(105, 140);
+
+    if (up){
+      plats.push({ x:x, y:GY - 92, w:150, h:12, float:true });
+      plats.push({ x:x + 200, y:HIGH, w:130, h:34, float:true });
+      orbs.push({ x:x + 265, y:HIGH - 42, label:th.text, got:false });
+      x += 200 + 130 + rnd(120, 160);
+      plats.push({ x:x - 300, y:GY, w:270, h:BASE_H + 80 - GY });
     } else {
-      orbs.push({ x:x + w*0.5, y:GY - 62, label:th.text, got:false });
+      plats.push({ x:x, y:LOW, w:240, h:BASE_H + 80 - LOW });
+      orbs.push({ x:x + 120, y:LOW - 46, label:th.text, got:false });
+      x += 240 + rnd(105, 140);
     }
-    x += w + rnd(100, 140);
+
+    const w2 = rnd(190, 250);
+    plats.push({ x:x, y:GY, w:w2, h:BASE_H + 80 - GY });
+    if (Math.random() < 0.3){
+      const sw = rnd(34, 52);
+      spikes.push({ x:x + rnd(40, w2 - sw - 30), y:GY - SPIKE_H, w:sw });
+    }
+    x += w2 + rnd(100, 135);
   });
+
   const holdW = 380;
   plats.push({ x:x, y:GY, w:holdW, h:BASE_H + 80 - GY });
   flags.push({ x:x + holdW*0.5, y:GY, kind:"goal", got:false, label:goalText });
@@ -1075,7 +1107,9 @@ function physics(dt){
   player.buffer = Math.max(0, player.buffer - dt);
   if (player.buffer > 0 && player.coyote > 0){
     player.vy = JUMP; player.buffer = 0; player.coyote = 0; player.onGround = false;
+    AUDIO.jump();
   }
+  const wasAir = !player.onGround;
   if (!jumpHeld && player.vy < -190) player.vy += 2600 * dt;
 
   // Horizontal. Nothing blocks sideways any more — the block bodies holding a
@@ -1102,6 +1136,8 @@ function physics(dt){
     }
   }
 
+  if (wasAir && player.onGround) AUDIO.land();
+
   player.trail.unshift({ x:player.x + player.w/2, y:player.y + player.h/2 });
   if (player.trail.length > 14) player.trail.pop();
 
@@ -1116,6 +1152,7 @@ function physics(dt){
 }
 
 function die(){
+  AUDIO.die();
   if (S.phase === "drift"){ S.deaths++; respawnDrift(); }
   else if (S.phase === "walk"){
     S.walkDeaths++;
@@ -1487,7 +1524,7 @@ function finishTurn(){
   meter.classList.remove("struck");
   splash(2, "Goal Land", "One goal. Mind the pits.", function(){
     const ly = Math.min(Math.max(player.y + player.h, 380), 452);
-    S.walkStart = player.x; S.stage = "world2"; S.freeCam = false; S.descend = false;
+    S.walkStart = player.x; S.stage = "world2"; S.showMap = ("world2" === "world6" || "world2" === "world9"); S.freeCam = false; S.descend = false;
     buildWorld2(player.x, ly, S.goal);
     player.y = ly - player.h - 2; player.vy = 0;
     S.lastCheck = { x:player.x + player.w/2, y:ly };
@@ -1568,7 +1605,7 @@ el("cpDone").addEventListener("click", () => {
 function launchWorld3(){
   splash(3, "Checkpoint Land", "Some of them are up in the sky. Use everything.", function(){
     const ly = 430;
-    S.walkStart = player.x; S.stage = "world3"; S.freeCam = false; S.descend = false;
+    S.walkStart = player.x; S.stage = "world3"; S.showMap = ("world3" === "world6" || "world3" === "world9"); S.freeCam = false; S.descend = false;
     buildWorld3(player.x, ly, S.checkpoints, S.goal);
     player.y = ly - player.h - 2; player.vy = 0;
     S.lastCheck = { x:player.x + player.w/2, y:ly };
@@ -1809,7 +1846,7 @@ el("dcDone").addEventListener("click", function(){
 function launchDeclarationLand(){
   splash(8, "Declaration Land", "The only way now is down \u2014 to what holds all of it up.", function(){
     const ly = 440;
-    S.walkStart = player.x; S.stage = "world8dec"; S.freeCam = true; S.descend = true;
+    S.walkStart = player.x; S.stage = "world8dec"; S.showMap = ("world8dec" === "world6" || "world8dec" === "world9"); S.freeCam = true; S.descend = true;
     buildDescent(player.x, ly, S.declarations.filter(function(d){ return d.on; }));
     player.y = ly - player.h - 2; player.vy = 0;
     S.lastCheck = { x:player.x + player.w/2, y:ly };
@@ -1822,7 +1859,7 @@ function launchDeclarationLand(){
 function launchWorld5(){
   splash(5, "Obstacle Land", "The things you named are flying around in here.", function(){
     const ly = 430;
-    S.walkStart = player.x; S.stage = "world5"; S.freeCam = false; S.descend = false;
+    S.walkStart = player.x; S.stage = "world5"; S.showMap = ("world5" === "world6" || "world5" === "world9"); S.freeCam = false; S.descend = false;
     buildObstacleLand(player.x, ly, S.obstacles, S.goal);
     player.y = ly - player.h - 2; player.vy = 0;
     S.lastCheck = { x:player.x + player.w/2, y:ly };
@@ -1831,9 +1868,9 @@ function launchWorld5(){
   });
 }
 function launchWorld6(){
-  splash(6, "Thing Land", "Every ring is something you said you'd need. Take them all.", function(){
+  splash(6, "Supplies Land", "Every ring is something you said you'd need \u2014 high and low.", function(){
     const ly = 430;
-    S.walkStart = player.x; S.stage = "world6"; S.freeCam = false; S.descend = false;
+    S.walkStart = player.x; S.stage = "world6"; S.showMap = ("world6" === "world6" || "world6" === "world9"); S.freeCam = false; S.descend = false;
     buildThingLand(player.x, ly, S.things, S.goal);
     player.y = ly - player.h - 2; player.vy = 0;
     S.lastCheck = { x:player.x + player.w/2, y:ly };
@@ -1844,7 +1881,7 @@ function launchWorld6(){
 function launchWorld7(){
   splash(7, "People Land", "Nobody gets there alone. Go and meet them.", function(){
     const ly = 430;
-    S.walkStart = player.x; S.stage = "world7"; S.freeCam = false; S.descend = false;
+    S.walkStart = player.x; S.stage = "world7"; S.showMap = ("world7" === "world6" || "world7" === "world9"); S.freeCam = false; S.descend = false;
     buildPeopleLand(player.x, ly, S.people, S.goal);
     player.y = ly - player.h - 2; player.vy = 0;
     S.lastCheck = { x:player.x + player.w/2, y:ly };
@@ -1853,9 +1890,9 @@ function launchWorld7(){
   });
 }
 function launchWorld8(){
-  splash(9, "Master Land", "The whole plan, one climb. You can see all of it now.", function(){
+  splash(9, "End Land", "The whole plan, one climb. You can see all of it now.", function(){
     const ly = 440;
-    S.walkStart = player.x; S.stage = "world9"; S.freeCam = true; S.descend = false;
+    S.walkStart = player.x; S.stage = "world9"; S.showMap = ("world9" === "world6" || "world9" === "world9"); S.freeCam = true; S.descend = false;
     const defs = S.checkpoints.map(function(c){ return { text:c.text, sub:fmtDate(c.date), kind:"way" }; });
     buildClimb(player.x, ly, defs, { goalLabel:S.goal, goalSub:fmtDate(S.goalDate) });
     player.y = ly - player.h - 2; player.vy = 0;
@@ -1868,7 +1905,7 @@ function launchWorld8(){
 // The minimap only exists in Master Land — seeing the whole plan at once is
 // the point of that level.
 function drawMinimap(){
-  if (S.stage !== "world9"){ return; }
+  if (!S.showMap){ return; }
   const W = minimap.width, H = minimap.height;
   mctx.clearRect(0,0,W,H);
   let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
@@ -1877,6 +1914,11 @@ function drawMinimap(){
   const ox = (W-(x1-x0)*k)/2 - x0*k, oy = (H-(y1-y0)*k)/2 - y0*k;
   mctx.fillStyle="rgba(255,255,255,.28)";
   for (const p of plats) mctx.fillRect(p.x*k+ox, p.y*k+oy, Math.max(2,p.w*k), Math.max(1.5,p.h*k));
+  for (const o of orbs){
+    mctx.strokeStyle = o.got ? "rgba(255,255,255,.85)" : "rgba(255,255,255,.55)";
+    mctx.lineWidth = 1.2;
+    mctx.beginPath(); mctx.arc(o.x*k+ox, o.y*k+oy, 2.6, 0, 6.284); mctx.stroke();
+  }
   for (const f of flags){
     mctx.fillStyle = f.got ? "rgba(255,255,255,.95)" : "rgba(255,255,255,.5)";
     const r = f.kind==="goal" ? 3.4 : 2.2;
@@ -2069,9 +2111,9 @@ el("planDone").addEventListener("click", () => {
 });
 
 function launchWorld4(){
-  splash(4, "Date Land", "Climb it. Left and right, all the way up.", function(){
+  splash(4, "Deadline Land", "Climb it. Left and right, all the way up.", function(){
     const ly = 440;
-    S.walkStart = player.x; S.stage = "world4"; S.freeCam = true; S.descend = false;
+    S.walkStart = player.x; S.stage = "world4"; S.showMap = ("world4" === "world6" || "world4" === "world9"); S.freeCam = true; S.descend = false;
     const defs = S.checkpoints.map(function(c){ return { text:c.text, sub:fmtDate(c.date), kind:"way" }; });
     buildClimb(player.x, ly, defs, { goalLabel:S.goal, goalSub:fmtDate(S.goalDate) });
     player.y = ly - player.h - 2; player.vy = 0;
@@ -2175,6 +2217,8 @@ function buildDeclarations(){
 
 /* ---- win ---- */
 function win(){
+  AUDIO.stop();
+  [523,659,784,1046,1319].forEach(function(f,i){ setTimeout(function(){ AUDIO.note(f,0.28,0.34); }, i*140); });
   S.phase = "win";
   hud.classList.remove("on");
   minimap.classList.remove("on");
@@ -2353,6 +2397,7 @@ el("winAgain").addEventListener("click", function(){
 
 /* ---- start ---- */
 function start(){
+  AUDIO.boot();                 // browsers only allow audio after a gesture
   titleO.classList.remove("on");
   hud.classList.add("on");
   splashLater(1, "Motion Land", "Movement without direction.");
@@ -2366,12 +2411,104 @@ function start(){
   player.x = 120; player.y = 380; player.vx = 0; player.vy = 0; player.trail = [];
   S.camX = 0; S.camY = 0; S.confronted = false;
   S.goal = ""; S.goalDate = ""; S.checkpoints = []; S.stage = "";
-  S.obstacles = []; S.things = []; S.people = []; S.ballR = 12; S.freeCam = false;
+  S.obstacles = []; S.things = []; S.people = []; S.ballR = 12; S.freeCam = false; S.showMap = false;
   S.why = ""; S.firstAction = ""; S.firstActionBy = ""; S.declarations = []; S.descend = false;
   birds = []; orbs = []; folk = [];
   minimap.classList.remove("on");
   S.deaths = 0; S.walkDeaths = 0; S.t = 0;
 }
+
+/* ===========================================================================
+   SOUND — everything is synthesised, so there are no audio files to load.
+   Square waves for the 8-bit character, kept deliberately quiet and sparse:
+   this is a game about a light drifting in silence, and the music should never
+   be the loudest thing in the room.
+   =========================================================================== */
+const AUDIO = {
+  ctx:null, master:null, on:true, timer:null, step:0, track:null,
+
+  boot:function(){
+    if (this.ctx) { if (this.ctx.state === "suspended") this.ctx.resume(); return; }
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    this.ctx = new AC();
+    this.master = this.ctx.createGain();
+    this.master.gain.value = 0.16;              // quiet on purpose
+    this.master.connect(this.ctx.destination);
+  },
+
+  // one short square-wave note
+  note:function(freq, dur, vol, type){
+    if (!this.ctx || !this.on || !freq) return;
+    const t = this.ctx.currentTime;
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = type || "square";
+    o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol == null ? 0.5 : vol, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + (dur || 0.12));
+    o.connect(g); g.connect(this.master);
+    o.start(t); o.stop(t + (dur || 0.12) + 0.02);
+  },
+  slide:function(f1, f2, dur, vol){
+    if (!this.ctx || !this.on) return;
+    const t = this.ctx.currentTime;
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = "square";
+    o.frequency.setValueAtTime(f1, t);
+    o.frequency.exponentialRampToValueAtTime(Math.max(20, f2), t + dur);
+    g.gain.setValueAtTime(vol == null ? 0.45 : vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(this.master);
+    o.start(t); o.stop(t + dur + 0.02);
+  },
+
+  jump:   function(){ this.slide(300, 620, 0.13, 0.32); },
+  land:   function(){ this.note(150, 0.05, 0.16); },
+  collect:function(){ this.note(660, 0.07, 0.4); setTimeout(()=>this.note(990, 0.10, 0.36), 70); },
+  flag:   function(){ [523,659,784].forEach((f,i)=>setTimeout(()=>this.note(f,0.14,0.36),i*90)); },
+  goal:   function(){ [523,659,784,1046].forEach((f,i)=>setTimeout(()=>this.note(f,0.20,0.4),i*110)); },
+  die:    function(){ this.slide(320, 70, 0.28, 0.3); },
+  wave:   function(){ this.note(880, 0.06, 0.22); },
+
+  // Each level gets its own short pattern. Same instrument, different mood —
+  // aimless in the drift, urgent on the deadline, low and slow underground.
+  TRACKS:{
+    world1:{ ms:640, v:0.10, n:[220,0,262,0,196,0,0,0,220,0,175,0,0,0,0,0] },
+    world2:{ ms:520, v:0.11, n:[262,0,330,0,392,0,330,0,262,0,196,0,262,0,0,0] },
+    world3:{ ms:440, v:0.11, n:[330,392,0,440,0,392,330,0,294,330,0,392,0,0,0,0] },
+    world4:{ ms:300, v:0.12, n:[392,0,392,440,494,0,440,392,349,0,392,0,330,0,0,0] },
+    world5:{ ms:340, v:0.12, n:[233,0,247,0,233,0,185,0,233,0,262,0,233,0,0,0] },
+    world6:{ ms:400, v:0.11, n:[349,440,523,440,349,0,392,0,349,440,523,659,523,0,0,0] },
+    world7:{ ms:560, v:0.10, n:[294,0,370,0,440,0,370,0,330,0,392,0,294,0,0,0] },
+    world8dec:{ ms:700, v:0.11, n:[147,0,131,0,110,0,0,0,131,0,110,0,98,0,0,0] },
+    world9:{ ms:360, v:0.12, n:[523,659,784,1046,784,659,523,659,587,698,880,698,587,0,0,0] },
+  },
+
+  play:function(key){
+    this.boot();
+    const t = this.TRACKS[key];
+    if (!t || !this.ctx){ this.stop(); return; }
+    if (this.track === key) return;             // already running
+    this.stop();
+    this.track = key; this.step = 0;
+    const self = this;
+    this.timer = setInterval(function(){
+      if (!self.on) return;
+      const f = t.n[self.step % t.n.length];
+      self.step++;
+      if (f) self.note(f, t.ms/1000 * 0.75, t.v, "square");
+    }, t.ms);
+  },
+  stop:function(){ if (this.timer){ clearInterval(this.timer); this.timer = null; } this.track = null; },
+  toggle:function(){
+    this.on = !this.on;
+    if (this.on) this.boot();
+    el("muteBtn").textContent = this.on ? "Sound on" : "Sound off";
+    return this.on;
+  }
+};
+el("muteBtn").addEventListener("click", function(e){ e.stopPropagation(); AUDIO.toggle(); });
 
 /* ===========================================================================
    LOOP
@@ -2429,12 +2566,12 @@ function frame(now){
     for (const o of orbs){
       if (o.got) continue;
       if (Math.abs(o.x - pcx) < 26 && Math.abs(o.y - pcy) < 26){
-        o.got = true; S.ballR = Math.min(20, S.ballR + 0.9);
+        o.got = true; S.ballR = Math.min(20, S.ballR + 0.9); AUDIO.collect();
       }
     }
     for (const f of folk){
       if (f.got) continue;
-      if (Math.abs(f.x - pcx) < 34 && Math.abs(f.y - (player.y + player.h)) < 70) f.got = true;
+      if (Math.abs(f.x - pcx) < 34 && Math.abs(f.y - (player.y + player.h)) < 70){ f.got = true; AUDIO.wave(); }
     }
 
     for (const f of flags){
@@ -2442,6 +2579,7 @@ function frame(now){
       const near = Math.abs((player.x + player.w/2) - f.x) < 30 && Math.abs((player.y + player.h) - f.y) < 95;
       if (!near) continue;
       f.got = true;
+      if (f.kind === "goal") AUDIO.goal(); else AUDIO.flag();
       // The goal flag is a checkpoint too — you can keep playing while the
       // level-up panel is up, so falling after it shouldn't throw you back.
       S.lastCheck = { x:f.x, y:f.y };
@@ -2454,6 +2592,11 @@ function frame(now){
 
   if (S.phase === "drift" || S.phase === "walk" || S.phase === "turn" || S.phase === "splash"){ updateHud(); draw(); }
   const playing = (S.phase === "walk" || S.phase === "drift") && !anyPanelOpen();
+  minimap.classList.toggle("on", !!S.showMap && S.phase === "walk" && !anyPanelOpen());
+  el("muteBtn").classList.toggle("on", S.phase === "drift" || S.phase === "walk");
+  if (S.phase === "drift") AUDIO.play("world1");
+  else if (S.phase === "walk") AUDIO.play(S.stage);
+  else if (S.phase === "win" || S.phase === "title") AUDIO.stop();
   const padEl = el("pad");
   if (padEl && document.body.classList.contains("touch")) padEl.classList.toggle("on", playing);
   const showSkip = S.phase === "walk" && !anyPanelOpen();

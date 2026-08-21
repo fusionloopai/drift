@@ -116,10 +116,21 @@ canvas{ display:block; position:fixed; inset:0; z-index:1; }
   -webkit-background-clip:text; background-clip:text; color:transparent;
 }
 #titleBall{
+  position:relative;
   width:13px; height:13px; border-radius:50%; background:#fff;
   margin:0 auto clamp(22px,4.5vw,36px);
   box-shadow:0 0 20px rgba(255,255,255,.85), 0 0 56px rgba(255,255,255,.35);
   animation:titleDrift 3.6s ease-in-out infinite;
+}
+/* The light stream — the same trail the ball leaves in-game, echoed here so
+   the title screen previews the mechanic before a single key is pressed. */
+#titleBall::after{
+  content:"";
+  position:absolute; top:50%; left:50%; z-index:-1;
+  width:120px; height:3px;
+  transform:translate(-50%,-50%);
+  background:linear-gradient(90deg, transparent 0%, rgba(255,255,255,.45) 50%, transparent 100%);
+  filter:blur(3px);
 }
 @keyframes titleDrift{ 0%,100%{ transform:translateX(-16px); } 50%{ transform:translateX(16px); } }
 #title .sub{ margin-top:clamp(28px,6vw,48px); font-size:clamp(10px,1.8vw,12px); color:var(--ink-faint); }
@@ -705,51 +716,23 @@ function drawFlags(){
   for (const f of flags){
     if (f.x < S.camX - 120 || f.x > S.camX + viewW + 120) continue;
 
-    // The small step-level markers — "keep jumping up" — are circles, not
-    // flags, so a colorblind player reads the difference by shape alone.
-    if (f.kind === "circle"){
-      ctx.save();
-      ctx.strokeStyle = f.got ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.5)";
-      ctx.lineWidth = 2;
-      if (!f.got){ ctx.shadowColor = "rgba(255,255,255,0.4)"; ctx.shadowBlur = 10; }
-      ctx.beginPath(); ctx.arc(f.x, f.y - 15, 9, 0, 6.284); ctx.stroke();
-      ctx.restore();
-
-      if (f.label){
-        const txt = f.label.toUpperCase();
-        ctx.save();
-        ctx.textAlign = "center";
-        ctx.fillStyle = "rgba(255,255,255,0.4)";
-        if (ctx.letterSpacing !== undefined) ctx.letterSpacing = "2px";
-        let size = 11;
-        ctx.font = "300 " + size + "px Montserrat, sans-serif";
-        const room = viewW - 56;
-        const wide = ctx.measureText(txt).width;
-        if (wide > room){
-          size = Math.max(8, size * room / wide);
-          ctx.font = "300 " + size.toFixed(1) + "px Montserrat, sans-serif";
-        }
-        const half = ctx.measureText(txt).width / 2 + 12;
-        const tx = Math.min(Math.max(f.x, S.camX + half), S.camX + viewW - half);
-        ctx.shadowColor = "rgba(255,255,255,0.25)"; ctx.shadowBlur = 12;
-        ctx.fillText(txt, tx, f.y - 40);
-        ctx.restore();
-      }
-      continue;
-    }
-
+    // Every flag is the same lit-up flag shape — small steps, medium
+    // sub-goals, large finals — brighter once reached, dim until then.
     const goal = f.kind === "goal";
-    const h = goal ? 118 : 68;
+    const small = f.kind === "circle";
+    const h = goal ? 118 : (small ? 44 : 68);
     ctx.save();
     ctx.strokeStyle = f.got ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.4)";
     ctx.lineWidth = goal ? 3 : 2;
     if (goal){ ctx.shadowColor = "rgba(255,255,255,0.55)"; ctx.shadowBlur = 26; }
+    else if (f.got){ ctx.shadowColor = "rgba(255,255,255,0.5)"; ctx.shadowBlur = 14; }
     ctx.beginPath(); ctx.moveTo(f.x, f.y); ctx.lineTo(f.x, f.y - h); ctx.stroke();
 
+    const flagLen = goal ? 54 : (small ? 24 : 34);
     ctx.beginPath();
     ctx.moveTo(f.x, f.y - h);
-    ctx.lineTo(f.x + (goal ? 54 : 34), f.y - h + (goal ? 17 : 11));
-    ctx.lineTo(f.x, f.y - h + (goal ? 34 : 22));
+    ctx.lineTo(f.x + flagLen, f.y - h + flagLen * 0.32);
+    ctx.lineTo(f.x, f.y - h + flagLen * 0.63);
     ctx.closePath();
     ctx.fillStyle = f.got || goal ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.32)";
     ctx.fill();
@@ -760,10 +743,10 @@ function drawFlags(){
       const txt = f.label.toUpperCase();
       ctx.save();
       ctx.textAlign = "center";
-      ctx.fillStyle = goal ? "rgba(255,255,255,0.62)" : "rgba(255,255,255,0.42)";
-      if (ctx.letterSpacing !== undefined) ctx.letterSpacing = "3px";
+      ctx.fillStyle = goal ? "rgba(255,255,255,0.62)" : (small ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.42)");
+      if (ctx.letterSpacing !== undefined) ctx.letterSpacing = small ? "2px" : "3px";
 
-      let size = goal ? 15 : 12;
+      let size = goal ? 15 : (small ? 11 : 12);
       ctx.font = "300 " + size + "px Montserrat, sans-serif";
       const room = viewW - 56;
       const wide = ctx.measureText(txt).width;

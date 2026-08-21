@@ -131,6 +131,8 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
   box-shadow:0 0 14px rgba(255,255,255,.7), 0 0 34px rgba(255,255,255,.22);
 }
 #title .sub{ margin-top:clamp(28px,6vw,48px); font-size:clamp(10px,1.8vw,12px); color:var(--ink-faint); }
+#title .tagline2{ margin-top:clamp(14px,3vw,20px); font-size:clamp(10px,1.9vw,13px); color:var(--ink-soft); }
+#playBtn{ margin-top:clamp(26px,5vw,38px); padding:15px clamp(28px,5vw,42px); }
 #resume{
   display:none; margin:22px auto 0; background:none; border:1px solid var(--line);
   border-radius:3px; color:var(--ink-faint); font-family:inherit; cursor:pointer;
@@ -142,8 +144,8 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 #field .ctx{ margin-bottom:clamp(12px,2.6vw,18px); color:var(--ink-faint); display:none; }
 #field .qtop{ font-size:clamp(10px,1.8vw,12px); color:var(--ink-faint); margin-bottom:clamp(12px,2.4vw,18px); }
 #field .q{ font-size:clamp(18px,4.4vw,34px); font-weight:300; line-height:1.35; }
-#field .hint{ margin-top:clamp(12px,2.4vw,18px); font-size:clamp(11px,1.9vw,14px); color:var(--ink-faint); font-weight:300; }
-#field .eg{ margin-top:10px; font-size:clamp(11px,1.9vw,14px); color:var(--ink-soft); font-style:italic; font-weight:300; }
+#field .hint{ margin-top:clamp(12px,2.4vw,18px); font-size:clamp(11.5px,2vw,14.5px); color:var(--ink-soft); font-weight:400; }
+#field .eg{ margin-top:10px; font-size:clamp(11px,1.9vw,14px); color:var(--ink-soft); font-style:italic; font-weight:400; }
 #field input{
   margin-top:clamp(24px,5vw,38px); width:100%;
   background:transparent; border:0; border-bottom:1px solid var(--line);
@@ -165,11 +167,11 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 /* ------------------- Panels (checkpoints / dates / plan) ------------------ */
 .panel .head{ font-size:clamp(20px,4.6vw,34px); font-weight:300; line-height:1.3; }
 .panel .why{
-  margin-top:clamp(14px,3vw,22px); font-size:clamp(12px,2.1vw,15px);
-  color:var(--ink-soft); font-weight:300; line-height:1.7;
+  margin-top:clamp(14px,3vw,22px); font-size:clamp(12.5px,2.15vw,15.5px);
+  color:var(--ink-soft); font-weight:400; line-height:1.7;
   max-width:56ch; margin-left:auto; margin-right:auto;
 }
-.panel .eg{ margin-top:10px; font-size:clamp(11px,1.9vw,13px); color:var(--ink-faint); font-style:italic; }
+.panel .eg{ margin-top:10px; font-size:clamp(11px,1.9vw,13.5px); color:var(--ink-soft); font-style:italic; font-weight:400; }
 .panel .rows{ margin-top:clamp(22px,4.4vw,32px); text-align:left; }
 .row{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
 .row .num{ flex:0 0 auto; width:26px; font-size:11px; color:var(--ink-faint); font-variant-numeric:tabular-nums; }
@@ -238,6 +240,10 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 .tree .t-cp{ margin-top:14px; margin-left:18px; color:var(--ink); }
 .tree .t-st{ margin-top:4px; margin-left:44px; color:var(--ink-soft); font-size:0.92em; }
 .tree .t-date{ color:var(--ink-faint); font-size:0.85em; font-variant-numeric:tabular-nums; }
+.tree .t-obs{ margin-top:18px; padding-top:14px; border-top:1px solid var(--line); }
+.tree .t-obs-h{ display:block; font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:8px; }
+.tree .t-ob{ margin-top:8px; color:var(--ink); }
+.tree .t-rs{ display:block; margin-left:20px; color:var(--ink-soft); font-size:0.92em; }
 
 .cal{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:16px; }
 .cal .agenda{
@@ -330,8 +336,23 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
   padding:10px 4px; margin-top:14px;
 }
 .backbtn:hover{ color:var(--ink); }
+.rsblock{ margin-bottom:20px; }
+.rsblock .ob{ font-size:clamp(12px,2.2vw,15px); color:var(--ink); font-weight:500; margin-bottom:8px; display:flex; gap:9px; align-items:baseline; }
+.rsblock .ob .mk{ color:var(--ink-faint); font-size:.85em; font-weight:400; }
+.rsblock input{
+  width:100%; background:transparent; border:0; border-bottom:1px solid var(--line);
+  color:var(--ink-soft); font-family:inherit; font-weight:400;
+  font-size:clamp(12px,2.2vw,15px); padding:9px 2px; outline:none; transition:border-color .2s ease;
+}
+.rsblock input:focus{ border-bottom-color:rgba(255,255,255,.55); color:var(--ink); }
+.rsblock input::placeholder{ color:#2e2e34; }
+
 .reorder .row.goalrow{ margin-bottom:14px; }
-.reorder .row.goalrow input{ color:var(--ink); font-size:clamp(14px,2.6vw,18px); border-bottom-color:rgba(255,255,255,.3); }
+.reorder .row.goalrow input.tx{ color:var(--ink); font-size:clamp(14px,2.6vw,18px); border-bottom-color:rgba(255,255,255,.3); }
+.reorder .row .tx{ cursor:default; }
+.reorder .row.editing .tx{ cursor:text; color:var(--ink); border-bottom-color:rgba(255,255,255,.6); }
+.reorder .row.editing .pencil{ border-color:rgba(255,255,255,.6); color:var(--ink); }
+.reorder .row .pencil{ font-size:13px; }
 .reorder .row.step input{ color:var(--ink-soft); font-size:clamp(12px,2.1vw,14px); }
 .row .mv{
   flex:0 0 auto; width:26px; height:26px; border:1px solid var(--line); border-radius:3px;
@@ -340,18 +361,18 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
 .row .mv:hover{ border-color:rgba(255,255,255,.4); color:var(--ink); }
 
 #win .firstbox{
-  margin-top:clamp(20px,4vw,30px); padding:16px 18px;
+  padding:16px 18px;
   border:1px solid var(--line); border-left:3px solid rgba(255,255,255,.55);
   border-radius:3px; background:var(--bg-raise); text-align:left;
 }
-#win .firstbox .lbl{ display:block; font-size:10px; color:var(--ink-faint); margin-bottom:8px; }
+#win .firstbox .lbl{ display:block; font-size:clamp(11px,2vw,13px); color:var(--ink-faint); margin-bottom:8px; }
 #win .firstbox .act{ font-size:clamp(13px,2.4vw,17px); color:var(--ink); font-weight:400; }
 #win .firstbox .by{ margin-top:6px; font-size:11px; color:var(--ink-faint); }
 #win .whybox{
   margin-top:14px; padding:14px 18px; border:1px solid var(--line); border-radius:3px;
   text-align:left; font-size:clamp(11px,2vw,14px); color:var(--ink-soft); font-weight:300; line-height:1.7;
 }
-#win .whybox .lbl{ display:block; font-size:10px; color:var(--ink-faint); margin-bottom:6px; }
+#win .whybox .lbl{ display:block; font-size:clamp(11px,2vw,13px); color:var(--ink-faint); margin-bottom:6px; }
 #win .decls .d{ display:flex; gap:10px; align-items:flex-start; margin-bottom:9px; cursor:pointer; }
 #win .decls .d .bx{
   flex:0 0 auto; width:15px; height:15px; margin-top:3px; border:1px solid var(--line);
@@ -360,22 +381,20 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
 #win .decls .d.on .bx{ border-color:rgba(255,255,255,.6); }
 #win .decls .d.off{ opacity:.4; }
 #win .steps{
-  margin-top:clamp(24px,5vw,36px); padding-top:clamp(20px,4vw,30px);
-  border-top:1px solid var(--line); text-align:left;
+  text-align:left;
   font-size:clamp(11px,2vw,14px); color:var(--ink-soft); font-weight:300; line-height:1.8;
 }
-#win .steps h4{ font-size:clamp(10px,1.7vw,12px); color:var(--ink); font-weight:400; margin-bottom:12px; }
+#win .steps h4{ font-size:clamp(12px,2.2vw,15px); color:var(--ink); font-weight:500; margin-bottom:14px; }
 #win .steps ol{ padding-left:20px; }
 #win .daily{
   margin-top:18px; padding:14px 16px; border:1px solid var(--line); border-radius:3px;
   background:var(--bg-raise); font-size:clamp(11px,1.9vw,13px); color:var(--ink-soft); line-height:1.7;
 }
 #win .ddsection{
-  margin-top:clamp(24px,5vw,36px); padding-top:clamp(20px,4vw,30px);
-  border-top:1px solid var(--line); text-align:left;
+  text-align:left;
   font-size:clamp(11px,1.9vw,13.5px); color:var(--ink-soft); font-weight:300; line-height:1.75;
 }
-#win .ddsection h4{ font-size:clamp(10px,1.7vw,12px); color:var(--ink); font-weight:400; margin-bottom:12px; }
+#win .ddsection h4{ font-size:clamp(12px,2.2vw,15px); color:var(--ink); font-weight:500; margin-bottom:14px; }
 #win .ddsection p{ margin-bottom:10px; }
 #win .ddsection b{ color:var(--ink); font-weight:400; }
 #win .ddsection ul{ padding-left:18px; margin:10px 0 14px; }
@@ -390,19 +409,27 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
 #win .ddsection .ddwhy{ color:var(--ink); }
 
 /* --------------------------------- Win ----------------------------------- */
+#win .card{
+  border:1px solid var(--line); border-radius:6px; background:var(--bg-raise);
+  padding:clamp(20px,4vw,34px); margin-top:clamp(16px,3vw,24px); text-align:left;
+}
+#win .card.hero{ text-align:center; padding:clamp(28px,5vw,46px) clamp(20px,4vw,34px); }
+#win .cardlbl{ font-size:clamp(11px,2vw,13px); color:var(--ink-faint); margin-bottom:clamp(12px,2.4vw,18px); }
+#win .trophy{ color:var(--ink-soft); }
+#win .trophy svg{ width:clamp(46px,8vw,64px); height:auto; filter:drop-shadow(0 0 18px rgba(255,255,255,.28)); }
 #win .wordmark{
-  font-size:clamp(22px,4.6vw,34px); font-weight:200;
+  font-size:clamp(40px,9vw,74px); font-weight:200;
   background:linear-gradient(90deg,#0d0d0d 0%,#1b1b1b 22%,#c0c0c0 50%,#1b1b1b 78%,#0d0d0d 100%);
   -webkit-background-clip:text; background-clip:text; color:transparent;
 }
-#winScene{ display:block; width:min(520px,88vw); height:auto; margin:clamp(6px,1.6vw,12px) auto 0; }
-#win .congrats{ margin-top:clamp(4px,1vw,10px); font-size:clamp(24px,5.6vw,44px); font-weight:200; }
+#winScene{ display:block; width:min(460px,82vw); height:auto; margin:clamp(4px,1.2vw,10px) auto 0; }
+#win .congrats{ margin-top:clamp(10px,2vw,16px); font-size:clamp(30px,6.6vw,54px); font-weight:200; }
 #win .congratsub{
   margin-top:12px; font-size:clamp(11px,2vw,14px); color:var(--ink-soft); font-weight:300; line-height:1.7;
   max-width:48ch; margin-left:auto; margin-right:auto;
 }
 #win .winrule{ height:1px; background:var(--line); margin:clamp(26px,5vw,40px) auto clamp(22px,4vw,32px); max-width:220px; }
-#win .goal{ font-size:clamp(20px,4.8vw,40px); font-weight:300; line-height:1.3; word-break:break-word; }
+#win .goal{ font-size:clamp(19px,4.2vw,34px); font-weight:300; line-height:1.3; word-break:break-word; }
 #win .whenline{ margin-top:10px; font-size:clamp(11px,1.9vw,14px); color:var(--ink-soft); font-variant-numeric:tabular-nums; }
 #win .tagline{
   margin-top:clamp(26px,5vw,40px); padding-top:clamp(22px,4.4vw,34px);
@@ -442,6 +469,8 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
   #win .cal .day.mark{ border:.5pt solid #000 !important; }
   #win .cal .agenda .dt, #win .cal .agenda .cd{ color:#444 !important; }
   #win .win-actions, #win .again, #win .viewtabs{ display:none; }
+  #win .card{ border:.5pt solid #999 !important; border-radius:0; padding:10pt; margin-top:8pt; page-break-inside:avoid; }
+  #win .trophy{ display:none; }
   #win .cal{ display:none; }                    /* the agenda-first list prints; grids don't */
   #win #winTree{ display:block !important; }
   canvas, .glow-field, #hud, #confront, #levelUp, #splash, #minimap, #skipBtn{ display:none !important; }
@@ -483,7 +512,8 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
       <div id="titleBall"></div>
     </div>
     <h1 class="tracked glow-text">Drift</h1>
-    <p class="sub tracked-sm">Press any key</p>
+    <p class="tagline2 tracked-sm">Goals. Gamified.</p>
+    <button id="playBtn" class="cta tracked-sm">Play Game</button>
     <button id="resume" class="tracked-sm">Resume my saved plan</button>
   </div>
 </div>
@@ -494,7 +524,7 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
     <p class="qtop tracked-sm" id="fieldTop">Make a goal</p>
     <p class="q" id="fieldQ">What do you want?</p>
     <p class="hint" id="fieldHint">Write it as if it already happened. Not &ldquo;I want to&rdquo; &mdash; &ldquo;I have.&rdquo;</p>
-    <p class="eg" id="fieldEg">e.g. &ldquo;I have paid off all $12,000 of my debt.&rdquo;</p>
+    <p class="eg" id="fieldEg">e.g. &ldquo;I went to Europe with my family.&rdquo;</p>
     <input id="goalInput" type="text" maxlength="90" autocomplete="off" autocapitalize="sentences"
            spellcheck="false" placeholder="I have&hellip;">
     <div class="keys tracked-sm">
@@ -509,7 +539,7 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
     <p class="head">Break it into checkpoints.</p>
     <p class="why">A goal with no checkpoints is a wish. Checkpoints are how you find out you're off track while there's still time to fix it &mdash; and how you keep moving when motivation runs out.</p>
     <div class="goalline"><span class="lbl tracked-sm">Your goal</span><span id="cpGoalEcho"></span></div>
-    <p class="eg">Write each one the same way &mdash; as if it already happened. e.g. &ldquo;I have paid off $3,000.&rdquo;</p>
+    <p class="eg">Write each one the same way &mdash; as if it already happened. e.g. &ldquo;I booked the flights.&rdquo;</p>
     <div class="rows" id="cpRows"></div>
     <button class="addbtn tracked-sm" id="cpAdd">+ &nbsp;Add checkpoint</button>
     <div><button class="cta tracked-sm" id="cpDone">Continue &nbsp;&rarr;</button></div>
@@ -598,10 +628,20 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
   </div>
 </div>
 
+<div id="rsPanel" class="overlay panel">
+  <div class="inner">
+    <p class="head">And when it comes?</p>
+    <p class="why">This is the part almost nobody does. Deciding your response now, before the obstacle shows up, is the difference between a plan that survives contact and one that doesn't. Write what you will actually do.</p>
+    <p class="eg">e.g. for &ldquo;something breaks and eats the savings&rdquo; &mdash; &ldquo;I move the trip back one month rather than cancel it.&rdquo;</p>
+    <div class="rows" id="rsRows"></div>
+    <div><button class="cta tracked-sm" id="rsDone">Continue &nbsp;&rarr;</button></div>
+  </div>
+</div>
+
 <div id="roPanel" class="overlay panel reorder">
   <div class="inner">
     <p class="head">Master the plan.</p>
-    <p class="why">Last pass &mdash; everything you wrote, in one place. Anything out of order? Move it. A plan you have actually looked at twice is a different thing from one you wrote once.</p>
+    <p class="why">Last pass &mdash; everything you wrote, in one place. Reorder it with the arrows, change any date, or hit the pencil to rewrite the words. A plan you have actually looked at twice is a different thing from one you wrote once.</p>
     <div class="rows" id="roRows"></div>
     <div><button class="cta tracked-sm" id="roDone">Lock it in &nbsp;&rarr;</button></div>
   </div>
@@ -610,58 +650,86 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
 <div id="win" class="overlay">
   <div class="inner">
     <p class="wordmark tracked" id="winMark">Drift</p>
-    <canvas id="winScene" width="520" height="190"></canvas>
-    <p class="congrats tracked glow-text">You made it.</p>
-    <p class="congratsub" id="winCongratSub"></p>
-    <div class="winrule"></div>
-    <p class="sub tracked-sm" style="color:var(--ink-faint);font-size:clamp(10px,1.8vw,12px)">Your goal</p>
-    <p class="goal tracked glow-text" id="winGoal"></p>
-    <p class="whenline" id="winWhen"></p>
-    <div class="viewtabs">
-      <button id="winTabList" class="tracked-sm sel">Goal list</button>
-      <button id="winTabCal" class="tracked-sm">Calendar view</button>
-    </div>
-    <div class="viewbody">
-      <div id="winTree" class="tree"></div>
-      <div id="winCal" class="cal" style="display:none"></div>
-    </div>
-    <div id="winFirst" class="firstbox"></div>
-    <div id="winWhy" class="whybox"></div>
-    <div class="steps" id="winDecl"></div>
-    <div class="steps">
-      <h4 class="tracked-sm">What you just did &mdash; the steps</h4>
-      <ol>
-        <li>Named one goal, in the present tense, as if it already happened.</li>
-        <li>Broke it into checkpoints you can actually check.</li>
-        <li>Put a real date on every one of them.</li>
-        <li>Named the obstacles before they showed up.</li>
-        <li>Listed what you'd need to learn, buy, or build.</li>
-        <li>Named the people whose help you'll need.</li>
-        <li>Reordered it until the sequence was true.</li>
-      </ol>
-      <div class="daily">The last move is the one this game can't do for you: take the nearest checkpoint and break it down to <b>daily actions</b>. A goal you touch every day stops being a goal and starts being who you are.</div>
-    </div>
-    <p class="tagline">Most people never write the life they say they want.</p>
-    <div class="ddsection">
-      <h4 class="tracked-sm">Next: The Dream Designer Blueprint</h4>
-      <p>This game gave you one goal, fully built. The Blueprint looks at the <b>machinery underneath</b> it &mdash; the reason most goals quietly die isn't the plan, it's the operating system running it.</p>
-      <p>It's a short assessment. You answer honestly across five areas, and it scores you out of 100:</p>
-      <ul>
-        <li><b>Goals</b> &mdash; do you write them down, picture them, say them out loud, look at them again?</li>
-        <li><b>Mindset &amp; belief</b> &mdash; do you actually believe you'll pull it off, and do you go again when you don't?</li>
-        <li><b>Daily practice</b> &mdash; is there a morning you keep, and a block of time the important work is safe in?</li>
-        <li><b>Environment &amp; influence</b> &mdash; do the people and inputs around you pull you forward or hold you level?</li>
-        <li><b>Action &amp; follow-through</b> &mdash; do you finish, do you track it, and how fast do you get back on?</li>
-      </ul>
-      <p>Your score puts you in one of four tiers, and each one gets its own guidance:</p>
-      <div class="tiers">
-        <div class="tier"><b>The Drifter</b><span>Life happens to you more than through you. Not a character flaw &mdash; an unmade decision.</span></div>
-        <div class="tier"><b>The Dreamer</b><span>You know what you want. It lives in your head, the one place a goal can't work from.</span></div>
-        <div class="tier"><b>The Builder</b><span>You set goals and return to them. What's missing is rhythm &mdash; the daily contact.</span></div>
-        <div class="tier"><b>The Designer</b><span>You're running the loop most people never start. Your work now is depth, not repair.</span></div>
+
+    <section class="card hero">
+      <div class="trophy" aria-hidden="true">
+        <svg viewBox="0 0 64 64" width="64" height="64">
+          <path d="M20 10h24v12a12 12 0 0 1-24 0z" fill="none" stroke="currentColor" stroke-width="2.4"/>
+          <path d="M20 14h-7a7 7 0 0 0 7 9M44 14h7a7 7 0 0 1-7 9" fill="none" stroke="currentColor" stroke-width="2.4"/>
+          <path d="M32 34v10M24 52h16M26 52c0-5 2-8 6-8s6 3 6 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+        </svg>
       </div>
-      <p class="ddwhy">It takes a few minutes, and it tells you the one part of the loop that's actually breaking &mdash; so the next goal you set doesn't need this much scaffolding to survive.</p>
-    </div>
+      <canvas id="winScene" width="520" height="190"></canvas>
+      <h2 class="congrats tracked glow-text">You made it.</h2>
+      <p class="congratsub" id="winCongratSub"></p>
+    </section>
+
+    <section class="card">
+      <p class="cardlbl tracked-sm">Your goal</p>
+      <p class="goal tracked glow-text" id="winGoal"></p>
+      <p class="whenline" id="winWhen"></p>
+    </section>
+
+    <section class="card">
+      <p class="cardlbl tracked-sm">The plan</p>
+      <div class="viewtabs">
+        <button id="winTabList" class="tracked-sm sel">Goal list</button>
+        <button id="winTabCal" class="tracked-sm">Calendar view</button>
+      </div>
+      <div class="viewbody">
+        <div id="winTree" class="tree"></div>
+        <div id="winCal" class="cal" style="display:none"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div id="winFirst" class="firstbox"></div>
+      <div id="winWhy" class="whybox"></div>
+    </section>
+
+    <section class="card"><div class="steps" id="winDecl"></div></section>
+
+    <section class="card">
+      <div class="steps">
+        <h4 class="tracked-sm">What you just did &mdash; the steps</h4>
+        <ol>
+          <li>Named one goal, in the present tense, as if it already happened.</li>
+          <li>Broke it into checkpoints you can actually check.</li>
+          <li>Put a real date on every one of them.</li>
+          <li>Named the obstacles before they showed up, and what you'd do about each.</li>
+          <li>Listed what you'd need to learn, buy, or build.</li>
+          <li>Named the people whose help you'll need.</li>
+          <li>Reordered it until the sequence was true.</li>
+        </ol>
+        <div class="daily">The last move is the one this game can't do for you: take the nearest checkpoint and break it down to <b>daily actions</b>. A goal you touch every day stops being a goal and starts being who you are.</div>
+      </div>
+    </section>
+
+    <p class="tagline">Most people never write the life they say they want.</p>
+
+    <section class="card">
+      <div class="ddsection">
+        <h4 class="tracked-sm">Next: The Dream Designer Blueprint</h4>
+        <p>This game gave you one goal, fully built. The Blueprint looks at the <b>machinery underneath</b> it &mdash; the reason most goals quietly die isn't the plan, it's the operating system running it.</p>
+        <p>It's a short assessment. You answer honestly across five areas, and it scores you out of 100:</p>
+        <ul>
+          <li><b>Goals</b> &mdash; do you write them down, picture them, say them out loud, look at them again?</li>
+          <li><b>Mindset &amp; belief</b> &mdash; do you actually believe you'll pull it off, and do you go again when you don't?</li>
+          <li><b>Daily practice</b> &mdash; is there a morning you keep, and a block of time the important work is safe in?</li>
+          <li><b>Environment &amp; influence</b> &mdash; do the people and inputs around you pull you forward or hold you level?</li>
+          <li><b>Action &amp; follow-through</b> &mdash; do you finish, do you track it, and how fast do you get back on?</li>
+        </ul>
+        <p>Your score puts you in one of four tiers, and each one gets its own guidance:</p>
+        <div class="tiers">
+          <div class="tier"><b>The Drifter</b><span>Life happens to you more than through you. Not a character flaw &mdash; an unmade decision.</span></div>
+          <div class="tier"><b>The Dreamer</b><span>You know what you want. It lives in your head, the one place a goal can't work from.</span></div>
+          <div class="tier"><b>The Builder</b><span>You set goals and return to them. What's missing is rhythm &mdash; the daily contact.</span></div>
+          <div class="tier"><b>The Designer</b><span>You're running the loop most people never start. Your work now is depth, not repair.</span></div>
+        </div>
+        <p class="ddwhy">It takes a few minutes, and it tells you the one part of the loop that's actually breaking &mdash; so the next goal you set doesn't need this much scaffolding to survive.</p>
+      </div>
+    </section>
+
     <div class="win-actions">
       <button class="cta tracked-sm" id="winPrint" type="button">Print / save PDF</button>
       <button class="cta tracked-sm" id="winLink" type="button">Copy my plan link</button>
@@ -726,11 +794,12 @@ const S = {
   declarations : [],
   obstacles : [], things : [], people : [],   // named in worlds 5-7
   stage : "",            // world2..world8
-  ballR : 12,            // grows with each power-up in Thing Land
+  ballR : 12,            // fixed — the light never changes size
   freeCam : false,       // climbing worlds let the camera track left as well as right
   descend : false,       // Declaration Land goes down, so camY may go positive
   camX : 0, camY : 0, camVel : CFG.DRIFT_SPEED,
   showMap : false,
+  diff : 0,              // rises one per level, nudges hazard density
   flashT : 0, turnT : 0, confronted : false,
   walkStart : 0, lastCheck : null, floorY : 720,
 };
@@ -884,32 +953,50 @@ function buildWorld3(startX, startY, cps, goalText){
   const GY = 430, SKY = 316, HIGH = 250;
   let x = startX + 250;
 
-  cps.forEach((cp, i) => {
-    const inSky = (i % 2 === 1);
+  // A varied ladder of heights, shuffled, so no two checkpoints in a row feel
+  // the same: some sit on the ground, some are one hop up, some are a five
+  // platform climb into the sky.
+  const HEIGHTS = [0, 1, 2, 5, 1, 3, 0, 4, 2, 1, 5, 3];
+  const RISE = 80;
 
-    for (let k = 0; k < 2; k++){
+  cps.forEach((cp, i) => {
+    const tiers = HEIGHTS[i % HEIGHTS.length];
+
+    // the approach along the ground
+    const approach = tiers >= 3 ? 1 : 2;
+    for (let k = 0; k < approach; k++){
       const w = rnd(150, 210);
       plats.push({ x, y:GY, w, h:BASE_H + 80 - GY });
-      if (Math.random() < 0.45 && w > 165){
+      if (Math.random() < 0.36 + S.diff * 0.05 && w > 165){
         const sw = rnd(34, 54);
         spikes.push({ x:x + rnd(38, w - sw - 28), y:GY - SPIKE_H, w:sw });
       }
       x += w + rnd(95, 130);
     }
 
-    if (inSky){
-      plats.push({ x, y:SKY, w:rnd(120, 170), h:12, float:true });
-      x += 190;
-      const bw = 96;
-      plats.push({ x, y:HIGH, w:bw, h:40, float:true });
-      flags.push({ x:x + bw * 0.5, y:HIGH, kind:"way", got:false, label:cp.text });
-      x += bw + rnd(120, 160);
-      plats.push({ x:x - 320, y:GY, w:300, h:BASE_H + 80 - GY });
-    } else {
+    if (tiers === 0){
       const w = rnd(300, 380);
       plats.push({ x, y:GY, w, h:BASE_H + 80 - GY });
       flags.push({ x:x + w * 0.5, y:GY, kind:"way", got:false, label:cp.text });
       x += w + rnd(95, 130);
+    } else {
+      let y = GY;
+      for (let t = 0; t < tiers; t++){                  // climb
+        y = Math.max(120, y - RISE);
+        const w = (t === tiers - 1) ? rnd(150, 200) : rnd(110, 150);
+        plats.push({ x, y, w, h:26, float:true });
+        if (t === tiers - 1){
+          flags.push({ x:x + w * 0.5, y, kind:"way", got:false, label:cp.text });
+        }
+        x += w + rnd(58, 96);
+      }
+      for (let t = 0; t < Math.min(tiers, 3); t++){     // and back down
+        y = Math.min(GY - 60, y + RISE + 12);
+        plats.push({ x, y, w:rnd(110, 150), h:26, float:true });
+        x += rnd(140, 178);
+      }
+      plats.push({ x, y:GY, w:rnd(240, 300), h:BASE_H + 80 - GY });
+      x += rnd(240, 300) + rnd(95, 130);
     }
   });
 
@@ -974,7 +1061,7 @@ function buildObstacleLand(startX, startY, obstacles, goalText){
     for (let k = 0; k < 2; k++){
       const w = rnd(160, 220);
       plats.push({ x:x, y:GY, w:w, h:BASE_H + 80 - GY });
-      if (k === 1 && Math.random() < 0.5){
+      if (k === 1 && Math.random() < 0.44 + S.diff * 0.05){
         const sw = rnd(34, 52);
         spikes.push({ x:x + rnd(36, w - sw - 26), y:GY - SPIKE_H, w:sw });
       }
@@ -982,6 +1069,13 @@ function buildObstacleLand(startX, startY, obstacles, goalText){
     }
     birds.push({ x:x - 150, y:0, baseY:GY - rnd(90, 150), amp:rnd(18, 34), phase:rnd(0, 6.28),
                  vx:rnd(26, 46) * (Math.random() < 0.5 ? -1 : 1), label:ob.text });
+
+    // A checkpoint past every obstacle — getting hit by a bird shouldn't cost
+    // you the whole level, and this is the one level built to hit you.
+    const rw = rnd(230, 290);
+    plats.push({ x:x, y:GY, w:rw, h:BASE_H + 80 - GY });
+    flags.push({ x:x + rw * 0.5, y:GY, kind:"way", got:false });
+    x += rw + rnd(95, 130);
   });
   const holdW = 380;
   plats.push({ x:x, y:GY, w:holdW, h:BASE_H + 80 - GY });
@@ -1045,7 +1139,7 @@ function buildThingLand(startX, startY, things, goalText){
 
     const w2 = rnd(190, 250);
     plats.push({ x:x, y:GY, w:w2, h:BASE_H + 80 - GY });
-    if (Math.random() < 0.3){
+    if (Math.random() < 0.3 + S.diff * 0.05){
       const sw = rnd(34, 52);
       spikes.push({ x:x + rnd(40, w2 - sw - 30), y:GY - SPIKE_H, w:sw });
     }
@@ -1078,7 +1172,8 @@ function buildPeopleLand(startX, startY, people, goalText){
   people.forEach(function(pe, i){
     const w = rnd(250, 320);
     plats.push({ x:x, y:UP, w:w, h:30, float:true });
-    folk.push({ x:x + w*0.5, y:UP, label:pe.text, got:false, wave:0 });
+    folk.push({ x:x + w*0.5, y:UP, label:pe.text, got:false, wave:0,
+                home:x + w*0.5, range:Math.max(40, w*0.32), dir:(Math.random()<0.5?-1:1), sp:rnd(16,30) });
     x += w + (i === people.length - 1 ? rnd(90, 120) : rnd(95, 125));
   });
 
@@ -1101,14 +1196,24 @@ function buildDescent(startX, startY, defs){
   defs.forEach(function(d, i){ flagAt[Math.min(TIERS - 1, 1 + i * 2)] = d; });
 
   for (let i = 0; i < TIERS; i++){
-    const bw = rnd(104, 148);
+    const t = i / Math.max(1, TIERS - 1);        // 0 at the top, 1 at the bottom
+    const bw = rnd(104, 148) - t * 34;           // ledges narrow as you go down
     plats.push({ x:x, y:y, w:bw, h:26, float:true });
     const d = flagAt[i];
-    if (d) flags.push({ x:x + bw*0.5, y:y, kind:"way", got:false, label:d.text });
+    if (d){
+      flags.push({ x:x + bw*0.5, y:y, kind:"way", got:false, label:d.text });
+    } else if (i > 1 && Math.random() < 0.18 + t * 0.42){
+      const sw = Math.min(bw - 34, rnd(30, 46));
+      if (sw > 20) spikes.push({ x:x + (bw - sw)/2, y:y - SPIKE_H, w:sw });
+    }
+    if (i > 3 && Math.random() < t * 0.5){
+      birds.push({ x:x + bw*0.5, y:0, baseY:y - rnd(46, 78), amp:rnd(14, 26),
+                   phase:rnd(0, 6.28), vx:rnd(24, 40) * (Math.random()<0.5?-1:1), label:"" });
+    }
     run++;
     if (run >= legLen){ dir *= -1; run = 0; legLen = rint(3, 5); }
-    x += dir * (bw + rnd(40, 76));
-    y += rnd(66, 92);                     // down, not up
+    x += dir * (bw + rnd(40, 76) + t * 46);      // and the gaps widen
+    y += rnd(66, 92);
   }
   const hw = 340;
   plats.push({ x:x - hw*0.5, y:y + 20, w:hw, h:44, float:true });
@@ -1179,7 +1284,7 @@ function physics(dt){
 
   if (wasAir && player.onGround) AUDIO.land();
 
-  player.trail.unshift({ x:player.x + player.w/2, y:player.y + player.h/2 });
+  player.trail.unshift({ x:player.x + player.w/2, y:player.y + player.h - S.ballR });
   if (player.trail.length > 14) player.trail.pop();
 
   let dead = S.phase === "drift" ? (player.y > worldBottom + 90) : (player.y > S.floorY);
@@ -1414,33 +1519,60 @@ function groundUnder(x, y){
   return best === null ? y + 60 : best;
 }
 
+// Labels sit at normal letter width and wrap onto up to three lines, so a
+// real sentence on a flag stays readable instead of stretching off-screen.
 function flagText(txt, fx, fy, size, colour){
   ctx.save();
   ctx.textAlign = "center";
   ctx.fillStyle = colour;
-  if (ctx.letterSpacing !== undefined) ctx.letterSpacing = "3px";
+  if (ctx.letterSpacing !== undefined) ctx.letterSpacing = "0px";
   ctx.font = "300 " + size + "px Montserrat, sans-serif";
-  const room = viewW - 56;
-  const wide = ctx.measureText(txt).width;
-  if (wide > room){
-    size = Math.max(8, size * room / wide);
-    ctx.font = "300 " + size.toFixed(1) + "px Montserrat, sans-serif";
+
+  const maxW = Math.min(viewW - 56, 300);
+  const words = String(txt).split(/\s+/);
+  let lines = [], cur = "";
+  for (let i = 0; i < words.length; i++){
+    const t = cur ? cur + " " + words[i] : words[i];
+    if (cur && ctx.measureText(t).width > maxW){ lines.push(cur); cur = words[i]; }
+    else cur = t;
   }
-  const half = ctx.measureText(txt).width / 2 + 12;
+  if (cur) lines.push(cur);
+
+  if (lines.length > 3){                       // too long even wrapped — shrink first
+    size = Math.max(8, size * 0.82);
+    ctx.font = "300 " + size.toFixed(1) + "px Montserrat, sans-serif";
+    lines = []; cur = "";
+    for (let i = 0; i < words.length; i++){
+      const t = cur ? cur + " " + words[i] : words[i];
+      if (cur && ctx.measureText(t).width > maxW){ lines.push(cur); cur = words[i]; }
+      else cur = t;
+    }
+    if (cur) lines.push(cur);
+    if (lines.length > 3){ lines = lines.slice(0, 3); lines[2] = lines[2] + "\u2026"; }
+  }
+
+  let widest = 0;
+  for (let i = 0; i < lines.length; i++) widest = Math.max(widest, ctx.measureText(lines[i]).width);
+  const half = widest / 2 + 12;
   const tx = Math.min(Math.max(fx, S.camX + half), S.camX + viewW - half);
+
+  const lh = size * 1.22;
+  const top = fy - (lines.length - 1) * lh;
   ctx.shadowColor = "rgba(255,255,255,0.3)"; ctx.shadowBlur = 16;
-  ctx.fillText(txt, tx, fy);
+  for (let i = 0; i < lines.length; i++) ctx.fillText(lines[i], tx, top + i * lh);
   ctx.restore();
 }
 
 function drawPlayer(){
-  const cx = player.x + player.w/2, cy = player.y + player.h/2;
+  const cx = player.x + player.w/2;
+  const cy = player.y + player.h - S.ballR;   // bottom of the ball == the feet
+
   ctx.save();
   for (let i = player.trail.length - 1; i > 0; i--){
     const t = player.trail[i];
     ctx.globalAlpha = (1 - i / player.trail.length) * 0.16;
     ctx.fillStyle = "#fff";
-    ctx.beginPath(); ctx.arc(t.x, t.y, 11 * (1 - i / player.trail.length), 0, 6.284); ctx.fill();
+    ctx.beginPath(); ctx.arc(t.x, t.y, (S.ballR - 1) * (1 - i / player.trail.length), 0, 6.284); ctx.fill();
   }
   ctx.restore();
   ctx.save();
@@ -1471,12 +1603,14 @@ const goalInput = el("goalInput");
 
 titleO.addEventListener("touchstart", e => { start(); e.preventDefault(); }, {passive:false});
 titleO.addEventListener("click", () => start());
+el("playBtn").addEventListener("click", function(e){ e.stopPropagation(); start(); });
 
 let fieldOpen = false;
 function anyPanelOpen(){
   return fieldOpen || cpPanel.classList.contains("on") || dtPanel.classList.contains("on") ||
          planPanel.classList.contains("on") || el("listPanel").classList.contains("on") ||
-         el("roPanel").classList.contains("on") || el("dcPanel").classList.contains("on");
+         el("roPanel").classList.contains("on") || el("dcPanel").classList.contains("on") ||
+         el("rsPanel").classList.contains("on");
 }
 
 function clock(s){
@@ -1554,10 +1688,11 @@ function commitGoal(text){
     top:"Your reason",
     q:"What changes when that's true?",
     hint:"The reason has to be bigger than the effort, or you'll trade it away.",
-    eg:"e.g. \u201cI stop lying awake doing math at 2am.\u201d",
+    eg:"e.g. \u201cMy kids see the world before they leave home.\u201d",
     ph:"because\u2026",
     val:function(v){ S.why = v; },
     then:function(){
+      AUDIO.turn();
       S.phase = "turn"; S.turnT = 0; S.flashT = 1;
       meter.classList.add("struck");
     }
@@ -1744,7 +1879,8 @@ function drawSplashArt(n){
   g.shadowBlur = 0;
 }
 function splash(n, name, line, then){
-  AUDIO.resume();
+  S.diff = Math.max(0, n - 3);   // levels 1-3 stay gentle, then it tightens
+  if (Date.now() >= AUDIO.holdUntil) AUDIO.resume();
   el("splashLv").textContent = "Level " + n;
   el("splashNm").textContent = name;
   el("splashLn").textContent = line;
@@ -1762,7 +1898,7 @@ function skipLevel(){
   const g = flags.filter(function(f){ return f.kind === "goal"; })[0];
   if (!g) return;
   flags.forEach(function(f){ f.got = true; });
-  orbs.forEach(function(o){ if (!o.got){ o.got = true; S.ballR = Math.min(20, S.ballR + 0.9); } });
+  orbs.forEach(function(o){ o.got = true; });
   folk.forEach(function(f){ f.got = true; });
   // Straight to the next step — the platforming is optional, the exercise isn't.
   clearTimeout(splashTimer);
@@ -1818,46 +1954,93 @@ function drawList(ph){
 }
 
 /* ---- reorder panel (Master Land) ---- */
+// One response per obstacle, asked while the obstacle is still fresh — and
+// before it has any chance to be a surprise.
+function openResponses(){
+  const rows = el("rsRows"); rows.innerHTML = "";
+  S.obstacles.forEach(function(ob){
+    const d = document.createElement("div");
+    d.className = "rsblock";
+    d.innerHTML = '<div class="ob"><span class="mk">When</span><span class="obt"></span></div>' +
+                  '<input type="text" maxlength="120" placeholder="I will\u2026">';
+    d.querySelector(".obt").textContent = ob.text;
+    const inp = d.querySelector("input");
+    inp.value = ob.response || "";
+    inp.addEventListener("input", function(){ ob.response = inp.value; });
+    inp.addEventListener("keydown", function(e){ e.stopPropagation(); });
+    rows.appendChild(d);
+  });
+  el("rsPanel").classList.add("on");
+  setTimeout(function(){ const f = rows.querySelector("input"); if (f) f.focus(); }, 80);
+}
+el("rsDone").addEventListener("click", function(){
+  el("rsPanel").classList.remove("on");
+  launchWorld5();
+});
+
 function openReorder(){
   drawReorder();
   el("roPanel").classList.add("on");
 }
 function drawReorder(){
   const rows = el("roRows"); rows.innerHTML = "";
-
-  // The goal sits at the top as the thing everything below is aiming at.
-  const gd = document.createElement("div");
-  gd.className = "row goalrow";
-  gd.innerHTML = '<span class="num">&#9670;</span><input type="text" readonly>';
-  gd.querySelector("input").value = S.goal + (S.goalDate ? "  \u2014  " + fmtDate(S.goalDate) : "");
-  rows.appendChild(gd);
-
   const swap = function(arr, a, b){ const t = arr[a]; arr[a] = arr[b]; arr[b] = t; drawReorder(); };
 
-  S.checkpoints.forEach(function(c, i){
+  // Build one editable row: pencil unlocks the text, the date is always live.
+  const mkRow = function(cls, mark, obj, opts){
     const d = document.createElement("div");
-    d.className = "row";
-    d.innerHTML = '<span class="num">' + (i+1) + '</span>' +
-      '<input type="text" maxlength="90"><button class="mv">&uarr;</button><button class="mv">&darr;</button>';
-    const inp = d.querySelector("input");
-    inp.value = c.text + (c.date ? "  \u2014  " + fmtDate(c.date) : "");
-    inp.readOnly = true;
-    const btns = d.querySelectorAll(".mv");
-    btns[0].addEventListener("click", function(){ if (i > 0) swap(S.checkpoints, i, i-1); });
-    btns[1].addEventListener("click", function(){ if (i < S.checkpoints.length - 1) swap(S.checkpoints, i, i+1); });
-    rows.appendChild(d);
+    d.className = "row " + cls;
+    d.innerHTML =
+      '<span class="num">' + mark + '</span>' +
+      '<input class="tx" type="text" maxlength="120" readonly>' +
+      '<button class="mv pencil" title="Edit">\u270e</button>' +
+      '<input class="dt" type="date">' +
+      (opts.moves ? '<button class="mv">&uarr;</button><button class="mv">&darr;</button>' : '');
+    const tx = d.querySelector(".tx"), dt = d.querySelector(".dt");
+    tx.value = obj.text != null ? obj.text : obj.goalText;
+    dt.value = obj.date || "";
 
-    // Steps under this checkpoint, movable within it.
+    d.querySelector(".pencil").addEventListener("click", function(){
+      tx.readOnly = !tx.readOnly;
+      d.classList.toggle("editing", !tx.readOnly);
+      if (!tx.readOnly){ tx.focus(); tx.setSelectionRange(tx.value.length, tx.value.length); }
+    });
+    tx.addEventListener("input", function(){ opts.setText(tx.value); });
+    tx.addEventListener("keydown", function(e){
+      e.stopPropagation();
+      if (e.key === "Enter"){ tx.readOnly = true; d.classList.remove("editing"); }
+    });
+    dt.addEventListener("change", function(){ opts.setDate(dt.value); });
+    rows.appendChild(d);
+    return d;
+  };
+
+  // The goal itself — editable, and its date can move any time.
+  mkRow("goalrow", "&#9670;", { text:S.goal, date:S.goalDate }, {
+    moves:false,
+    setText:function(v){ S.goal = v; },
+    setDate:function(v){ S.goalDate = v; },
+  });
+
+  S.checkpoints.forEach(function(c, i){
+    const d = mkRow("", String(i+1), c, {
+      moves:true,
+      setText:function(v){ c.text = v; },
+      setDate:function(v){ c.date = v; },
+    });
+    const mv = d.querySelectorAll(".mv");
+    mv[1].addEventListener("click", function(){ if (i > 0) swap(S.checkpoints, i, i-1); });
+    mv[2].addEventListener("click", function(){ if (i < S.checkpoints.length - 1) swap(S.checkpoints, i, i+1); });
+
     c.steps.forEach(function(st, j){
-      const sd = document.createElement("div");
-      sd.className = "row step";
-      sd.innerHTML = '<span class="num">&middot;</span>' +
-        '<input type="text" readonly><button class="mv">&uarr;</button><button class="mv">&darr;</button>';
-      sd.querySelector("input").value = st.text + (st.date ? "  \u2014  " + fmtDate(st.date) : "");
+      const sd = mkRow("step", "&middot;", st, {
+        moves:true,
+        setText:function(v){ st.text = v; },
+        setDate:function(v){ st.date = v; },
+      });
       const sb = sd.querySelectorAll(".mv");
-      sb[0].addEventListener("click", function(){ if (j > 0) swap(c.steps, j, j-1); });
-      sb[1].addEventListener("click", function(){ if (j < c.steps.length - 1) swap(c.steps, j, j+1); });
-      rows.appendChild(sd);
+      sb[1].addEventListener("click", function(){ if (j > 0) swap(c.steps, j, j-1); });
+      sb[2].addEventListener("click", function(){ if (j < c.steps.length - 1) swap(c.steps, j, j+1); });
     });
   });
 }
@@ -2101,6 +2284,15 @@ wireTabs(el("winTabList"), el("winTabCal"), el("winTree"), el("winCal"));
 function buildTree(target){
   let h = '<div class="t-goal">&#9670; ' + esc(S.goal) +
           ' <span class="t-date">' + esc(fmtDate(S.goalDate)) + '</span></div>';
+  if (S.obstacles.some(function(o){ return o.response; })){
+    h += '<div class="t-obs"><span class="t-obs-h">If it goes wrong</span>';
+    S.obstacles.forEach(function(o){
+      if (!o.response) return;
+      h += '<div class="t-ob">&#9888; ' + esc(o.text) +
+           '<span class="t-rs">&rarr; ' + esc(o.response) + '</span></div>';
+    });
+    h += '</div>';
+  }
   S.checkpoints.forEach(c => {
     h += '<div class="t-cp">&#9873; ' + esc(c.text) +
          ' <span class="t-date">' + esc(fmtDate(c.date)) + '</span></div>';
@@ -2196,17 +2388,17 @@ function nextStep(){
     case "world4": return { main:"Name your obstacles", run:function(){
       openList({ head:"What gets in the way?",
         why:"Every plan meets resistance. Naming it now turns a surprise into something you already have an answer for.",
-        eg:"e.g. \u201cUnexpected car repairs.\u201d \u201cI quit when it gets boring.\u201d",
-        placeholder:"something in the way", store:S.obstacles, next:launchWorld5 }); } };
+        eg:"e.g. \u201cSomething breaks and eats the savings.\u201d \u201cWe never agree on dates.\u201d",
+        placeholder:"something in the way", store:S.obstacles, next:openResponses }); } };
     case "world5": return { main:"What will you need?", run:function(){
       openList({ head:"What will you need?",
         why:"Knowledge, skills, tools, money, information. The things you don't have yet but the goal requires.",
-        eg:"e.g. \u201cA real budget I actually track.\u201d \u201cA side income of $400/mo.\u201d",
+        eg:"e.g. \u201cPassports for everyone.\u201d \u201c$6,000 saved for the trip.\u201d",
         placeholder:"something you'll need", store:S.things, next:launchWorld6 }); } };
     case "world6": return { main:"Who will you need?", run:function(){
       openList({ head:"Who will you need?",
         why:"Almost nothing worth doing gets done alone. Who has to help, agree, teach, or just know about this?",
-        eg:"e.g. \u201cMy wife, so we're on the same page.\u201d \u201cSomeone who's done it.\u201d",
+        eg:"e.g. \u201cMy wife, so we pick the dates together.\u201d \u201cSomeone who has taken kids abroad.\u201d",
         placeholder:"a person", store:S.people, next:launchWorld7 }); } };
     case "world7":    return { main:"Speak it over yourself", run:openDeclarations };
     case "world8dec": return { main:"Master your plan", run:openReorder };
@@ -2228,7 +2420,7 @@ function askFirstAction(){
     top:"First move",
     q:"What will you do in the next 48 hours?",
     hint:"One thing. Small enough that there is no excuse not to.",
-    eg:"e.g. \u201cList every debt and what it costs me.\u201d",
+    eg:"e.g. \u201cPick the month and tell my wife.\u201d",
     ph:"the very next thing",
     val:function(v){ S.firstAction = v; },
     then:function(){ win(); }   // declarations were chosen back in Declaration Land
@@ -2388,7 +2580,7 @@ function saveToUrl(){
     const pack = {
       g:S.goal, w:S.why, d:S.goalDate, a:S.firstAction, ab:S.firstActionBy,
       c:S.checkpoints.map(function(c){ return [c.text, c.date, c.steps.map(function(s){ return [s.text, s.date]; })]; }),
-      o:S.obstacles.map(function(x){ return x.text; }),
+      o:S.obstacles.map(function(x){ return [x.text, x.response || ""]; }),
       t:S.things.map(function(x){ return x.text; }),
       p:S.people.map(function(x){ return x.text; }),
       dc:S.declarations.filter(function(x){ return x.on; }).map(function(x){ return x.t; }),
@@ -2411,7 +2603,9 @@ function loadFromUrl(fromStorage){
     S.checkpoints = (o.c || []).map(function(c){
       return { text:c[0], date:c[1], steps:(c[2]||[]).map(function(s){ return { text:s[0], date:s[1] }; }) };
     });
-    S.obstacles = (o.o||[]).map(function(t){ return {text:t}; });
+    S.obstacles = (o.o||[]).map(function(t){
+      return Array.isArray(t) ? { text:t[0], response:t[1] } : { text:t };
+    });
     S.things    = (o.t||[]).map(function(t){ return {text:t}; });
     S.people    = (o.p||[]).map(function(t){ return {text:t}; });
     S.declarations = (o.dc||[]).map(function(t){ return { t:t, own:false, on:true }; });
@@ -2482,7 +2676,7 @@ function start(){
   player.x = 120; player.y = 380; player.vx = 0; player.vy = 0; player.trail = [];
   S.camX = 0; S.camY = 0; S.confronted = false;
   S.goal = ""; S.goalDate = ""; S.checkpoints = []; S.stage = "";
-  S.obstacles = []; S.things = []; S.people = []; S.ballR = 12; S.freeCam = false; S.showMap = false;
+  S.obstacles = []; S.things = []; S.people = []; S.ballR = 12; S.freeCam = false; S.showMap = false; S.diff = 0;
   S.why = ""; S.firstAction = ""; S.firstActionBy = ""; S.declarations = []; S.descend = false;
   birds = []; orbs = []; folk = [];
   minimap.classList.remove("on");
@@ -2560,6 +2754,20 @@ const AUDIO = {
   },
 
   jump:   function(){ this.slide(300, 620, 0.13, 0.32); },
+  // The moment the goal becomes real and the drift ends. Rises and settles.
+  turn:   function(){
+    this.boot();
+    this.silence(2600);
+    const F3=174.61, A3=220.00, C4=261.63, F4=349.23, A4=440.00, C5=523.25, F5=698.46;
+    this.phrase([
+      [F3, 0.00, 2.30, 0.10], [C4, 0.00, 2.30, 0.075],   // held bed underneath
+      [F4, 0.00, 0.42, 0.24],
+      [A4, 0.34, 0.42, 0.24],
+      [C5, 0.68, 0.42, 0.24],
+      [F5, 1.02, 1.05, 0.26],                             // lands and rings out
+      [A3, 1.02, 1.05, 0.09],
+    ], 0.24, "triangle");
+  },
   land:   function(){ this.note(150, 0.05, 0.16); },
   collect:function(){ this.phrase([[659.25, 0, 0.10, 0.22], [987.77, 0.06, 0.16, 0.20]], 0.2, "triangle"); },
   flag:   function(){
@@ -2585,20 +2793,33 @@ const AUDIO = {
 
   // Each level gets its own short pattern. Same instrument, different mood —
   // aimless in the drift, urgent on the deadline, low and slow underground.
+  // The score climbs with the game: aimless and sparse in the drift, steadier
+  // once there's a goal, faster and brighter through the middle, then End Land
+  // drops into a minor key — the last climb should feel like it costs something.
   TRACKS:{
-    world1:{ ms:640, v:0.10, n:[220,0,262,0,196,0,0,0,220,0,175,0,0,0,0,0] },
-    world2:{ ms:520, v:0.11, n:[262,0,330,0,392,0,330,0,262,0,196,0,262,0,0,0] },
-    world3:{ ms:440, v:0.11, n:[330,392,0,440,0,392,330,0,294,330,0,392,0,0,0,0] },
-    world4:{ ms:300, v:0.12, n:[392,0,392,440,494,0,440,392,349,0,392,0,330,0,0,0] },
-    world5:{ ms:340, v:0.12, n:[233,0,247,0,233,0,185,0,233,0,262,0,233,0,0,0] },
-    world6:{ ms:400, v:0.11, n:[349,440,523,440,349,0,392,0,349,440,523,659,523,0,0,0] },
-    world7:{ ms:560, v:0.10, n:[294,0,370,0,440,0,370,0,330,0,392,0,294,0,0,0] },
-    world8dec:{ ms:700, v:0.11, n:[147,0,131,0,110,0,0,0,131,0,110,0,98,0,0,0] },
-    world9:{ ms:360, v:0.12, n:[523,659,784,1046,784,659,523,659,587,698,880,698,587,0,0,0] },
+    // 1 Motion — no key, no pulse. Wandering.
+    world1:{ ms:660, v:0.09, n:[220,0,262,0,196,0,0,0,220,0,175,0,0,0,0,0] },
+    // 2 Goal — a pulse arrives, major, still calm.
+    world2:{ ms:520, v:0.10, n:[262,0,330,0,392,0,330,0,262,0,196,0,262,0,0,0] },
+    // 3 Checkpoint — same key, more movement.
+    world3:{ ms:450, v:0.11, n:[330,392,0,440,0,392,330,0,294,330,0,392,440,0,392,0] },
+    // 4 Deadline — quicker, a clock behind it.
+    world4:{ ms:330, v:0.115, n:[392,0,392,440,494,0,440,392,349,392,440,0,494,0,440,0] },
+    // 5 Obstacle — tightens, semitone shadow in it.
+    world5:{ ms:310, v:0.12, n:[349,370,392,0,349,0,311,0,349,370,392,440,392,0,370,0] },
+    // 6 Supplies — the brightest, bouncing.
+    world6:{ ms:290, v:0.12, n:[440,523,659,523,440,523,587,0,440,523,659,880,659,523,440,0] },
+    // 7 People — warm, full, the high point.
+    world7:{ ms:300, v:0.125, n:[392,494,587,494,392,587,698,587,494,587,698,880,698,587,494,0] },
+    // 8 Declaration — the descent. Low, slow, one note at a time.
+    world8dec:{ ms:600, v:0.115, n:[147,0,131,0,0,0,110,0,131,0,110,0,98,0,0,0] },
+    // 9 End — minor, driving, dangerous. A minor with a flat second leaning on it.
+    world9:{ ms:250, v:0.13, n:[440,523,659,523,440,415,440,0,523,659,784,659,523,466,440,0] },
   },
 
   // Keep the level track off for a moment so a fanfare isn't fighting it.
   silence:function(ms){ this.holdUntil = Date.now() + ms; this.stop(); },
+  resume:function(){ this.holdUntil = 0; },
 
   play:function(key){
     if (Date.now() < this.holdUntil) return;
@@ -2683,11 +2904,16 @@ function frame(now){
     for (const o of orbs){
       if (o.got) continue;
       if (Math.abs(o.x - pcx) < 24 && Math.abs(o.y - pcy) < 24){
-        o.got = true; S.ballR = Math.min(20, S.ballR + 0.9); AUDIO.collect();
+        o.got = true; AUDIO.collect();
         S.lastCheck = { x:o.x, y:groundUnder(o.x, o.y) };
       }
     }
     for (const f of folk){
+      if (f.home != null){                       // patrol back and forth
+        f.x += f.dir * f.sp * dt;
+        if (f.x > f.home + f.range){ f.x = f.home + f.range; f.dir = -1; }
+        if (f.x < f.home - f.range){ f.x = f.home - f.range; f.dir =  1; }
+      }
       if (f.got) continue;
       if (Math.abs(f.x - pcx) < 34 && Math.abs(f.y - (player.y + player.h)) < 70){
         f.got = true; AUDIO.wave(); S.lastCheck = { x:f.x, y:f.y };

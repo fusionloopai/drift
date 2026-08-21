@@ -157,6 +157,21 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 }
 #resume:hover{ border-color:rgba(255,255,255,.4); color:var(--ink); }
 
+/* The other door out of the title screen — for anyone who'd rather look at
+   the machinery under their goals before they set one here. Small on purpose:
+   this is a detour, not the invitation the page is making. */
+#ddSkip{
+  display:block; margin:clamp(18px,3.6vw,26px) auto 0; max-width:min(400px,88vw);
+  border:1px dashed var(--line); border-radius:5px; background:none;
+  padding:clamp(11px,2.2vw,15px) clamp(14px,3vw,18px);
+  text-decoration:none; cursor:pointer;
+  transition:border-color .2s ease, background .2s ease;
+}
+#ddSkip:hover{ border-color:rgba(255,255,255,.35); background:rgba(255,255,255,.03); }
+#ddSkip .q{ display:block; font-size:clamp(10px,1.7vw,12px); color:var(--ink-faint); }
+#ddSkip .go{ display:block; margin-top:6px; font-size:clamp(10px,1.8vw,12.5px); color:var(--ink-soft); }
+#ddSkip:hover .go{ color:var(--ink); }
+
 /* --------------------------- Field (one prompt) --------------------------- */
 #field .ctx{ margin-bottom:clamp(12px,2.6vw,18px); color:var(--ink-faint); display:none; }
 #field .qtop{ font-size:clamp(10px,1.8vw,12px); color:var(--ink-faint); margin-bottom:clamp(12px,2.4vw,18px); }
@@ -577,6 +592,10 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
       <p class="htnote">A mouse won't move the ball &mdash; use the keys on a computer, or the buttons on a phone or tablet.</p>
     </div>
     <button id="resume" class="tracked-sm">Resume my saved plan</button>
+    <a id="ddSkip" href="#" target="_blank" rel="noopener">
+      <span class="q">Rather build the blueprint first?</span>
+      <span class="go">Go to the Dream Designer Blueprint &nbsp;&rarr;</span>
+    </a>
   </div>
 </div>
 
@@ -852,6 +871,7 @@ const CFG = {
   DRIFT_SPEED : 190,   // px/s the camera shoves you right whether you press anything or not
   PX_PER_M    : 8,     // world pixels per displayed "meter"
 };
+document.getElementById("ddSkip").href = CFG.DREAMDESIGNER_URL;
 
 /* ===========================================================================
    CANVAS + VIEW
@@ -1336,6 +1356,155 @@ function buildDescent(startX, startY, defs){
   const hw = 340;
   plats.push({ x:x - hw*0.5, y:y + 20, w:hw, h:44, float:true });
   flags.push({ x:x, y:y + 20, kind:"goal", got:false, label:S.goal, sub:"your foundation" });
+  setFloor();
+}
+
+// End Land: every mechanic in the game, back to back, one long finale —
+// straight ground, the obstacles and the tools that answer them, a climb,
+// a drop, then a second longer climb to the summit. Every checkpoint from
+// the plan gets handed out across the whole thing, not bunched into one
+// section — the plan's spine runs through everything, right to the top.
+function buildFinalLand(startX, startY, cps, obstacles, things, people, goalText, goalSub){
+  launchPad(startX, startY); clearProps(); spikes = []; flags = [];
+  const GY = 430;
+  let x = startX + 220, y = GY;
+
+  const cpQueue = cps.slice();
+  const nextCp = function(){ return cpQueue.shift() || null; };
+  const placeWay = function(px, py){
+    const d = nextCp();
+    if (d) flags.push({ x:px, y:py, kind:"way", got:false, label:d.text, sub:d.sub });
+  };
+
+  // ---- 1. Straight ground — the drift's own move, one more time. ----
+  for (let i = 0; i < 4; i++){
+    const w = rnd(180, 240);
+    plats.push({ x:x, y:GY, w:w, h:BASE_H + 80 - GY });
+    if (i === 1 && Math.random() < 0.4){
+      const sw = rnd(34, 50);
+      spikes.push({ x:x + rnd(36, w - sw - 26), y:GY - SPIKE_H, w:sw });
+    }
+    if (i === 2) placeWay(x + w * 0.5, GY);
+    x += w + rnd(90, 130);
+  }
+
+  // ---- 2. The obstacles, and the tools that answer them, one more time. ----
+  obstacles.forEach(function(ob, obId){
+    const w0 = rnd(160, 210);
+    plats.push({ x:x, y:GY, w:w0, h:BASE_H + 80 - GY });
+    if (ob.response && ob.response.trim().length >= 3){
+      tools.push({ x:x + w0 * 0.5, y:GY - 46, label:ob.response, got:false, obId:obId });
+    }
+    x += w0 + rnd(70, 100);
+    birds.push({ x:x + 40, y:0, baseY:GY - rnd(90, 140), amp:rnd(18, 32), phase:rnd(0, 6.28),
+                 vx:rnd(26, 44) * (Math.random() < 0.5 ? -1 : 1), label:ob.text, obId:obId });
+    const w1 = rnd(160, 210);
+    plats.push({ x:x, y:GY, w:w1, h:BASE_H + 80 - GY });
+    if (Math.random() < 0.4){
+      const sw = rnd(34, 50);
+      spikes.push({ x:x + rnd(36, w1 - sw - 26), y:GY - SPIKE_H, w:sw });
+    }
+    x += w1 + rnd(90, 120);
+  });
+  placeWay(x + 40, GY);
+
+  // ---- 3. Climb — the things they'll need, up where the air is thin. ----
+  y = GY;
+  let dir = 1, run = 0, legLen = 5;
+  let thingsQ = things.slice();
+  const CLIMB1 = Math.max(10, cpQueue.length + thingsQ.length + 4);
+  for (let i = 0; i < CLIMB1; i++){
+    const bw = rnd(90, 140);
+    plats.push({ x:x, y:y, w:bw, h:30, float:true });
+    if (i % 3 === 1 && thingsQ.length){
+      const th = thingsQ.shift();
+      orbs.push({ x:x + bw * 0.5, y:y - 40, label:th.text, got:false });
+    } else if (i % 4 === 3){
+      placeWay(x + bw * 0.5, y);
+    } else if (i > 2 && Math.random() < 0.22){
+      const sw = Math.min(bw - 30, rnd(30, 46));
+      if (sw > 18) spikes.push({ x:x + (bw - sw) / 2, y:y - SPIKE_H, w:sw });
+    }
+    run++;
+    if (run >= legLen){ dir *= -1; run = 0; legLen = dir > 0 ? rint(4, 6) : rint(2, 3); }
+    const big = Math.random() < 0.2;
+    x += dir * (bw + (big ? rnd(110, 155) : rnd(55, 90)));
+    y -= big ? rnd(88, 108) : rnd(58, 80);
+  }
+  thingsQ.forEach(function(th){                    // anything left gets one more ledge
+    const bw = rnd(120, 150);
+    plats.push({ x:x, y:y, w:bw, h:30, float:true });
+    orbs.push({ x:x + bw * 0.5, y:y - 40, label:th.text, got:false });
+    x += bw + rnd(90, 120);
+  });
+
+  // ---- 4. Down — the descent, right in the middle of the climb this time.
+  // The people they'll need are waiting on the way. ----
+  let peopleQ = people.slice();
+  const DESCEND = Math.max(8, peopleQ.length * 2 + 4);
+  dir = 1; run = 0; legLen = 4;
+  for (let i = 0; i < DESCEND; i++){
+    const t = i / Math.max(1, DESCEND - 1);
+    const bw = rnd(120, 170) - t * 20;
+    plats.push({ x:x, y:y, w:bw, h:28, float:true });
+    if (i % 3 === 1 && peopleQ.length){
+      const pe = peopleQ.shift();
+      folk.push({ x:x + bw * 0.5, y:y, label:pe.text, got:false, wave:0, home:null });
+    } else if (i % 4 === 3){
+      placeWay(x + bw * 0.5, y);
+    } else if (i > 1 && Math.random() < 0.24 + t * 0.3){
+      const sw = Math.min(bw - 30, rnd(30, 46));
+      if (sw > 18) spikes.push({ x:x + (bw - sw) / 2, y:y - SPIKE_H, w:sw });
+    }
+    run++;
+    if (run >= legLen){ dir *= -1; run = 0; legLen = rint(3, 5); }
+    x += dir * (bw + rnd(45, 80) + t * 30);
+    y += rnd(64, 90);
+  }
+  peopleQ.forEach(function(pe){
+    const bw = rnd(150, 190);
+    plats.push({ x:x, y:y, w:bw, h:28, float:true });
+    folk.push({ x:x + bw * 0.5, y:y, label:pe.text, got:false, wave:0, home:null });
+    x += bw + rnd(90, 120);
+  });
+  const restW = 260;
+  plats.push({ x:x, y:y, w:restW, h:30, float:true });
+  x += restW + rnd(90, 120);
+
+  // ---- 5. Up again — the last climb, longer and tighter than the first.
+  // Whatever's left of the plan lives up here, at the top. ----
+  dir = 1; run = 0; legLen = 5;
+  const CLIMB2 = Math.max(14, cpQueue.length * 3 + 8);
+  for (let i = 0; i < CLIMB2; i++){
+    const bw = rnd(78, 122);
+    plats.push({ x:x, y:y, w:bw, h:30, float:true });
+    if (i % 3 === 2 && cpQueue.length){
+      placeWay(x + bw * 0.5, y);
+    } else if (i > 1 && Math.random() < 0.3){
+      const sw = Math.min(bw - 26, rnd(30, 48));
+      if (sw > 18) spikes.push({ x:x + (bw - sw) / 2, y:y - SPIKE_H, w:sw });
+    }
+    if (i > 5 && Math.random() < 0.22){
+      birds.push({ x:x + bw * 0.5, y:0, baseY:y - rnd(50, 84), amp:rnd(16, 28),
+                   phase:rnd(0, 6.28), vx:rnd(28, 46) * (Math.random() < 0.5 ? -1 : 1), label:"" });
+    }
+    run++;
+    if (run >= legLen){ dir *= -1; run = 0; legLen = dir > 0 ? rint(4, 6) : rint(2, 3); }
+    const big = Math.random() < 0.26;
+    x += dir * (bw + (big ? rnd(120, 165) : rnd(56, 92)));
+    y -= big ? rnd(92, 112) : rnd(62, 84);
+  }
+  while (cpQueue.length){    // nothing from the plan is missing from its own finale
+    const bw = rnd(140, 180);
+    plats.push({ x:x, y:y, w:bw, h:30, float:true });
+    placeWay(x + bw * 0.5, y);
+    x += bw + rnd(90, 120);
+  }
+
+  // ---- 6. The summit. ----
+  const hw2 = 340;
+  plats.push({ x:x - hw2 * 0.5, y:y + 10, w:hw2, h:44, float:true });
+  flags.push({ x:x, y:y + 10, kind:"goal", got:false, label:goalText, sub:goalSub });
   setFloor();
 }
 
@@ -2383,11 +2552,11 @@ function launchWorld7(){
   });
 }
 function launchWorld8(){
-  splash(9, "End Land", "The whole plan, one climb. You can see all of it now.", function(){
+  splash(9, "End Land", "Everything, one more time — the whole plan, together, all the way to the top.", function(){
     const ly = 440;
-    S.walkStart = player.x; S.stage = "world9"; S.showMap = ("world9" === "world6" || "world9" === "world9"); S.freeCam = true; S.descend = false;
+    S.walkStart = player.x; S.stage = "world9"; S.showMap = true; S.freeCam = true; S.descend = true;
     const defs = S.checkpoints.map(function(c){ return { text:c.text, sub:fmtDate(c.date), kind:"way" }; });
-    buildClimb(player.x, ly, defs, { goalLabel:S.goal, goalSub:fmtDate(S.goalDate) });
+    buildFinalLand(player.x, ly, defs, S.obstacles, S.things, S.people, S.goal, fmtDate(S.goalDate));
     player.y = ly - player.h - 2; player.vy = 0;
     S.lastCheck = { x:player.x + player.w/2, y:ly };
     setMeterLabel("Height to summit");

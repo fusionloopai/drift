@@ -118,15 +118,15 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 #titleBallWrap{ position:relative; width:220px; height:60px; margin:0 auto clamp(22px,4.5vw,36px); }
 #titleCv{ position:absolute; inset:0; }
 #titleGlow{
-  position:absolute; top:30px; left:110px; width:200px; height:200px;
+  position:absolute; top:30px; left:110px; width:120px; height:120px;
   transform:translate(-50%,-50%); pointer-events:none;
-  background:radial-gradient(circle, rgba(255,255,255,.20) 0%, rgba(255,255,255,.08) 28%, transparent 62%);
+  background:radial-gradient(circle, rgba(255,255,255,.10) 0%, rgba(255,255,255,.04) 30%, transparent 62%);
 }
 #titleBall{
   position:absolute; top:30px; left:110px;
   width:13px; height:13px; border-radius:50%; background:#fff;
   transform:translate(-50%,-50%);
-  box-shadow:0 0 20px rgba(255,255,255,.85), 0 0 56px rgba(255,255,255,.35);
+  box-shadow:0 0 14px rgba(255,255,255,.7), 0 0 34px rgba(255,255,255,.22);
 }
 #title .sub{ margin-top:clamp(28px,6vw,48px); font-size:clamp(10px,1.8vw,12px); color:var(--ink-faint); }
 
@@ -242,6 +242,67 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 .cal .day.mark{ border-color:var(--line); background:var(--bg-raise); color:var(--ink); }
 .cal .day .g{ font-size:9px; line-height:1; margin-top:1px; }
 .cal .legend{ margin-top:6px; font-size:10px; color:var(--ink-faint); display:flex; gap:14px; flex-wrap:wrap; }
+
+/* ------------------------------ Splash ----------------------------------- */
+#splash{
+  position:fixed; inset:0; z-index:11; pointer-events:none;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; background:rgba(0,0,0,.93);
+  opacity:0; transition:opacity .55s ease;
+}
+#splash.on{ opacity:1; }
+#splash .lv{ font-size:clamp(10px,1.8vw,13px); color:var(--ink-faint); }
+#splash .nm{ margin-top:14px; font-size:clamp(28px,7vw,62px); font-weight:200; }
+#splash .ln{ margin-top:18px; font-size:clamp(12px,2.2vw,16px); color:var(--ink-soft); font-weight:300; max-width:46ch; }
+
+/* Minimap — Master Land only. Shows the whole level at once. */
+#minimap{
+  position:fixed; z-index:5; left:50%; transform:translateX(-50%);
+  bottom:clamp(14px,3vh,26px); width:min(560px,86vw); height:52px;
+  border:1px solid var(--line); border-radius:3px; background:rgba(10,10,12,.72);
+  opacity:0; transition:opacity .5s ease; pointer-events:none;
+}
+#minimap.on{ opacity:1; }
+
+#skipBtn{
+  position:fixed; z-index:6; right:clamp(16px,3vw,32px); bottom:clamp(16px,3vh,28px);
+  background:rgba(10,10,12,.8); border:1px solid var(--line); border-radius:3px;
+  color:var(--ink-faint); font-family:inherit; cursor:pointer;
+  font-size:clamp(9px,1.4vw,11px); padding:10px 15px;
+  opacity:0; pointer-events:none; transition:opacity .4s ease, color .2s ease, border-color .2s ease;
+}
+#skipBtn.on{ opacity:.75; pointer-events:auto; }
+#skipBtn:hover{ color:var(--ink); border-color:rgba(255,255,255,.4); }
+
+.backbtn{
+  background:none; border:0; cursor:pointer; font-family:inherit;
+  color:var(--ink-faint); font-size:clamp(9px,1.5vw,11px);
+  padding:10px 4px; margin-top:14px;
+}
+.backbtn:hover{ color:var(--ink); }
+.reorder .row .mv{
+  flex:0 0 auto; width:26px; height:26px; border:1px solid var(--line); border-radius:3px;
+  background:none; color:var(--ink-faint); cursor:pointer; font-family:inherit; font-size:11px; line-height:1;
+}
+.reorder .row .mv:hover{ border-color:rgba(255,255,255,.4); color:var(--ink); }
+
+#win .steps{
+  margin-top:clamp(24px,5vw,36px); padding-top:clamp(20px,4vw,30px);
+  border-top:1px solid var(--line); text-align:left;
+  font-size:clamp(11px,2vw,14px); color:var(--ink-soft); font-weight:300; line-height:1.8;
+}
+#win .steps h4{ font-size:clamp(10px,1.7vw,12px); color:var(--ink); font-weight:400; margin-bottom:12px; }
+#win .steps ol{ padding-left:20px; }
+#win .daily{
+  margin-top:18px; padding:14px 16px; border:1px solid var(--line); border-radius:3px;
+  background:var(--bg-raise); font-size:clamp(11px,1.9vw,13px); color:var(--ink-soft); line-height:1.7;
+}
+#win .ddexplain{
+  margin-top:clamp(18px,3.6vw,26px); font-size:clamp(11px,1.9vw,13px);
+  color:var(--ink-soft); font-weight:300; line-height:1.75; max-width:56ch;
+  margin-left:auto; margin-right:auto; text-align:left;
+}
+#win .ddexplain b{ color:var(--ink); font-weight:400; }
 
 /* --------------------------------- Win ----------------------------------- */
 #win .goal{ font-size:clamp(20px,4.8vw,40px); font-weight:300; line-height:1.3; word-break:break-word; }
@@ -368,7 +429,40 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
       <div id="planTree" class="tree"></div>
       <div id="planCal" class="cal" style="display:none"></div>
     </div>
-    <div><button class="cta tracked-sm" id="planDone">Begin the climb &nbsp;&rarr;</button></div>
+    <div>
+      <button class="cta tracked-sm" id="planDone">Begin the climb &nbsp;&rarr;</button>
+      <div><button class="backbtn tracked-sm" id="planBack">&larr; &nbsp;Back to dates</button></div>
+    </div>
+  </div>
+</div>
+
+<div id="splash">
+  <p class="lv tracked-sm" id="splashLv"></p>
+  <p class="nm tracked glow-text" id="splashNm"></p>
+  <p class="ln" id="splashLn"></p>
+</div>
+
+<canvas id="minimap" width="1120" height="104"></canvas>
+<button id="skipBtn" class="tracked-sm">Skip level &nbsp;&rarr;</button>
+
+<div id="listPanel" class="overlay panel">
+  <div class="inner">
+    <p class="head" id="lpHead"></p>
+    <p class="why" id="lpWhy"></p>
+    <div class="goalline"><span class="lbl tracked-sm">Your goal</span><span id="lpGoalEcho"></span></div>
+    <p class="eg" id="lpEg"></p>
+    <div class="rows" id="lpRows"></div>
+    <button class="addbtn tracked-sm" id="lpAdd">+ &nbsp;Add another</button>
+    <div><button class="cta tracked-sm" id="lpDone">Continue &nbsp;&rarr;</button></div>
+  </div>
+</div>
+
+<div id="roPanel" class="overlay panel reorder">
+  <div class="inner">
+    <p class="head">Master the plan.</p>
+    <p class="why">Last pass. Anything out of order? Move it. A plan you have actually looked at twice is a different thing from one you wrote once.</p>
+    <div class="rows" id="roRows"></div>
+    <div><button class="cta tracked-sm" id="roDone">Lock it in &nbsp;&rarr;</button></div>
   </div>
 </div>
 
@@ -385,7 +479,21 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
       <div id="winTree" class="tree"></div>
       <div id="winCal" class="cal" style="display:none"></div>
     </div>
+    <div class="steps">
+      <h4 class="tracked-sm">What you just did &mdash; the steps</h4>
+      <ol>
+        <li>Named one goal, in the present tense, as if it already happened.</li>
+        <li>Broke it into checkpoints you can actually check.</li>
+        <li>Put a real date on every one of them.</li>
+        <li>Named the obstacles before they showed up.</li>
+        <li>Listed what you'd need to learn, buy, or build.</li>
+        <li>Named the people whose help you'll need.</li>
+        <li>Reordered it until the sequence was true.</li>
+      </ol>
+      <div class="daily">The last move is the one this game can't do for you: take the nearest checkpoint and break it down to <b>daily actions</b>. A goal you touch every day stops being a goal and starts being who you are.</div>
+    </div>
     <p class="tagline">Most people never write the life they say they want.</p>
+    <p class="ddexplain"><b>The Dream Designer Blueprint</b> is the next step up from this game. Drift asks you for one goal. The Blueprint looks at the whole operating system underneath it &mdash; how you set goals, what you believe about your own follow-through, your daily practice, the people and inputs around you, and whether you finish what you start. You answer a set of questions, get a score out of 100, and land in one of four tiers &mdash; Drifter, Dreamer, Builder, or Designer &mdash; with specific guidance for the one you're actually in. It takes a few minutes and it tells you which part of the loop is breaking.</p>
     <div class="win-actions">
       <button class="cta tracked-sm" id="winPrint" type="button">Print / save PDF</button>
       <a class="cta tracked-sm" id="winCta" href="#" target="_blank" rel="noopener">
@@ -446,7 +554,10 @@ const S = {
   t : 0, deaths : 0, walkDeaths : 0,
   goal : "", goalDate : "",
   checkpoints : [],      // {text, date, steps:[{text,date}]}
-  stage : "",            // world2 | world3 | world4
+  obstacles : [], things : [], people : [],   // named in worlds 5-7
+  stage : "",            // world2..world8
+  ballR : 12,            // grows with each power-up in Thing Land
+  freeCam : false,       // climbing worlds let the camera track left as well as right
   camX : 0, camY : 0, camVel : CFG.DRIFT_SPEED,
   flashT : 0, turnT : 0, confronted : false,
   walkStart : 0, lastCheck : null, floorY : 720,
@@ -458,6 +569,9 @@ let plats  = [];   // {x,y,w,h,float?}  float = one-way sky platform / block
 let spikes = [];   // {x,y,w}
 let flags  = [];   // {x,y,kind:"way"|"goal",got,label,sub?}
 let motes  = [];
+let birds  = [];   // {x,y,baseY,amp,phase,vx,label} — Obstacle Land
+let orbs   = [];   // {x,y,label,got}               — Thing Land power-ups
+let folk   = [];   // {x,y,label,got,wave}          — Coop Land
 let genX   = 0, lastY = 430;
 
 const GRAV = 2000, JUMP = -740, RUN = 330, SPIKE_H = 15;
@@ -531,6 +645,7 @@ function trimBehind(){
   spikes = spikes.filter(s => s.x + s.w > cut);
 }
 
+function clearProps(){ birds = []; orbs = []; folk = []; }
 function launchPad(startX, startY){
   plats = plats.filter(p => p.x + p.w < startX - 40);
   plats.push({ x:startX - 150, y:startY, w:330, h:BASE_H + 80 - startY });
@@ -635,6 +750,99 @@ function buildWorld4(startX, startY, goalText, dateText){
   const holdW = 300;
   plats.push({ x, y:y + 10, w:holdW, h:40, float:true });
   flags.push({ x:x + holdW * 0.5, y:y + 10, kind:"goal", got:false, label:goalText, sub:dateText });
+  setFloor();
+}
+
+// A zig-zag ascent: blocks march right for a few tiers, then back left, then
+// right again — so climbing means using the whole screen, not just holding one
+// direction. Used by Date Land and Master Land.
+function buildClimb(startX, startY, defs, extra){
+  launchPad(startX, startY); clearProps(); spikes = []; flags = [];
+  extra = extra || {};
+  let x = startX + 200, y = Math.min(startY, 440);
+  let dir = 1, run = 0;
+  const RISE = 78, TIERS = Math.max(12, defs.length * 3 + 4);
+  const flagAt = {};
+  defs.forEach((d, i) => { flagAt[Math.min(TIERS - 1, 2 + i * 3)] = d; });
+
+  for (let i = 0; i < TIERS; i++){
+    const bw = rnd(96, 132);
+    plats.push({ x:x, y:y, w:bw, h:34, float:true });
+    const d = flagAt[i];
+    if (d) flags.push({ x:x + bw*0.5, y:y, kind:d.kind || "way", got:false, label:d.text, sub:d.sub });
+    run++;
+    if (run >= 3){ dir *= -1; run = 0; }
+    x += dir * (bw + rnd(58, 92));
+    y -= RISE;
+  }
+  const hw = 300;
+  plats.push({ x:x - hw*0.5, y:y + 10, w:hw, h:40, float:true });
+  flags.push({ x:x, y:y + 10, kind:"goal", got:false, label:extra.goalLabel || S.goal, sub:extra.goalSub });
+  setFloor();
+}
+
+// Obstacle Land: ground and pits, plus birds that patrol — each one carrying
+// the name of something the player said would get in the way.
+function buildObstacleLand(startX, startY, obstacles, goalText){
+  launchPad(startX, startY); clearProps(); spikes = []; flags = [];
+  const GY = 430;
+  let x = startX + 240;
+  obstacles.forEach(function(ob){
+    for (let k = 0; k < 2; k++){
+      const w = rnd(160, 220);
+      plats.push({ x:x, y:GY, w:w, h:BASE_H + 80 - GY });
+      if (k === 1 && Math.random() < 0.5){
+        const sw = rnd(34, 52);
+        spikes.push({ x:x + rnd(36, w - sw - 26), y:GY - SPIKE_H, w:sw });
+      }
+      x += w + rnd(95, 130);
+    }
+    birds.push({ x:x - 150, y:0, baseY:GY - rnd(90, 150), amp:rnd(18, 34), phase:rnd(0, 6.28),
+                 vx:rnd(26, 46) * (Math.random() < 0.5 ? -1 : 1), label:ob.text });
+  });
+  const holdW = 380;
+  plats.push({ x:x, y:GY, w:holdW, h:BASE_H + 80 - GY });
+  flags.push({ x:x + holdW*0.5, y:GY, kind:"goal", got:false, label:goalText });
+  setFloor();
+}
+
+// Thing Land: every power-up is one of the things they said they'd need. Each
+// one collected makes the light bigger.
+function buildThingLand(startX, startY, things, goalText){
+  launchPad(startX, startY); clearProps(); spikes = []; flags = [];
+  const GY = 430, SKY = 320;
+  let x = startX + 240;
+  things.forEach(function(th, i){
+    const w = rnd(170, 230);
+    plats.push({ x:x, y:GY, w:w, h:BASE_H + 80 - GY });
+    if (i % 2 === 1){
+      plats.push({ x:x + 40, y:SKY, w:130, h:12, float:true });
+      orbs.push({ x:x + 105, y:SKY - 40, label:th.text, got:false });
+    } else {
+      orbs.push({ x:x + w*0.5, y:GY - 62, label:th.text, got:false });
+    }
+    x += w + rnd(100, 140);
+  });
+  const holdW = 380;
+  plats.push({ x:x, y:GY, w:holdW, h:BASE_H + 80 - GY });
+  flags.push({ x:x + holdW*0.5, y:GY, kind:"goal", got:false, label:goalText });
+  setFloor();
+}
+
+// Coop Land: the people they named, standing on the path. Reach every one.
+function buildCoopLand(startX, startY, people, goalText){
+  launchPad(startX, startY); clearProps(); spikes = []; flags = [];
+  const GY = 430;
+  let x = startX + 240;
+  people.forEach(function(pe){
+    const w = rnd(230, 300);
+    plats.push({ x:x, y:GY, w:w, h:BASE_H + 80 - GY });
+    folk.push({ x:x + w*0.5, y:GY, label:pe.text, got:false, wave:0 });
+    x += w + rnd(95, 125);
+  });
+  const holdW = 380;
+  plats.push({ x:x, y:GY, w:holdW, h:BASE_H + 80 - GY });
+  flags.push({ x:x + holdW*0.5, y:GY, kind:"goal", got:false, label:goalText });
   setFloor();
 }
 
@@ -744,6 +952,9 @@ function draw(){
   drawBackdrop();
   drawPlatforms();
   drawSpikes();
+  drawBirds();
+  drawOrbs();
+  drawFolk();
   drawFlags();
   drawPlayer();
 
@@ -820,6 +1031,69 @@ function drawSpikes(){
   ctx.restore();
 }
 
+// Birds: chevron shapes, shape-encoded like the spikes, each labelled with the
+// obstacle it stands for. They patrol, so timing matters.
+function drawBirds(){
+  ctx.save();
+  for (const b of birds){
+    if (b.x < S.camX - 120 || b.x > S.camX + viewW + 120) continue;
+    ctx.strokeStyle = "rgba(255,255,255,0.8)"; ctx.lineWidth = 2;
+    ctx.shadowColor = "rgba(255,255,255,0.45)"; ctx.shadowBlur = 10;
+    const w = 13, f = Math.sin(b.phase * 3) * 4;
+    ctx.beginPath();
+    ctx.moveTo(b.x - w, b.y + f); ctx.lineTo(b.x, b.y - 5); ctx.lineTo(b.x + w, b.y + f);
+    ctx.stroke();
+    ctx.restore(); ctx.save();
+    if (b.label) flagText(b.label.toUpperCase(), b.x, b.y - 22, 10, "rgba(255,255,255,0.42)");
+  }
+  ctx.restore();
+}
+
+// Power-ups: a ring you collect. Solid once taken.
+function drawOrbs(){
+  for (const o of orbs){
+    if (o.x < S.camX - 120 || o.x > S.camX + viewW + 120) continue;
+    ctx.save();
+    ctx.lineWidth = 2;
+    if (!o.got){
+      ctx.shadowColor = "rgba(255,255,255,0.7)"; ctx.shadowBlur = 16;
+      ctx.strokeStyle = "rgba(255,255,255,0.85)";
+      ctx.beginPath(); ctx.arc(o.x, o.y, 10, 0, 6.284); ctx.stroke();
+      ctx.beginPath(); ctx.arc(o.x, o.y, 4, 0, 6.284); ctx.stroke();
+    } else {
+      ctx.globalAlpha = 0.2; ctx.strokeStyle = "rgba(255,255,255,0.5)";
+      ctx.beginPath(); ctx.arc(o.x, o.y, 10, 0, 6.284); ctx.stroke();
+    }
+    ctx.restore();
+    if (o.label) flagText(o.label.toUpperCase(), o.x, o.y - 26, 10,
+      o.got ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.5)");
+  }
+}
+
+// People: a simple standing figure that raises an arm when you get close.
+function drawFolk(){
+  for (const f of folk){
+    if (f.x < S.camX - 140 || f.x > S.camX + viewW + 140) continue;
+    const near = Math.abs((player.x + player.w/2) - f.x) < 150;
+    if (near) f.wave = Math.min(1, f.wave + 0.06); else f.wave = Math.max(0, f.wave - 0.06);
+    const t = f.wave, ang = -0.5 - Math.sin(performance.now()/160) * 0.5 * t;
+    ctx.save();
+    ctx.strokeStyle = f.got ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.5)";
+    ctx.lineWidth = 2;
+    if (f.got){ ctx.shadowColor = "rgba(255,255,255,0.5)"; ctx.shadowBlur = 12; }
+    const bx = f.x, by = f.y - 34;
+    ctx.beginPath(); ctx.arc(bx, by, 6, 0, 6.284); ctx.stroke();          // head
+    ctx.beginPath(); ctx.moveTo(bx, by + 6); ctx.lineTo(bx, by + 22); ctx.stroke();   // body
+    ctx.beginPath(); ctx.moveTo(bx, by + 22); ctx.lineTo(bx - 7, f.y); ctx.moveTo(bx, by + 22); ctx.lineTo(bx + 7, f.y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(bx, by + 11); ctx.lineTo(bx - 9, by + 18); ctx.stroke();          // arm down
+    ctx.beginPath(); ctx.moveTo(bx, by + 11);                                                     // arm up / waving
+    ctx.lineTo(bx + Math.cos(ang) * 11, by + 11 + Math.sin(ang) * 11); ctx.stroke();
+    ctx.restore();
+    if (f.label) flagText(f.label.toUpperCase(), f.x, f.y - 56, 10,
+      f.got ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.38)");
+  }
+}
+
 function drawFlags(){
   for (const f of flags){
     if (f.x < S.camX - 140 || f.x > S.camX + viewW + 140) continue;
@@ -883,7 +1157,7 @@ function drawPlayer(){
   else if (S.confronted) blur = 26 + 8 * (0.5 + 0.5 * Math.sin(S.t * 2.4));
   ctx.shadowBlur = blur;
   ctx.fillStyle = "#fff";
-  ctx.beginPath(); ctx.arc(cx, cy, 12, 0, 6.284); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx, cy, S.ballR, 0, 6.284); ctx.fill();
   ctx.restore();
 }
 
@@ -907,7 +1181,9 @@ titleO.addEventListener("click", () => start());
 
 let fieldOpen = false;
 function anyPanelOpen(){
-  return fieldOpen || cpPanel.classList.contains("on") || dtPanel.classList.contains("on") || planPanel.classList.contains("on");
+  return fieldOpen || cpPanel.classList.contains("on") || dtPanel.classList.contains("on") ||
+         planPanel.classList.contains("on") || el("listPanel").classList.contains("on") ||
+         el("roPanel").classList.contains("on");
 }
 
 function clock(s){
@@ -983,14 +1259,16 @@ function commitGoal(text){
 }
 
 function finishTurn(){
-  const ly = Math.min(Math.max(player.y + player.h, 380), 452);
-  S.walkStart = player.x; S.stage = "world2";
-  buildWorld2(player.x, ly, S.goal);
-  player.y = ly - player.h - 2; player.vy = 0;
-  S.lastCheck = { x:player.x + player.w/2, y:ly };
   meter.classList.remove("struck");
-  setMeterLabel("Distance to goal");
-  S.phase = "walk";
+  splash(2, "Goal Land", "One goal. Mind the pits.", function(){
+    const ly = Math.min(Math.max(player.y + player.h, 380), 452);
+    S.walkStart = player.x; S.stage = "world2"; S.freeCam = false;
+    buildWorld2(player.x, ly, S.goal);
+    player.y = ly - player.h - 2; player.vy = 0;
+    S.lastCheck = { x:player.x + player.w/2, y:ly };
+    setMeterLabel("Distance to goal");
+    S.phase = "walk";
+  });
 }
 
 /* ---- checkpoints panel ---- */
@@ -1043,14 +1321,188 @@ el("cpDone").addEventListener("click", () => {
 });
 
 function launchWorld3(){
-  const ly = 430;
-  S.walkStart = player.x; S.stage = "world3";
-  buildWorld3(player.x, ly, S.checkpoints, S.goal);
-  player.y = ly - player.h - 2; player.vy = 0;
-  S.lastCheck = { x:player.x + player.w/2, y:ly };
-  setMeterLabel("Distance to next");
-  hud.classList.add("on");
-  S.phase = "walk";
+  splash(3, "Checkpoint Land", "Some of them are up in the sky. Use everything.", function(){
+    const ly = 430;
+    S.walkStart = player.x; S.stage = "world3"; S.freeCam = false;
+    buildWorld3(player.x, ly, S.checkpoints, S.goal);
+    player.y = ly - player.h - 2; player.vy = 0;
+    S.lastCheck = { x:player.x + player.w/2, y:ly };
+    setMeterLabel("Distance to next");
+    hud.classList.add("on");
+    S.phase = "walk";
+  });
+}
+
+/* ---- splash + skip ---- */
+const splashEl = el("splash"), minimap = el("minimap"), mctx = minimap.getContext("2d");
+let splashTimer = null;
+function splash(n, name, line, then){
+  el("splashLv").textContent = "Level " + n;
+  el("splashNm").textContent = name;
+  el("splashLn").textContent = line;
+  splashEl.classList.add("on");
+  S.phase = "splash";
+  clearTimeout(splashTimer);
+  splashTimer = setTimeout(function(){ splashEl.classList.remove("on"); then(); }, 2400);
+}
+
+// Skip: jump straight to the next prompt without finishing the level. The
+// exercise is the point; the platforming is the delivery mechanism.
+function skipLevel(){
+  if (S.phase !== "walk") return;
+  const g = flags.filter(function(f){ return f.kind === "goal"; })[0];
+  if (!g) return;
+  flags.forEach(function(f){ f.got = true; });
+  orbs.forEach(function(o){ if (!o.got){ o.got = true; S.ballR = Math.min(20, S.ballR + 0.9); } });
+  folk.forEach(function(f){ f.got = true; });
+  reachedGoal();
+}
+el("skipBtn").addEventListener("click", skipLevel);
+
+/* ---- generic list panel (obstacles / things / people) ---- */
+let lpStore = null, lpNext = null;
+function openList(cfg){
+  lpStore = cfg.store; lpNext = cfg.next;
+  el("lpHead").textContent = cfg.head;
+  el("lpWhy").textContent = cfg.why;
+  el("lpEg").textContent = cfg.eg;
+  el("lpGoalEcho").textContent = S.goal;
+  if (!lpStore.length) lpStore.push({text:""},{text:""},{text:""});
+  drawList(cfg.placeholder);
+  el("lpAdd").onclick = function(){
+    if (lpStore.length >= 8) return;
+    lpStore.push({text:""}); drawList(cfg.placeholder);
+    const ins = el("lpRows").querySelectorAll("input");
+    ins[ins.length-1].focus();
+  };
+  el("lpDone").onclick = function(){
+    const kept = lpStore.filter(function(o){ return o.text.trim().length >= 2; });
+    if (!kept.length) return;
+    lpStore.length = 0; kept.forEach(function(k){ lpStore.push(k); });
+    el("listPanel").classList.remove("on");
+    lpNext();
+  };
+  el("listPanel").classList.add("on");
+  setTimeout(function(){ const f = el("lpRows").querySelector("input"); if (f) f.focus(); }, 80);
+}
+function drawList(ph){
+  const rows = el("lpRows"); rows.innerHTML = "";
+  lpStore.forEach(function(o, i){
+    const d = document.createElement("div");
+    d.className = "row";
+    d.innerHTML = '<span class="num">' + (i+1) + '</span>' +
+      '<input type="text" maxlength="70"><button class="kill">&times;</button>';
+    const inp = d.querySelector("input");
+    inp.placeholder = ph; inp.value = o.text;
+    inp.addEventListener("input", function(){ o.text = inp.value; });
+    inp.addEventListener("keydown", function(e){ e.stopPropagation(); });
+    d.querySelector(".kill").addEventListener("click", function(){
+      if (lpStore.length <= 1) return;
+      lpStore.splice(lpStore.indexOf(o), 1); drawList(ph);
+    });
+    rows.appendChild(d);
+  });
+}
+
+/* ---- reorder panel (Master Land) ---- */
+function openReorder(){
+  drawReorder();
+  el("roPanel").classList.add("on");
+}
+function drawReorder(){
+  const rows = el("roRows"); rows.innerHTML = "";
+  S.checkpoints.forEach(function(c, i){
+    const d = document.createElement("div");
+    d.className = "row";
+    d.innerHTML = '<span class="num">' + (i+1) + '</span>' +
+      '<input type="text" maxlength="90"><button class="mv">&uarr;</button><button class="mv">&darr;</button>';
+    const inp = d.querySelector("input");
+    inp.value = c.text + (c.date ? "  —  " + fmtDate(c.date) : "");
+    inp.readOnly = true;
+    const btns = d.querySelectorAll(".mv");
+    btns[0].addEventListener("click", function(){
+      if (i === 0) return;
+      const t = S.checkpoints[i-1]; S.checkpoints[i-1] = c; S.checkpoints[i] = t; drawReorder();
+    });
+    btns[1].addEventListener("click", function(){
+      if (i === S.checkpoints.length - 1) return;
+      const t = S.checkpoints[i+1]; S.checkpoints[i+1] = c; S.checkpoints[i] = t; drawReorder();
+    });
+    rows.appendChild(d);
+  });
+}
+el("roDone").addEventListener("click", function(){
+  el("roPanel").classList.remove("on");
+  launchWorld8();
+});
+
+/* ---- worlds 5-8 ---- */
+function launchWorld5(){
+  splash(5, "Obstacle Land", "The things you named are flying around in here.", function(){
+    const ly = 430;
+    S.walkStart = player.x; S.stage = "world5"; S.freeCam = false;
+    buildObstacleLand(player.x, ly, S.obstacles, S.goal);
+    player.y = ly - player.h - 2; player.vy = 0;
+    S.lastCheck = { x:player.x + player.w/2, y:ly };
+    setMeterLabel("Distance to goal");
+    hud.classList.add("on"); S.phase = "walk";
+  });
+}
+function launchWorld6(){
+  splash(6, "Thing Land", "Every ring is something you said you'd need. Take them all.", function(){
+    const ly = 430;
+    S.walkStart = player.x; S.stage = "world6"; S.freeCam = false;
+    buildThingLand(player.x, ly, S.things, S.goal);
+    player.y = ly - player.h - 2; player.vy = 0;
+    S.lastCheck = { x:player.x + player.w/2, y:ly };
+    setMeterLabel("Distance to goal");
+    hud.classList.add("on"); S.phase = "walk";
+  });
+}
+function launchWorld7(){
+  splash(7, "Coop Land", "Nobody gets there alone. Go and meet them.", function(){
+    const ly = 430;
+    S.walkStart = player.x; S.stage = "world7"; S.freeCam = false;
+    buildCoopLand(player.x, ly, S.people, S.goal);
+    player.y = ly - player.h - 2; player.vy = 0;
+    S.lastCheck = { x:player.x + player.w/2, y:ly };
+    setMeterLabel("Distance to goal");
+    hud.classList.add("on"); S.phase = "walk";
+  });
+}
+function launchWorld8(){
+  splash(8, "Master Land", "The whole plan, one climb. You can see all of it now.", function(){
+    const ly = 440;
+    S.walkStart = player.x; S.stage = "world8"; S.freeCam = true;
+    const defs = S.checkpoints.map(function(c){ return { text:c.text, sub:fmtDate(c.date), kind:"way" }; });
+    buildClimb(player.x, ly, defs, { goalLabel:S.goal, goalSub:fmtDate(S.goalDate) });
+    player.y = ly - player.h - 2; player.vy = 0;
+    S.lastCheck = { x:player.x + player.w/2, y:ly };
+    setMeterLabel("Height to summit");
+    hud.classList.add("on"); minimap.classList.add("on"); S.phase = "walk";
+  });
+}
+
+// The minimap only exists in Master Land — seeing the whole plan at once is
+// the point of that level.
+function drawMinimap(){
+  if (S.stage !== "world8"){ return; }
+  const W = minimap.width, H = minimap.height;
+  mctx.clearRect(0,0,W,H);
+  let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+  for (const p of plats){ x0=Math.min(x0,p.x); x1=Math.max(x1,p.x+p.w); y0=Math.min(y0,p.y); y1=Math.max(y1,p.y+p.h); }
+  const sx = W/(x1-x0+80), sy = H/(y1-y0+80), k = Math.min(sx,sy);
+  const ox = (W-(x1-x0)*k)/2 - x0*k, oy = (H-(y1-y0)*k)/2 - y0*k;
+  mctx.fillStyle="rgba(255,255,255,.28)";
+  for (const p of plats) mctx.fillRect(p.x*k+ox, p.y*k+oy, Math.max(2,p.w*k), Math.max(1.5,p.h*k));
+  for (const f of flags){
+    mctx.fillStyle = f.got ? "rgba(255,255,255,.95)" : "rgba(255,255,255,.5)";
+    const r = f.kind==="goal" ? 3.4 : 2.2;
+    mctx.beginPath(); mctx.arc(f.x*k+ox, f.y*k+oy-3, r, 0, 6.284); mctx.fill();
+  }
+  mctx.fillStyle="#fff"; mctx.shadowColor="rgba(255,255,255,.9)"; mctx.shadowBlur=6;
+  mctx.beginPath(); mctx.arc((player.x+player.w/2)*k+ox, (player.y+player.h/2)*k+oy, 2.6, 0, 6.284); mctx.fill();
+  mctx.shadowBlur=0;
 }
 
 /* ---- dates panel ---- */
@@ -1206,26 +1658,67 @@ function buildCalendar(target){
   target.innerHTML = h;
 }
 
+el("planBack").addEventListener("click", function(){
+  planPanel.classList.remove("on");
+  dtPanel.classList.add("on");
+});
 el("planDone").addEventListener("click", () => {
   planPanel.classList.remove("on");
   launchWorld4();
 });
 
 function launchWorld4(){
-  const ly = 440;
-  S.walkStart = player.x; S.stage = "world4";
-  buildWorld4(player.x, ly, S.goal, fmtDate(S.goalDate));
-  player.y = ly - player.h - 2; player.vy = 0;
-  S.lastCheck = { x:player.x + player.w/2, y:ly };
-  setMeterLabel("Height to summit");
-  hud.classList.add("on");
-  S.phase = "walk";
+  splash(4, "Date Land", "Climb it. Left and right, all the way up.", function(){
+    const ly = 440;
+    S.walkStart = player.x; S.stage = "world4"; S.freeCam = true;
+    const defs = S.checkpoints.map(function(c){ return { text:c.text, sub:fmtDate(c.date), kind:"way" }; });
+    buildClimb(player.x, ly, defs, { goalLabel:S.goal, goalSub:fmtDate(S.goalDate) });
+    player.y = ly - player.h - 2; player.vy = 0;
+    S.lastCheck = { x:player.x + player.w/2, y:ly };
+    setMeterLabel("Height to summit");
+    hud.classList.add("on"); S.phase = "walk";
+  });
+}
+
+// One place that decides what a finished level unlocks next.
+function reachedGoal(){
+  minimap.classList.remove("on");
+  if (S.stage === "world2")      showLevelUp("Level up", "Create checkpoints", "Click", openCheckpoints);
+  else if (S.stage === "world3") showLevelUp("Level up", "Add dates", "Click", openDates);
+  else if (S.stage === "world4") showLevelUp("Level up", "Name your obstacles", "Click", function(){
+    openList({
+      head:"What gets in the way?",
+      why:"Every plan meets resistance. Naming it now turns a surprise into something you already have an answer for.",
+      eg:"e.g. \u201cUnexpected car repairs.\u201d \u201cI quit when it gets boring.\u201d",
+      placeholder:"something in the way",
+      store:S.obstacles, next:launchWorld5 });
+  });
+  else if (S.stage === "world5") showLevelUp("Level up", "What will you need?", "Click", function(){
+    openList({
+      head:"What will you need?",
+      why:"Knowledge, skills, tools, money, information. The things you don't have yet but the goal requires.",
+      eg:"e.g. \u201cA real budget I actually track.\u201d \u201cA side income of $400/mo.\u201d",
+      placeholder:"something you'll need",
+      store:S.things, next:launchWorld6 });
+  });
+  else if (S.stage === "world6") showLevelUp("Level up", "Who will you need?", "Click", function(){
+    openList({
+      head:"Who will you need?",
+      why:"Almost nothing worth doing gets done alone. Who has to help, agree, teach, or just know about this?",
+      eg:"e.g. \u201cMy wife, so we're on the same page.\u201d \u201cSomeone who's done it.\u201d",
+      placeholder:"a person",
+      store:S.people, next:launchWorld7 });
+  });
+  else if (S.stage === "world7") showLevelUp("Level up", "Master your plan", "Click", openReorder);
+  else win();
 }
 
 /* ---- win ---- */
 function win(){
   S.phase = "win";
   hud.classList.remove("on");
+  minimap.classList.remove("on");
+  el("skipBtn").classList.remove("on");
   el("winGoal").textContent = S.goal;
   el("winWhen").textContent = S.goalDate ? "By " + fmtDate(S.goalDate) : "";
   buildTree(el("winTree"));
@@ -1240,6 +1733,7 @@ el("winAgain").addEventListener("click", () => location.reload());
 function start(){
   titleO.classList.remove("on");
   hud.classList.add("on");
+  splashLater(1, "Motion Land", "Movement without direction.");
   setMeterLabel("Time drifted");
   S.phase = "drift";
   plats = []; spikes = []; flags = [];
@@ -1250,12 +1744,25 @@ function start(){
   player.x = 120; player.y = 380; player.vx = 0; player.vy = 0; player.trail = [];
   S.camX = 0; S.camY = 0; S.confronted = false;
   S.goal = ""; S.goalDate = ""; S.checkpoints = []; S.stage = "";
+  S.obstacles = []; S.things = []; S.people = []; S.ballR = 12; S.freeCam = false;
+  birds = []; orbs = []; folk = [];
+  minimap.classList.remove("on");
   S.deaths = 0; S.walkDeaths = 0; S.t = 0;
 }
 
 /* ===========================================================================
    LOOP
    =========================================================================== */
+function splashLater(n, name, line){
+  setTimeout(function(){
+    el("splashLv").textContent = "Level " + n;
+    el("splashNm").textContent = name;
+    el("splashLn").textContent = line;
+    splashEl.classList.add("on");
+    setTimeout(function(){ splashEl.classList.remove("on"); }, 2000);
+  }, 40);
+}
+
 let last = performance.now();
 function frame(now){
   const dt = Math.min(0.033, (now - last) / 1000);
@@ -1281,10 +1788,29 @@ function frame(now){
     if (!anyPanelOpen()) physics(dt);
     const wantX = player.x - viewW * 0.4;
     S.camX += (wantX - S.camX) * Math.min(1, dt * 4.5);
-    S.camX = Math.max(S.walkStart - viewW * 0.5, S.camX);
+    if (!S.freeCam) S.camX = Math.max(S.walkStart - viewW * 0.5, S.camX);
     // vertical follow, only ever upward — the mountain needs it
     const wantY = Math.min(0, player.y + offY - viewH * 0.60);
     S.camY += (wantY - S.camY) * Math.min(1, dt * 3.5);
+
+    // birds patrol; touching one costs you the checkpoint
+    const pcx = player.x + player.w/2, pcy = player.y + player.h/2;
+    for (const b of birds){
+      b.phase += dt * 3;
+      b.x += b.vx * dt;
+      b.y = b.baseY + Math.sin(b.phase) * b.amp;
+      if (Math.abs(b.x - pcx) < 40 && Math.abs(b.y - pcy) < 26){ die(); break; }
+    }
+    for (const o of orbs){
+      if (o.got) continue;
+      if (Math.abs(o.x - pcx) < 26 && Math.abs(o.y - pcy) < 26){
+        o.got = true; S.ballR = Math.min(20, S.ballR + 0.9);
+      }
+    }
+    for (const f of folk){
+      if (f.got) continue;
+      if (Math.abs(f.x - pcx) < 34 && Math.abs(f.y - (player.y + player.h)) < 70) f.got = true;
+    }
 
     for (const f of flags){
       if (f.got) continue;
@@ -1292,19 +1818,15 @@ function frame(now){
       if (!near) continue;
       f.got = true;
       if (f.kind !== "goal"){ S.lastCheck = { x:f.x, y:f.y }; break; }
-
-      if (S.stage === "world2"){
-        showLevelUp("Level up", "Create checkpoints", "Click", openCheckpoints);
-      } else if (S.stage === "world3"){
-        showLevelUp("Level up", "Add dates", "Click", openDates);
-      } else {
-        win();
-      }
+      reachedGoal();
       break;
     }
+    drawMinimap();
   }
 
-  if (S.phase === "drift" || S.phase === "walk" || S.phase === "turn"){ updateHud(); draw(); }
+  if (S.phase === "drift" || S.phase === "walk" || S.phase === "turn" || S.phase === "splash"){ updateHud(); draw(); }
+  const showSkip = S.phase === "walk" && !anyPanelOpen();
+  el("skipBtn").classList.toggle("on", showSkip);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
@@ -1320,17 +1842,17 @@ function titleBallFrame(now){
     const cx = 110, cy = 30, amp = 34, period = 3.6;
     const x = cx + amp * Math.sin((now / 1000) * (2 * Math.PI / period));
     titleTrail.unshift({ x:x, y:cy });
-    if (titleTrail.length > 14) titleTrail.pop();
+    if (titleTrail.length > 34) titleTrail.pop();
 
     tctx.clearRect(0, 0, titleCv.width, titleCv.height);
     for (let i = titleTrail.length - 1; i > 0; i--){
       const t = titleTrail[i];
       const k = 1 - i / titleTrail.length;
-      tctx.globalAlpha = k * 0.22;
+      tctx.globalAlpha = k * 0.16;
       tctx.fillStyle = "#fff";
-      tctx.shadowColor = "rgba(255,255,255,0.8)";
-      tctx.shadowBlur = 8 * k;
-      tctx.beginPath(); tctx.arc(t.x, t.y, 5.5 * k, 0, 6.284); tctx.fill();
+      tctx.shadowColor = "rgba(255,255,255,0.6)";
+      tctx.shadowBlur = 5 * k;
+      tctx.beginPath(); tctx.arc(t.x, t.y, 5 * k, 0, 6.284); tctx.fill();
     }
     tctx.globalAlpha = 1; tctx.shadowBlur = 0;
 

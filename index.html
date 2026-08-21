@@ -1354,6 +1354,25 @@ function drawFlags(){
     if (f.sub)   flagText(f.sub.toUpperCase(), f.x, f.y - h - 44, 11, "rgba(255,255,255,0.4)");
   }
 }
+// The flag's true shape: the pole, plus the banner that hangs off it.
+function flagBox(f){
+  const goal = f.kind === "goal";
+  const h  = goal ? 118 : 62;
+  const fl = goal ? 54 : 32;
+  return { x:f.x - 7, y:f.y - h, w:fl + 14, h:h };
+}
+// Highest platform top sitting below a point — where a floating pickup's
+// checkpoint should actually put you back.
+function groundUnder(x, y){
+  let best = null;
+  for (const p of plats){
+    if (x < p.x - 4 || x > p.x + p.w + 4) continue;
+    if (p.y < y - 2) continue;
+    if (!best || p.y < best) best = p.y;
+  }
+  return best === null ? y + 60 : best;
+}
+
 function flagText(txt, fx, fy, size, colour){
   ctx.save();
   ctx.textAlign = "center";
@@ -1684,6 +1703,7 @@ function drawSplashArt(n){
   g.shadowBlur = 0;
 }
 function splash(n, name, line, then){
+  AUDIO.resume();
   el("splashLv").textContent = "Level " + n;
   el("splashNm").textContent = name;
   el("splashLn").textContent = line;
@@ -2218,7 +2238,7 @@ function buildDeclarations(){
 /* ---- win ---- */
 function win(){
   AUDIO.stop();
-  [523,659,784,1046,1319].forEach(function(f,i){ setTimeout(function(){ AUDIO.note(f,0.28,0.34); }, i*140); });
+  [523.25,659.25,783.99,1046.50].forEach(function(f,i){ setTimeout(function(){ AUDIO.note(f,0.42,0.30,"triangle"); }, i*185); });
   S.phase = "win";
   hud.classList.remove("on");
   minimap.classList.remove("on");
@@ -2425,7 +2445,7 @@ function start(){
    be the loudest thing in the room.
    =========================================================================== */
 const AUDIO = {
-  ctx:null, master:null, on:true, timer:null, step:0, track:null,
+  ctx:null, master:null, on:true, timer:null, step:0, track:null, holdUntil:0,
 
   boot:function(){
     if (this.ctx) { if (this.ctx.state === "suspended") this.ctx.resume(); return; }
@@ -2466,8 +2486,20 @@ const AUDIO = {
   jump:   function(){ this.slide(300, 620, 0.13, 0.32); },
   land:   function(){ this.note(150, 0.05, 0.16); },
   collect:function(){ this.note(660, 0.07, 0.4); setTimeout(()=>this.note(990, 0.10, 0.36), 70); },
-  flag:   function(){ [523,659,784].forEach((f,i)=>setTimeout(()=>this.note(f,0.14,0.36),i*90)); },
-  goal:   function(){ [523,659,784,1046].forEach((f,i)=>setTimeout(()=>this.note(f,0.20,0.4),i*110)); },
+  flag:   function(){
+    const self = this;
+    [523.25, 783.99].forEach(function(f,i){
+      setTimeout(function(){ self.note(f, 0.16, 0.24, "triangle"); }, i * 110);
+    });
+  },
+  // do - mi - so - do, straight up the scale. Clean, not clever.
+  goal:   function(){
+    const self = this;
+    this.silence(1500);                            // let it ring on its own
+    [523.25, 659.25, 783.99, 1046.50].forEach(function(f,i){
+      setTimeout(function(){ self.note(f, 0.34, 0.30, "triangle"); }, i * 165);
+    });
+  },
   die:    function(){ this.slide(320, 70, 0.28, 0.3); },
   wave:   function(){ this.note(880, 0.06, 0.22); },
 
@@ -2485,7 +2517,11 @@ const AUDIO = {
     world9:{ ms:360, v:0.12, n:[523,659,784,1046,784,659,523,659,587,698,880,698,587,0,0,0] },
   },
 
+  // Keep the level track off for a moment so a fanfare isn't fighting it.
+  silence:function(ms){ this.holdUntil = Date.now() + ms; this.stop(); },
+
   play:function(key){
+    if (Date.now() < this.holdUntil) return;
     this.boot();
     const t = this.TRACKS[key];
     if (!t || !this.ctx){ this.stop(); return; }
@@ -2501,6 +2537,7 @@ const AUDIO = {
     }, t.ms);
   },
   stop:function(){ if (this.timer){ clearInterval(this.timer); this.timer = null; } this.track = null; },
+  resume:function(){ this.holdUntil = 0; },
   toggle:function(){
     this.on = !this.on;
     if (this.on) this.boot();
@@ -2565,19 +2602,21 @@ function frame(now){
     }
     for (const o of orbs){
       if (o.got) continue;
-      if (Math.abs(o.x - pcx) < 26 && Math.abs(o.y - pcy) < 26){
+      if (Math.abs(o.x - pcx) < 24 && Math.abs(o.y - pcy) < 24){
         o.got = true; S.ballR = Math.min(20, S.ballR + 0.9); AUDIO.collect();
+        S.lastCheck = { x:o.x, y:groundUnder(o.x, o.y) };
       }
     }
     for (const f of folk){
       if (f.got) continue;
-      if (Math.abs(f.x - pcx) < 34 && Math.abs(f.y - (player.y + player.h)) < 70){ f.got = true; AUDIO.wave(); }
+      if (Math.abs(f.x - pcx) < 34 && Math.abs(f.y - (player.y + player.h)) < 70){
+        f.got = true; AUDIO.wave(); S.lastCheck = { x:f.x, y:f.y };
+      }
     }
 
     for (const f of flags){
       if (f.got) continue;
-      const near = Math.abs((player.x + player.w/2) - f.x) < 30 && Math.abs((player.y + player.h) - f.y) < 95;
-      if (!near) continue;
+      if (!aabb(player, flagBox(f))) continue;   // you have to actually touch it
       f.got = true;
       if (f.kind === "goal") AUDIO.goal(); else AUDIO.flag();
       // The goal flag is a checkpoint too — you can keep playing while the

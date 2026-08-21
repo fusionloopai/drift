@@ -346,7 +346,8 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 #win .ddsection b{ color:var(--ink); font-weight:400; }
 #win .ddsection ul{ padding-left:18px; margin:10px 0 14px; }
 #win .ddsection li{ margin-bottom:6px; }
-#win .ddsection .tiers{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; margin:12px 0 14px; }
+#win .ddsection .tiers{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:12px 0 14px; }
+@media (max-width:520px){ #win .ddsection .tiers{ grid-template-columns:1fr; } }
 #win .ddsection .tier{
   border:1px solid var(--line); border-radius:3px; background:var(--bg-raise); padding:12px 14px;
 }
@@ -527,6 +528,17 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
   </div>
 </div>
 
+<div id="dcPanel" class="overlay panel">
+  <div class="inner">
+    <p class="head">Speak it over yourself.</p>
+    <p class="why">You already wrote these in the present tense, as if they were true. That was on purpose. Read them out loud every morning and every night &mdash; the ones you keep are the ones you'll carry down with you.</p>
+    <p class="eg">Untick anything that isn't yours. Add your own with the button below.</p>
+    <div class="rows" id="dcRows"></div>
+    <button class="addbtn tracked-sm" id="dcAdd">+ &nbsp;Add your own</button>
+    <div><button class="cta tracked-sm" id="dcDone">Carry them down &nbsp;&rarr;</button></div>
+  </div>
+</div>
+
 <div id="roPanel" class="overlay panel reorder">
   <div class="inner">
     <p class="head">Master the plan.</p>
@@ -652,6 +664,7 @@ const S = {
   stage : "",            // world2..world8
   ballR : 12,            // grows with each power-up in Thing Land
   freeCam : false,       // climbing worlds let the camera track left as well as right
+  descend : false,       // Declaration Land goes down, so camY may go positive
   camX : 0, camY : 0, camVel : CFG.DRIFT_SPEED,
   flashT : 0, turnT : 0, confronted : false,
   walkStart : 0, lastCheck : null, floorY : 720,
@@ -746,7 +759,7 @@ function launchPad(startX, startY){
 }
 function setFloor(){
   let lowest = 0;
-  for (const p of plats) if (!p.float && p.y > lowest) lowest = p.y;
+  for (const p of plats) if (p.y > lowest) lowest = p.y;   // float blocks count on a descent
   S.floorY = lowest + 240;
 }
 
@@ -925,6 +938,33 @@ function buildPeopleLand(startX, startY, people, goalText){
   const holdW = 380;
   plats.push({ x:x, y:GY, w:holdW, h:BASE_H + 80 - GY });
   flags.push({ x:x + holdW*0.5, y:GY, kind:"goal", got:false, label:goalText });
+  setFloor();
+}
+
+// Declaration Land: the one level that goes down. You drop, tier by tier, past
+// the things you say over yourself, to the foundation underneath the whole
+// plan — then Master Land climbs back out.
+function buildDescent(startX, startY, defs){
+  launchPad(startX, startY); clearProps(); spikes = []; flags = [];
+  let x = startX + 190, y = Math.min(startY, 440);
+  let dir = 1, run = 0, legLen = 4;
+  const TIERS = Math.max(10, defs.length * 2 + 4);
+  const flagAt = {};
+  defs.forEach(function(d, i){ flagAt[Math.min(TIERS - 1, 1 + i * 2)] = d; });
+
+  for (let i = 0; i < TIERS; i++){
+    const bw = rnd(104, 148);
+    plats.push({ x:x, y:y, w:bw, h:26, float:true });
+    const d = flagAt[i];
+    if (d) flags.push({ x:x + bw*0.5, y:y, kind:"way", got:false, label:d.text });
+    run++;
+    if (run >= legLen){ dir *= -1; run = 0; legLen = rint(3, 5); }
+    x += dir * (bw + rnd(40, 76));
+    y += rnd(66, 92);                     // down, not up
+  }
+  const hw = 340;
+  plats.push({ x:x - hw*0.5, y:y + 20, w:hw, h:44, float:true });
+  flags.push({ x:x, y:y + 20, kind:"goal", got:false, label:S.goal, sub:"your foundation" });
   setFloor();
 }
 
@@ -1264,7 +1304,7 @@ let fieldOpen = false;
 function anyPanelOpen(){
   return fieldOpen || cpPanel.classList.contains("on") || dtPanel.classList.contains("on") ||
          planPanel.classList.contains("on") || el("listPanel").classList.contains("on") ||
-         el("roPanel").classList.contains("on");
+         el("roPanel").classList.contains("on") || el("dcPanel").classList.contains("on");
 }
 
 function clock(s){
@@ -1372,7 +1412,7 @@ function finishTurn(){
   meter.classList.remove("struck");
   splash(2, "Goal Land", "One goal. Mind the pits.", function(){
     const ly = Math.min(Math.max(player.y + player.h, 380), 452);
-    S.walkStart = player.x; S.stage = "world2"; S.freeCam = false;
+    S.walkStart = player.x; S.stage = "world2"; S.freeCam = false; S.descend = false;
     buildWorld2(player.x, ly, S.goal);
     player.y = ly - player.h - 2; player.vy = 0;
     S.lastCheck = { x:player.x + player.w/2, y:ly };
@@ -1453,7 +1493,7 @@ el("cpDone").addEventListener("click", () => {
 function launchWorld3(){
   splash(3, "Checkpoint Land", "Some of them are up in the sky. Use everything.", function(){
     const ly = 430;
-    S.walkStart = player.x; S.stage = "world3"; S.freeCam = false;
+    S.walkStart = player.x; S.stage = "world3"; S.freeCam = false; S.descend = false;
     buildWorld3(player.x, ly, S.checkpoints, S.goal);
     player.y = ly - player.h - 2; player.vy = 0;
     S.lastCheck = { x:player.x + player.w/2, y:ly };
@@ -1551,7 +1591,10 @@ function skipLevel(){
   flags.forEach(function(f){ f.got = true; });
   orbs.forEach(function(o){ if (!o.got){ o.got = true; S.ballR = Math.min(20, S.ballR + 0.9); } });
   folk.forEach(function(f){ f.got = true; });
-  reachedGoal();
+  // Straight to the next step — the platforming is optional, the exercise isn't.
+  minimap.classList.remove("on");
+  hideLevelUp();
+  nextStep().run();
 }
 el("skipBtn").addEventListener("click", skipLevel);
 
@@ -1648,11 +1691,61 @@ el("roDone").addEventListener("click", function(){
   launchWorld8();
 });
 
+/* ---- declarations panel + Declaration Land (the descent) ---- */
+function openDeclarations(){
+  buildDeclarations();
+  drawDecRows();
+  el("dcPanel").classList.add("on");
+}
+function drawDecRows(){
+  const rows = el("dcRows"); rows.innerHTML = "";
+  S.declarations.forEach(function(d, i){
+    const r = document.createElement("div");
+    r.className = "row";
+    r.innerHTML = '<span class="num">' + (d.on ? "\u2713" : "") + '</span>' +
+      '<input type="text" maxlength="120"><button class="kill">&times;</button>';
+    const inp = r.querySelector("input");
+    inp.value = d.t;
+    if (!d.on) inp.style.opacity = ".4";
+    inp.addEventListener("input", function(){ d.t = inp.value; });
+    inp.addEventListener("keydown", function(e){ e.stopPropagation(); });
+    r.querySelector(".num").style.cursor = "pointer";
+    r.querySelector(".num").addEventListener("click", function(){ d.on = !d.on; drawDecRows(); });
+    r.querySelector(".kill").addEventListener("click", function(){
+      S.declarations.splice(i, 1); drawDecRows();
+    });
+    rows.appendChild(r);
+  });
+}
+el("dcAdd").addEventListener("click", function(){
+  S.declarations.push({ t:"", own:true, on:true });
+  drawDecRows();
+  const ins = el("dcRows").querySelectorAll("input");
+  if (ins.length) ins[ins.length-1].focus();
+});
+el("dcDone").addEventListener("click", function(){
+  S.declarations = S.declarations.filter(function(d){ return d.t.trim().length >= 3; });
+  if (!S.declarations.length) return;
+  el("dcPanel").classList.remove("on");
+  launchDeclarationLand();
+});
+function launchDeclarationLand(){
+  splash(8, "Declaration Land", "The only way now is down \u2014 to what holds all of it up.", function(){
+    const ly = 440;
+    S.walkStart = player.x; S.stage = "world8dec"; S.freeCam = true; S.descend = true;
+    buildDescent(player.x, ly, S.declarations.filter(function(d){ return d.on; }));
+    player.y = ly - player.h - 2; player.vy = 0;
+    S.lastCheck = { x:player.x + player.w/2, y:ly };
+    setMeterLabel("Depth to foundation");
+    hud.classList.add("on"); S.phase = "walk";
+  });
+}
+
 /* ---- worlds 5-8 ---- */
 function launchWorld5(){
   splash(5, "Obstacle Land", "The things you named are flying around in here.", function(){
     const ly = 430;
-    S.walkStart = player.x; S.stage = "world5"; S.freeCam = false;
+    S.walkStart = player.x; S.stage = "world5"; S.freeCam = false; S.descend = false;
     buildObstacleLand(player.x, ly, S.obstacles, S.goal);
     player.y = ly - player.h - 2; player.vy = 0;
     S.lastCheck = { x:player.x + player.w/2, y:ly };
@@ -1663,7 +1756,7 @@ function launchWorld5(){
 function launchWorld6(){
   splash(6, "Thing Land", "Every ring is something you said you'd need. Take them all.", function(){
     const ly = 430;
-    S.walkStart = player.x; S.stage = "world6"; S.freeCam = false;
+    S.walkStart = player.x; S.stage = "world6"; S.freeCam = false; S.descend = false;
     buildThingLand(player.x, ly, S.things, S.goal);
     player.y = ly - player.h - 2; player.vy = 0;
     S.lastCheck = { x:player.x + player.w/2, y:ly };
@@ -1674,7 +1767,7 @@ function launchWorld6(){
 function launchWorld7(){
   splash(7, "People Land", "Nobody gets there alone. Go and meet them.", function(){
     const ly = 430;
-    S.walkStart = player.x; S.stage = "world7"; S.freeCam = false;
+    S.walkStart = player.x; S.stage = "world7"; S.freeCam = false; S.descend = false;
     buildPeopleLand(player.x, ly, S.people, S.goal);
     player.y = ly - player.h - 2; player.vy = 0;
     S.lastCheck = { x:player.x + player.w/2, y:ly };
@@ -1683,9 +1776,9 @@ function launchWorld7(){
   });
 }
 function launchWorld8(){
-  splash(8, "Master Land", "The whole plan, one climb. You can see all of it now.", function(){
+  splash(9, "Master Land", "The whole plan, one climb. You can see all of it now.", function(){
     const ly = 440;
-    S.walkStart = player.x; S.stage = "world8"; S.freeCam = true;
+    S.walkStart = player.x; S.stage = "world9"; S.freeCam = true; S.descend = false;
     const defs = S.checkpoints.map(function(c){ return { text:c.text, sub:fmtDate(c.date), kind:"way" }; });
     buildClimb(player.x, ly, defs, { goalLabel:S.goal, goalSub:fmtDate(S.goalDate) });
     player.y = ly - player.h - 2; player.vy = 0;
@@ -1698,7 +1791,7 @@ function launchWorld8(){
 // The minimap only exists in Master Land — seeing the whole plan at once is
 // the point of that level.
 function drawMinimap(){
-  if (S.stage !== "world8"){ return; }
+  if (S.stage !== "world9"){ return; }
   const W = minimap.width, H = minimap.height;
   mctx.clearRect(0,0,W,H);
   let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
@@ -1889,6 +1982,10 @@ function buildCalendar(target){
   target.innerHTML = h;
 }
 
+el("planBack").addEventListener("click", function(){
+  planPanel.classList.remove("on");
+  dtPanel.classList.add("on");
+});
 el("planDone").addEventListener("click", () => {
   planPanel.classList.remove("on");
   launchWorld4();
@@ -1897,7 +1994,7 @@ el("planDone").addEventListener("click", () => {
 function launchWorld4(){
   splash(4, "Date Land", "Climb it. Left and right, all the way up.", function(){
     const ly = 440;
-    S.walkStart = player.x; S.stage = "world4"; S.freeCam = true;
+    S.walkStart = player.x; S.stage = "world4"; S.freeCam = true; S.descend = false;
     const defs = S.checkpoints.map(function(c){ return { text:c.text, sub:fmtDate(c.date), kind:"way" }; });
     buildClimb(player.x, ly, defs, { goalLabel:S.goal, goalSub:fmtDate(S.goalDate) });
     player.y = ly - player.h - 2; player.vy = 0;
@@ -1908,36 +2005,34 @@ function launchWorld4(){
 }
 
 // One place that decides what a finished level unlocks next.
+function nextStep(){
+  switch (S.stage){
+    case "world2": return { main:"Create checkpoints", run:openCheckpoints };
+    case "world3": return { main:"Add dates", run:openDates };
+    case "world4": return { main:"Name your obstacles", run:function(){
+      openList({ head:"What gets in the way?",
+        why:"Every plan meets resistance. Naming it now turns a surprise into something you already have an answer for.",
+        eg:"e.g. \u201cUnexpected car repairs.\u201d \u201cI quit when it gets boring.\u201d",
+        placeholder:"something in the way", store:S.obstacles, next:launchWorld5 }); } };
+    case "world5": return { main:"What will you need?", run:function(){
+      openList({ head:"What will you need?",
+        why:"Knowledge, skills, tools, money, information. The things you don't have yet but the goal requires.",
+        eg:"e.g. \u201cA real budget I actually track.\u201d \u201cA side income of $400/mo.\u201d",
+        placeholder:"something you'll need", store:S.things, next:launchWorld6 }); } };
+    case "world6": return { main:"Who will you need?", run:function(){
+      openList({ head:"Who will you need?",
+        why:"Almost nothing worth doing gets done alone. Who has to help, agree, teach, or just know about this?",
+        eg:"e.g. \u201cMy wife, so we're on the same page.\u201d \u201cSomeone who's done it.\u201d",
+        placeholder:"a person", store:S.people, next:launchWorld7 }); } };
+    case "world7":    return { main:"Speak it over yourself", run:openDeclarations };
+    case "world8dec": return { main:"Master your plan", run:openReorder };
+    default:          return { main:"Finish", run:askFirstAction };
+  }
+}
 function reachedGoal(){
   minimap.classList.remove("on");
-  if (S.stage === "world2")      showLevelUp("Level up", "Create checkpoints", "Click", openCheckpoints);
-  else if (S.stage === "world3") showLevelUp("Level up", "Add dates", "Click", openDates);
-  else if (S.stage === "world4") showLevelUp("Level up", "Name your obstacles", "Click", function(){
-    openList({
-      head:"What gets in the way?",
-      why:"Every plan meets resistance. Naming it now turns a surprise into something you already have an answer for.",
-      eg:"e.g. \u201cUnexpected car repairs.\u201d \u201cI quit when it gets boring.\u201d",
-      placeholder:"something in the way",
-      store:S.obstacles, next:launchWorld5 });
-  });
-  else if (S.stage === "world5") showLevelUp("Level up", "What will you need?", "Click", function(){
-    openList({
-      head:"What will you need?",
-      why:"Knowledge, skills, tools, money, information. The things you don't have yet but the goal requires.",
-      eg:"e.g. \u201cA real budget I actually track.\u201d \u201cA side income of $400/mo.\u201d",
-      placeholder:"something you'll need",
-      store:S.things, next:launchWorld6 });
-  });
-  else if (S.stage === "world6") showLevelUp("Level up", "Who will you need?", "Click", function(){
-    openList({
-      head:"Who will you need?",
-      why:"Almost nothing worth doing gets done alone. Who has to help, agree, teach, or just know about this?",
-      eg:"e.g. \u201cMy wife, so we're on the same page.\u201d \u201cSomeone who's done it.\u201d",
-      placeholder:"a person",
-      store:S.people, next:launchWorld7 });
-  });
-  else if (S.stage === "world7") showLevelUp("Level up", "Master your plan", "Click", openReorder);
-  else askFirstAction();
+  const nx = nextStep();
+  showLevelUp("Level up", nx.main, "Click", nx.run);
 }
 
 // The last move before the summary: one thing they will actually do now.
@@ -1952,7 +2047,7 @@ function askFirstAction(){
     eg:"e.g. \u201cList every debt and what it costs me.\u201d",
     ph:"the very next thing",
     val:function(v){ S.firstAction = v; },
-    then:function(){ buildDeclarations(); win(); }
+    then:function(){ win(); }   // declarations were chosen back in Declaration Land
   });
 }
 
@@ -2139,7 +2234,7 @@ function start(){
   S.camX = 0; S.camY = 0; S.confronted = false;
   S.goal = ""; S.goalDate = ""; S.checkpoints = []; S.stage = "";
   S.obstacles = []; S.things = []; S.people = []; S.ballR = 12; S.freeCam = false;
-  S.why = ""; S.firstAction = ""; S.firstActionBy = ""; S.declarations = [];
+  S.why = ""; S.firstAction = ""; S.firstActionBy = ""; S.declarations = []; S.descend = false;
   birds = []; orbs = []; folk = [];
   minimap.classList.remove("on");
   S.deaths = 0; S.walkDeaths = 0; S.t = 0;
@@ -2186,7 +2281,8 @@ function frame(now){
     S.camX += (wantX - S.camX) * Math.min(1, dt * 4.5);
     if (!S.freeCam) S.camX = Math.max(S.walkStart - viewW * 0.5, S.camX);
     // vertical follow, only ever upward — the mountain needs it
-    const wantY = Math.min(0, player.y + offY - viewH * 0.60);
+    const wantY = S.descend ? (player.y + offY - viewH * 0.50)
+                            : Math.min(0, player.y + offY - viewH * 0.60);
     S.camY += (wantY - S.camY) * Math.min(1, dt * 3.5);
 
     // birds patrol; touching one costs you the checkpoint
@@ -2226,6 +2322,10 @@ function frame(now){
   if (S.phase === "drift" || S.phase === "walk" || S.phase === "turn" || S.phase === "splash"){ updateHud(); draw(); }
   const showSkip = S.phase === "walk" && !anyPanelOpen();
   el("skipBtn").classList.toggle("on", showSkip);
+  if (showSkip){
+    const lbl = "Skip \u2192 " + nextStep().main;
+    if (el("skipBtn").textContent !== lbl) el("skipBtn").textContent = lbl;
+  }
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);

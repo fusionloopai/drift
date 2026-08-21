@@ -916,6 +916,11 @@ let folk   = [];   // {x,y,label,got,wave}          — People Land
 let genX   = 0, lastY = 430;
 
 const GRAV = 2000, JUMP = -740, RUN = 330, SPIKE_H = 15;
+// Variable jump height. Holding gives the full ~137px; releasing early cuts the
+// rise short. JUMP_CUT is how hard the release brakes you and JUMP_FLOOR is the
+// speed it stops braking at — together they set the smallest possible hop
+// (~44px), so a quick tap clears a ledge without launching you over the level.
+const JUMP_CUT = 14000, JUMP_FLOOR = 40;
 // max jump height at these constants is ~137px — every rise below stays under it.
 
 /* ===========================================================================
@@ -1356,7 +1361,7 @@ function physics(dt){
     AUDIO.jump();
   }
   const wasAir = !player.onGround;
-  if (!jumpHeld && player.vy < -190) player.vy += 2600 * dt;
+  if (!jumpHeld && player.vy < -JUMP_FLOOR) player.vy += JUMP_CUT * dt;
 
   // Horizontal. Nothing blocks sideways any more — the block bodies holding a
   // surface up are pass-through, Mario style, so only the top face is solid.

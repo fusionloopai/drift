@@ -1167,20 +1167,26 @@ function buildObstacleLand(startX, startY, obstacles, goalText){
   const GY = 430;
   let x = startX + 240;
   obstacles.forEach(function(ob, obId){
-    for (let k = 0; k < 2; k++){
-      const w = rnd(160, 220);
-      plats.push({ x:x, y:GY, w:w, h:BASE_H + 80 - GY });
-      if (k === 1 && Math.random() < 0.44 + S.diff * 0.05){
-        const sw = rnd(34, 52);
-        spikes.push({ x:x + rnd(36, w - sw - 26), y:GY - SPIKE_H, w:sw });
-      }
-      if (k === 0 && ob.response && ob.response.trim().length >= 3){
-        tools.push({ x:x + w * 0.5, y:GY - 46, label:ob.response, got:false, obId:obId });
-      }
-      x += w + rnd(95, 130);
+    // The tool sits on the first stretch of ground...
+    const w0 = rnd(160, 220);
+    plats.push({ x:x, y:GY, w:w0, h:BASE_H + 80 - GY });
+    if (ob.response && ob.response.trim().length >= 3){
+      tools.push({ x:x + w0 * 0.5, y:GY - 46, label:ob.response, got:false, obId:obId });
     }
-    birds.push({ x:x - 150, y:0, baseY:GY - rnd(90, 150), amp:rnd(18, 34), phase:rnd(0, 6.28),
+    x += w0 + rnd(70, 100);   // a tight gap — the bird is right behind it
+
+    // ...and its bird is close enough behind that picking up the tool and
+    // meeting the bird read as the same beat, not two unrelated encounters.
+    birds.push({ x:x + 40, y:0, baseY:GY - rnd(90, 150), amp:rnd(18, 34), phase:rnd(0, 6.28),
                  vx:rnd(26, 46) * (Math.random() < 0.5 ? -1 : 1), label:ob.text, obId:obId });
+
+    const w1 = rnd(160, 220);
+    plats.push({ x:x, y:GY, w:w1, h:BASE_H + 80 - GY });
+    if (Math.random() < 0.44 + S.diff * 0.05){
+      const sw = rnd(34, 52);
+      spikes.push({ x:x + rnd(36, w1 - sw - 26), y:GY - SPIKE_H, w:sw });
+    }
+    x += w1 + rnd(95, 130);
 
     // A checkpoint past every obstacle — getting hit by a bird shouldn't cost
     // you the whole level, and this is the one level built to hit you.

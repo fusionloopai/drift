@@ -815,31 +815,6 @@ function buildWorld3(startX, startY, cps, goalText){
   setFloor();
 }
 
-// --- World 4: the mountain. Square blocks climbing up and up; the only way on
-// is to jump. The summit carries the goal and the date it's due.
-function buildWorld4(startX, startY, goalText, dateText){
-  launchPad(startX, startY);
-  spikes = []; flags = [];
-
-  let x = startX + 230;
-  let y = Math.min(startY, 440);
-  const RISE = 82;          // well under the ~137px jump ceiling
-  const TIERS = 11;
-
-  for (let i = 0; i < TIERS; i++){
-    const bw = rnd(92, 128);
-    plats.push({ x, y, w:bw, h:34, float:true });
-    if (i === 3 || i === 7) flags.push({ x:x + bw * 0.5, y, kind:"way", got:false });
-    x += bw + rnd(52, 84);
-    y = y - RISE;
-  }
-
-  const holdW = 300;
-  plats.push({ x, y:y + 10, w:holdW, h:40, float:true });
-  flags.push({ x:x + holdW * 0.5, y:y + 10, kind:"goal", got:false, label:goalText, sub:dateText });
-  setFloor();
-}
-
 // A zig-zag ascent: blocks march right for a few tiers, then back left, then
 // right again — so climbing means using the whole screen, not just holding one
 // direction. Used by Date Land and Master Land.

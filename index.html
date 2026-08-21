@@ -944,13 +944,9 @@ function launchWorld3(){
   S.walkStart = player.x;
   S.stage = "world3";
   buildFinalClimb(player.x, ly, [
-    { text:S.subsubs[0], kind:"circle" },
-    { text:S.subsubs[1], kind:"circle" },
-    { text:S.subs[0],    kind:"way"    },
-    { text:S.subsubs[2], kind:"circle" },
-    { text:S.subsubs[3], kind:"circle" },
-    { text:S.subs[1],    kind:"way"    },
-    { text:S.goal30,     kind:"goal"   },
+    { text:S.subs[0], kind:"way"  },
+    { text:S.subs[1], kind:"way"  },
+    { text:S.goal30,  kind:"goal" },
   ]);
   player.y  = ly - player.h - 2;
   player.vy = 0;
@@ -958,24 +954,43 @@ function launchWorld3(){
   S.phase = "walk";
 }
 
-// Reached the 30-day goal flag. Collect all six pieces of the breakdown back
-// to back — two sub-goals, then two smaller steps under each — then launch
-// the one long final climb that visits all seven in order.
+function launchWorld4(){
+  const ly = Math.min(Math.max(player.y + player.h, 300), 462);
+  S.walkStart = player.x;
+  S.stage = "world4";
+  buildFinalClimb(player.x, ly, [
+    { text:S.subsubs[0], kind:"circle" },
+    { text:S.subsubs[1], kind:"circle" },
+    { text:S.subsubs[2], kind:"circle" },
+    { text:S.subsubs[3], kind:"goal"   },
+  ]);
+  player.y  = ly - player.h - 2;
+  player.vy = 0;
+  S.lastCheck = { x:player.x + player.w/2, y:ly };
+  S.phase = "walk";
+}
+
+// Reached the 30-day goal flag (halfway point of the journey). Break it into
+// two smaller goals, then climb World 3 — its own level — to reach both.
 function afterWorld2(){
   queue = [];
   const ctx30 = "YOUR 30-DAY GOAL: " + S.goal30.toUpperCase();
   pushStep(ctx30, "Break it into two smaller goals. First:", "smaller goal one", v => { S.subs[0] = v; });
   pushStep(ctx30, "Second:", "smaller goal two", v => { S.subs[1] = v; });
-  runQueue(() => {
-    const ctxA = "BREAKING DOWN: " + S.subs[0].toUpperCase();
-    const ctxB = "BREAKING DOWN: " + S.subs[1].toUpperCase();
-    queue = [];
-    pushStep(ctxA, "First smaller step:",  "step one", v => { S.subsubs[0] = v; });
-    pushStep(ctxA, "Second smaller step:", "step two", v => { S.subsubs[1] = v; });
-    pushStep(ctxB, "First smaller step:",  "step one", v => { S.subsubs[2] = v; });
-    pushStep(ctxB, "Second smaller step:", "step two", v => { S.subsubs[3] = v; });
-    runQueue(launchWorld3);
-  });
+  runQueue(launchWorld3);
+}
+
+// Reached both sub-goals and the 30-day goal again in World 3. Now each of
+// those two sub-goals gets its own halfway point — World 4, its own level.
+function afterWorld3(){
+  queue = [];
+  const ctxA = "BREAKING DOWN: " + S.subs[0].toUpperCase();
+  const ctxB = "BREAKING DOWN: " + S.subs[1].toUpperCase();
+  pushStep(ctxA, "First smaller step:",  "step one", v => { S.subsubs[0] = v; });
+  pushStep(ctxA, "Second smaller step:", "step two", v => { S.subsubs[1] = v; });
+  pushStep(ctxB, "First smaller step:",  "step one", v => { S.subsubs[2] = v; });
+  pushStep(ctxB, "Second smaller step:", "step two", v => { S.subsubs[3] = v; });
+  runQueue(launchWorld4);
 }
 
 function win(){
@@ -1057,6 +1072,8 @@ function frame(now){
         S.lastCheck = { x:f.x, y:f.y };
       } else if (S.stage === "world2"){
         afterWorld2();
+      } else if (S.stage === "world3"){
+        afterWorld3();
       } else {
         win();
       }

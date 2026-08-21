@@ -2180,7 +2180,10 @@ function frame(now){
       const near = Math.abs((player.x + player.w/2) - f.x) < 30 && Math.abs((player.y + player.h) - f.y) < 95;
       if (!near) continue;
       f.got = true;
-      if (f.kind !== "goal"){ S.lastCheck = { x:f.x, y:f.y }; break; }
+      // The goal flag is a checkpoint too — you can keep playing while the
+      // level-up panel is up, so falling after it shouldn't throw you back.
+      S.lastCheck = { x:f.x, y:f.y };
+      if (f.kind !== "goal") break;
       reachedGoal();
       break;
     }

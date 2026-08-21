@@ -313,15 +313,34 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 
 /* On-screen controls. Only shown on touch devices — a phone player had no way
    of knowing the screen thirds were the controls. */
-#muteBtn{
-  position:fixed; z-index:7; left:clamp(16px,3vw,32px);
-  top:calc(clamp(16px,3vw,32px) + 62px);
-  background:none; border:0; color:var(--ink-faint); font-family:inherit;
-  font-size:clamp(8px,1.3vw,10px); cursor:pointer; padding:6px 0;
+#sound{
+  position:fixed; z-index:8; left:clamp(16px,3vw,32px);
+  top:calc(clamp(16px,3vw,32px) + 84px);
+  display:flex; gap:6px;
   opacity:0; pointer-events:none; transition:opacity .4s ease;
 }
-#muteBtn.on{ opacity:.6; pointer-events:auto; }
-#muteBtn:hover{ opacity:1; color:var(--ink); }
+#sound.on{ opacity:1; pointer-events:auto; }
+.sndbtn{
+  width:38px; height:38px; padding:0; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(10,10,12,.8); border:1px solid var(--line); border-radius:6px;
+  color:var(--ink-faint); transition:border-color .2s ease, color .2s ease, background .2s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+.sndbtn svg{ width:19px; height:19px; }
+.sndbtn svg path{ fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+.sndbtn svg path:first-child{ fill:currentColor; stroke-width:1.2; }
+.sndbtn svg .slash{ stroke-width:1.6; }
+.sndbtn:hover{ color:var(--ink-soft); border-color:rgba(255,255,255,.35); }
+.sndbtn.sel{
+  color:var(--ink); border-color:rgba(255,255,255,.6); background:rgba(255,255,255,.09);
+  box-shadow:0 0 18px rgba(255,255,255,.12);
+}
+@media (max-width:640px){
+  #sound{ gap:8px; }
+  .sndbtn{ width:44px; height:44px; }
+  .sndbtn svg{ width:21px; height:21px; }
+}
 
 #pad{
   position:fixed; z-index:7; left:0; right:0; bottom:0;
@@ -504,7 +523,7 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
   #win .trophy{ display:none; }
   #win .cal{ display:none; }                    /* the agenda-first list prints; grids don't */
   #win #winTree{ display:block !important; }
-  canvas, .glow-field, #hud, #confront, #levelUp, #splash, #minimap, #skipBtn{ display:none !important; }
+  canvas, .glow-field, #hud, #confront, #levelUp, #splash, #minimap, #skipBtn, #sound, #pad{ display:none !important; }
   #win .wordmark{ -webkit-text-fill-color:#000 !important; color:#000 !important; background:none !important; font-size:16pt; }
   #win .congrats{ font-size:15pt; }
   #win .winrule{ background:#999 !important; }
@@ -644,7 +663,28 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
 <canvas id="minimap" width="1120" height="104"></canvas>
 <button id="skipBtn" class="tracked-sm">Skip level &nbsp;&rarr;</button>
 
-<button id="muteBtn" class="tracked-sm" aria-label="Sound mode">Sound: on</button>
+<div id="sound" role="group" aria-label="Sound">
+  <button class="sndbtn" data-mode="all" aria-label="Music and effects" title="Music and effects">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z"/>
+      <path d="M15.5 8.6a4.5 4.5 0 0 1 0 6.8M18.4 6a8 8 0 0 1 0 12" class="wv"/>
+    </svg>
+  </button>
+  <button class="sndbtn" data-mode="sfx" aria-label="Effects only, no music" title="Effects only, no music">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z"/>
+      <path d="M15.5 8.6a4.5 4.5 0 0 1 0 6.8" class="wv"/>
+      <path d="M17.5 5.5v6M17.5 5.5l4-1v6" class="note"/>
+      <path d="M15 4l7 16" class="slash"/>
+    </svg>
+  </button>
+  <button class="sndbtn" data-mode="off" aria-label="Sound off" title="Sound off">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z"/>
+      <path d="M16 9.5l5 5M21 9.5l-5 5" class="wv"/>
+    </svg>
+  </button>
+</div>
 
 <div id="pad">
   <div class="padgrp">
@@ -2987,17 +3027,24 @@ const AUDIO = {
   stop:function(){ if (this.timer){ clearInterval(this.timer); this.timer = null; } this.track = null; },
   resume:function(){ this.holdUntil = 0; },
   MODES:["all","sfx","off"],
-  LABELS:{ all:"Sound: on", sfx:"Sound: effects only", off:"Sound: off" },
-  cycle:function(){
-    const i = this.MODES.indexOf(this.mode);
-    this.mode = this.MODES[(i + 1) % this.MODES.length];
-    if (this.mode !== "off") this.boot();
-    if (this.mode !== "all") this.stop();
-    el("muteBtn").textContent = this.LABELS[this.mode];
-    return this.mode;
+  set:function(mode){
+    this.mode = mode;
+    if (mode !== "off") this.boot();
+    if (mode !== "all") this.stop();
+    this.paint();
+    return mode;
+  },
+  paint:function(){
+    const self = this;
+    document.querySelectorAll("#sound .sndbtn").forEach(function(b){
+      b.classList.toggle("sel", b.dataset.mode === self.mode);
+    });
   }
 };
-el("muteBtn").addEventListener("click", function(e){ e.stopPropagation(); AUDIO.cycle(); });
+document.querySelectorAll("#sound .sndbtn").forEach(function(b){
+  b.addEventListener("click", function(e){ e.stopPropagation(); AUDIO.set(b.dataset.mode); });
+});
+AUDIO.paint();
 
 /* ===========================================================================
    LOOP
@@ -3093,7 +3140,7 @@ function frame(now){
   if (S.phase === "drift" || S.phase === "walk" || S.phase === "turn" || S.phase === "splash"){ updateHud(); draw(); }
   const playing = (S.phase === "walk" || S.phase === "drift") && !anyPanelOpen();
   minimap.classList.toggle("on", !!S.showMap && S.phase === "walk" && !anyPanelOpen());
-  el("muteBtn").classList.toggle("on", S.phase === "drift" || S.phase === "walk");
+  el("sound").classList.toggle("on", S.phase === "drift" || S.phase === "walk");
   if (S.phase === "drift") AUDIO.play("world1");
   else if (S.phase === "walk") AUDIO.play(S.stage);
   else if (S.phase === "win" || S.phase === "title") AUDIO.stop();

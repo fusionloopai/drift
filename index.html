@@ -70,9 +70,11 @@ canvas{ display:block; position:fixed; inset:0; z-index:1; }
    identical, every 520px, forever. This just says so out loud, a few times,
    escalating, low in the frame so it never fights the HUD. */
 #recognize{
-  position:fixed; z-index:6; left:0; right:0; bottom:19%;
-  text-align:center; pointer-events:none;
-  font-size:clamp(12px,2vw,15px); font-style:italic; color:var(--ink-faint);
+  position:fixed; z-index:6; top:clamp(16px,3vw,32px); right:clamp(16px,3vw,32px);
+  max-width:min(280px,52vw);
+  text-align:right; pointer-events:none;
+  font-size:clamp(11px,1.8vw,14px); font-style:italic; color:var(--ink-faint);
+  line-height:1.4;
   opacity:0; transition:opacity .7s ease;
 }
 #recognize.on{ opacity:.8; }
@@ -202,7 +204,7 @@ canvas{ display:block; position:fixed; inset:0; z-index:1; }
 
 <div id="confront">
   <p class="l1 tracked glow-text">This is drifting.</p>
-  <p class="l2">No direction. Same ground, forever.</p>
+  <p class="l2">No direction. Just motion.</p>
 </div>
 
 <div id="levelUp">
@@ -262,7 +264,7 @@ const CFG = {
   // hook, the Blueprint is the gate that already captures the email.
   DREAMDESIGNER_URL : "https://dreamdesigner.lifesong.io",
 
-  CONFRONT_AT : 30,    // seconds of drifting before the game says so out loud
+  CONFRONT_AT : 10,    // seconds of drifting before the game says so out loud
   DRIFT_SPEED : 190,   // px/s the camera shoves you right, whether you press anything or not
   WALK_LENGTH : 2600,  // px of designed path once you've decided where you're going
   PX_PER_M    : 8,     // world pixels per displayed "meter"
@@ -771,6 +773,13 @@ const hud = el("hud"), meter = el("meter"), meterValue = el("meterValue");
 const recognize = el("recognize"), confront = el("confront"), levelUp = el("levelUp");
 const confrontL1 = confront.querySelector(".l1"), confrontL2 = confront.querySelector(".l2");
 const titleO = el("title"), fieldO = el("field"), winO = el("win"), goalInput = el("goalInput");
+
+// The title overlay sits above the canvas (it has to, for "Press any key" to
+// render), which means it also intercepts every tap before the canvas ever
+// sees it — cv's touchstart/mousedown start() handlers never fire on mobile.
+// Bind directly to the overlay so a tap works exactly like a keypress does.
+titleO.addEventListener("touchstart", e => { start(); e.preventDefault(); }, {passive:false});
+titleO.addEventListener("click", () => start());
 let fieldOpen = false;
 
 function clock(s){

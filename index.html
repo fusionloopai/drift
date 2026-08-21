@@ -127,7 +127,7 @@ canvas{ display:block; position:fixed; inset:0; z-index:1; }
   position:absolute; top:18px; left:70px;
   width:13px; height:13px; border-radius:50%; background:#fff;
   transform:translate(-50%,-50%);
-  box-shadow:0 0 20px rgba(255,255,255,.85), 0 0 56px rgba(255,255,255,.35);
+  box-shadow:0 0 20px rgba(255,255,255,.9), 0 0 56px rgba(255,255,255,.4), 0 0 100px rgba(255,255,255,.15);
 }
 #title .sub{ margin-top:clamp(28px,6vw,48px); font-size:clamp(10px,1.8vw,12px); color:var(--ink-faint); }
 
@@ -284,7 +284,7 @@ const CFG = {
   // hook, the Blueprint is the gate that already captures the email.
   DREAMDESIGNER_URL : "https://dreamdesigner.lifesong.io",
 
-  CONFRONT_AT : 20,    // seconds of drifting before the game says so out loud
+  CONFRONT_AT : 10,    // seconds of drifting before the game says so out loud
   DRIFT_SPEED : 190,   // px/s the camera shoves you right, whether you press anything or not
   PX_PER_M    : 8,     // world pixels per displayed "meter"
 };
@@ -1132,11 +1132,14 @@ function titleBallFrame(now){
     tctx.clearRect(0, 0, titleCv.width, titleCv.height);
     for (let i = titleTrail.length - 1; i > 0; i--){
       const t = titleTrail[i];
-      tctx.globalAlpha = (1 - i / titleTrail.length) * 0.16;
+      tctx.globalAlpha = (1 - i / titleTrail.length) * 0.22;
       tctx.fillStyle = "#fff";
+      tctx.shadowColor = "rgba(255,255,255,0.8)";
+      tctx.shadowBlur = 8 * (1 - i / titleTrail.length);
       tctx.beginPath(); tctx.arc(t.x, t.y, 5.5 * (1 - i / titleTrail.length), 0, 6.284); tctx.fill();
     }
     tctx.globalAlpha = 1;
+    tctx.shadowBlur = 0;
 
     titleBall.style.left = x + "px";
     titleBall.style.top = cy + "px";

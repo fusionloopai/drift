@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Drift</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='black'/><circle cx='32' cy='32' r='10' fill='white'/></svg>">
-<meta name="description" content="A short game about what happens before you decide what you want.">
+<meta name="description" content="A short game that teaches you how to actually set a goal.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400;500;600&display=swap" rel="stylesheet">
@@ -13,12 +13,11 @@
 /* ---------------------------------------------------------------------------
    Drift — visual system is DreamDesigner's: black ground, ambient white glow,
    Montserrat, Josh's 30% tracking on anything that reads as a heading or label.
-   Tokens are copied from dreamdesigner-app/app/globals.css on purpose. If that
-   file's palette moves, move this one too — the handoff at the end only feels
-   like one product while these match.
+   Tokens copied from dreamdesigner-app/app/globals.css on purpose — the handoff
+   at the end only feels like one product while these match.
 
-   Nothing in this game is encoded by colour alone. Platforms are rectangles,
-   flags are flags. Shape carries every meaning.
+   Nothing is encoded by colour alone. Platforms are rectangles, hazards are
+   triangles, flags are flags, calendar markers are distinct glyphs.
 --------------------------------------------------------------------------- */
 :root{
   --ink:#ffffff; --ink-soft:#a8a8ad; --ink-faint:#5c5c63;
@@ -36,10 +35,8 @@ body{
   touch-action:none;
   user-select:none; -webkit-user-select:none;
 }
-canvas{ display:block; position:fixed; inset:0; z-index:1; }
+canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 
-/* The ambient glow sits above the canvas at very low opacity so the world is lit
-   by the same light DreamDesigner uses, not by a different one. */
 .glow-field{
   position:fixed; inset:0; pointer-events:none; z-index:2;
   background:
@@ -66,7 +63,7 @@ canvas{ display:block; position:fixed; inset:0; z-index:1; }
                letter-spacing:0.12em; font-variant-numeric:tabular-nums; }
 #meter.struck .value{ text-decoration:line-through; color:var(--ink-faint); }
 
-/* The confrontation. Fires once, ~20s in. The world keeps scrolling under it —
+/* The confrontation. Fires once, 10s in. The world keeps scrolling under it —
    nothing pauses for a realization, that's the whole point being made. */
 #confront{
   position:fixed; inset:0; z-index:6; pointer-events:none;
@@ -77,12 +74,11 @@ canvas{ display:block; position:fixed; inset:0; z-index:1; }
 #confront.dim{ background:rgba(0,0,0,0.62); }
 #confront p{ opacity:0; transform:translateY(8px); transition:opacity .9s ease, transform .9s ease; }
 #confront .l1{ font-size:clamp(26px,6vw,50px); font-weight:200; }
-#confront .l2{ margin-top:clamp(14px,3vw,22px); font-size:clamp(13px,2.4vw,18px); font-weight:300; color:var(--ink-soft); }
-#confront .l3{ margin-top:clamp(10px,2vw,16px); font-size:clamp(13px,2.4vw,18px); font-weight:300; color:var(--ink-soft); }
+#confront .l2, #confront .l3{ margin-top:clamp(12px,2.4vw,18px); font-size:clamp(13px,2.4vw,18px); font-weight:300; color:var(--ink-soft); }
 #confront p.on{ opacity:1; transform:translateY(0); }
 
-/* What used to be a hidden hotkey is now a stated invitation, framed the way a
-   game already knows how to ask: level up, or don't. Either is a real choice. */
+/* The invitation between worlds. Framed the way a game already knows how to
+   ask: level up. Top-right so it never covers terrain on a phone. */
 #levelUp{
   position:fixed; z-index:6; top:clamp(16px,3vw,32px); right:clamp(16px,3vw,32px);
   transform:translateY(-8px);
@@ -95,7 +91,7 @@ canvas{ display:block; position:fixed; inset:0; z-index:1; }
 #levelUp.on{ opacity:1; pointer-events:auto; transform:translateY(0); animation:panelPulse 3.4s ease-in-out infinite; }
 #levelUp:hover{ border-color:rgba(255,255,255,.42); }
 #levelUp .lu-label{ font-size:clamp(9px,1.4vw,11px); color:var(--ink-faint); }
-#levelUp .lu-main{ margin-top:6px; font-size:clamp(15px,2.8vw,20px); font-weight:400; }
+#levelUp .lu-main{ margin-top:6px; font-size:clamp(14px,2.6vw,19px); font-weight:400; }
 #levelUp .lu-sub{ margin-top:8px; font-size:clamp(8px,1.3vw,10px); color:var(--ink-faint); }
 @keyframes panelPulse{ 0%,100%{ box-shadow:0 0 0 rgba(255,255,255,0); } 50%{ box-shadow:0 0 34px rgba(255,255,255,.07) inset; } }
 
@@ -106,6 +102,7 @@ canvas{ display:block; position:fixed; inset:0; z-index:1; }
   text-align:center; padding:clamp(24px,6vw,64px);
   background:rgba(0,0,0,0.94);
   opacity:0; pointer-events:none; transition:opacity .5s ease;
+  overflow-y:auto;
 }
 .overlay.on{ opacity:1; pointer-events:auto; }
 .overlay .inner{ max-width:min(720px,92vw); width:100%; }
@@ -115,26 +112,31 @@ canvas{ display:block; position:fixed; inset:0; z-index:1; }
   background:linear-gradient(90deg, #0d0d0d 0%, #1b1b1b 22%, #c0c0c0 50%, #1b1b1b 78%, #0d0d0d 100%);
   -webkit-background-clip:text; background-clip:text; color:transparent;
 }
-/* A tiny canvas draws the real directional trail (same fading-circle math as
-   drawPlayer(), scaled down); the ball itself stays a plain div positioned
-   by the same JS loop, so the two never drift out of sync. */
-#titleBallWrap{
-  position:relative; width:140px; height:36px;
-  margin:0 auto clamp(22px,4.5vw,36px);
-}
+/* The title ball: a canvas draws its real directional trail (same fading-circle
+   math as the in-game player), a radial halo carries the ambient glow that the
+   old static streak used to provide, and both track the ball from one JS loop. */
+#titleBallWrap{ position:relative; width:220px; height:60px; margin:0 auto clamp(22px,4.5vw,36px); }
 #titleCv{ position:absolute; inset:0; }
+#titleGlow{
+  position:absolute; top:30px; left:110px; width:200px; height:200px;
+  transform:translate(-50%,-50%); pointer-events:none;
+  background:radial-gradient(circle, rgba(255,255,255,.20) 0%, rgba(255,255,255,.08) 28%, transparent 62%);
+}
 #titleBall{
-  position:absolute; top:18px; left:70px;
+  position:absolute; top:30px; left:110px;
   width:13px; height:13px; border-radius:50%; background:#fff;
   transform:translate(-50%,-50%);
-  box-shadow:0 0 20px rgba(255,255,255,.9), 0 0 56px rgba(255,255,255,.4), 0 0 100px rgba(255,255,255,.15);
+  box-shadow:0 0 20px rgba(255,255,255,.85), 0 0 56px rgba(255,255,255,.35);
 }
 #title .sub{ margin-top:clamp(28px,6vw,48px); font-size:clamp(10px,1.8vw,12px); color:var(--ink-faint); }
 
+/* --------------------------- Field (one prompt) --------------------------- */
 #field .ctx{ margin-bottom:clamp(12px,2.6vw,18px); color:var(--ink-faint); display:none; }
 #field .q{ font-size:clamp(18px,4.4vw,34px); font-weight:300; line-height:1.35; }
+#field .hint{ margin-top:clamp(12px,2.4vw,18px); font-size:clamp(11px,1.9vw,14px); color:var(--ink-faint); font-weight:300; }
+#field .eg{ margin-top:10px; font-size:clamp(11px,1.9vw,14px); color:var(--ink-soft); font-style:italic; font-weight:300; }
 #field input{
-  margin-top:clamp(28px,6vw,44px); width:100%;
+  margin-top:clamp(24px,5vw,38px); width:100%;
   background:transparent; border:0; border-bottom:1px solid var(--line);
   color:var(--ink); font-family:inherit; font-weight:300;
   font-size:clamp(16px,3.4vw,24px); letter-spacing:0.04em;
@@ -144,67 +146,129 @@ canvas{ display:block; position:fixed; inset:0; z-index:1; }
 #field input:focus{ border-bottom-color:rgba(255,255,255,0.55); }
 #field input::placeholder{ color:#2e2e34; letter-spacing:0.04em; }
 #field .keys{
-  margin-top:clamp(26px,5vw,40px); display:flex; gap:clamp(14px,4vw,34px);
+  margin-top:clamp(22px,4.4vw,34px); display:flex; gap:clamp(14px,4vw,34px);
   justify-content:center; flex-wrap:wrap;
   font-size:clamp(9px,1.5vw,11px); color:var(--ink-faint);
 }
 #field .keys b{ font-weight:500; color:var(--ink-soft); }
 #field .keys .refuse{ opacity:.55; }
 
-#win .goal{
-  font-size:clamp(22px,5.4vw,46px); font-weight:300; line-height:1.3;
-  word-break:break-word;
+/* ------------------- Panels (checkpoints / dates / plan) ------------------ */
+.panel .head{ font-size:clamp(20px,4.6vw,34px); font-weight:300; line-height:1.3; }
+.panel .why{
+  margin-top:clamp(14px,3vw,22px); font-size:clamp(12px,2.1vw,15px);
+  color:var(--ink-soft); font-weight:300; line-height:1.7;
+  max-width:56ch; margin-left:auto; margin-right:auto;
 }
-#win .stats{
-  margin-top:clamp(30px,6vw,48px); font-size:clamp(12px,2.1vw,15px);
-  font-weight:300; line-height:1.6; color:var(--ink-soft); text-align:left;
-  max-width:52ch; margin-left:auto; margin-right:auto;
+.panel .eg{ margin-top:10px; font-size:clamp(11px,1.9vw,13px); color:var(--ink-faint); font-style:italic; }
+.panel .rows{ margin-top:clamp(22px,4.4vw,32px); text-align:left; }
+.row{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.row .num{ flex:0 0 auto; width:26px; font-size:11px; color:var(--ink-faint); font-variant-numeric:tabular-nums; }
+.row input[type=text]{
+  flex:1 1 auto; min-width:0;
+  background:transparent; border:0; border-bottom:1px solid var(--line);
+  color:var(--ink); font-family:inherit; font-weight:300;
+  font-size:clamp(13px,2.4vw,17px); padding:9px 2px; outline:none;
+  transition:border-color .2s ease;
 }
-#win .stats .half-row{ margin-top:16px; color:var(--ink); font-weight:400; }
-#win .stats .sub-row{ margin-top:8px; margin-left:20px; color:var(--ink-soft); font-weight:350; font-size:0.95em; }
-#win .stats .subsub-row{ margin-top:4px; margin-left:40px; color:var(--ink-soft); font-weight:300; font-size:0.9em; }
-#win .tagline{
-  margin-top:clamp(30px,6vw,48px); padding-top:clamp(26px,5vw,40px);
-  border-top:1px solid var(--line);
-  font-size:clamp(11px,1.9vw,14px); font-weight:300; color:var(--ink-faint);
-  font-style:italic; letter-spacing:0.03em;
+.row input[type=text]:focus{ border-bottom-color:rgba(255,255,255,0.55); }
+.row input[type=text]::placeholder{ color:#2e2e34; }
+.row input[type=date]{
+  flex:0 0 auto;
+  background:var(--bg-raise); border:1px solid var(--line); border-radius:3px;
+  color:var(--ink-soft); font-family:inherit; font-size:clamp(11px,1.9vw,13px);
+  padding:8px 10px; outline:none; color-scheme:dark;
 }
-#win .win-actions{
-  display:flex; gap:14px; justify-content:center; flex-wrap:wrap;
-  margin-top:clamp(24px,5vw,36px);
+.row .kill{
+  flex:0 0 auto; width:28px; height:28px; border:1px solid var(--line); border-radius:3px;
+  background:none; color:var(--ink-faint); cursor:pointer; font-family:inherit; font-size:14px; line-height:1;
 }
-#win .cta{
-  display:inline-block;
-  padding:16px clamp(20px,4vw,34px);
+.row .kill:hover{ border-color:rgba(255,255,255,.4); color:var(--ink); }
+.row.step{ margin-left:34px; }
+.row.step .num{ width:16px; }
+.addbtn{
+  margin-top:6px; background:none; border:1px dashed var(--line); border-radius:3px;
+  color:var(--ink-faint); cursor:pointer; font-family:inherit;
+  font-size:clamp(10px,1.7vw,12px); padding:9px 16px;
+  transition:border-color .2s ease, color .2s ease;
+}
+.addbtn:hover{ border-color:rgba(255,255,255,.4); color:var(--ink); }
+.addbtn.step{ margin-left:34px; font-size:clamp(9px,1.5vw,11px); padding:7px 13px; }
+.cta{
+  display:inline-block; margin-top:clamp(22px,4.4vw,34px);
+  padding:15px clamp(20px,4vw,32px);
   border:1px solid var(--line); border-radius:3px;
   background:var(--bg-raise); color:var(--ink-soft);
   font-size:clamp(9px,1.5vw,11px); text-decoration:none;
   font-family:inherit; cursor:pointer;
   transition:border-color .2s ease, color .2s ease, box-shadow .2s ease;
 }
-#win .cta:hover{
-  border-color:rgba(255,255,255,0.4); color:var(--ink);
-  box-shadow:0 0 40px rgba(255,255,255,0.06) inset;
+.cta:hover{ border-color:rgba(255,255,255,0.4); color:var(--ink); box-shadow:0 0 40px rgba(255,255,255,0.06) inset; }
+.cta[disabled]{ opacity:.35; cursor:not-allowed; }
+.cta[disabled]:hover{ border-color:var(--line); color:var(--ink-soft); box-shadow:none; }
+.goalline{
+  margin-top:clamp(16px,3vw,24px); padding:14px 16px;
+  border:1px solid var(--line); border-radius:3px; background:var(--bg-raise);
+  font-size:clamp(12px,2.1vw,15px); font-weight:300; color:var(--ink);
 }
+.goalline .lbl{ display:block; font-size:10px; color:var(--ink-faint); margin-bottom:6px; }
+
+/* ------------------------- Plan / calendar views -------------------------- */
+.viewtabs{ margin-top:clamp(18px,3.6vw,26px); display:flex; gap:10px; justify-content:center; }
+.viewtabs button{
+  background:var(--bg-raise); border:1px solid var(--line); border-radius:3px;
+  color:var(--ink-faint); font-family:inherit; cursor:pointer;
+  font-size:clamp(9px,1.5vw,11px); padding:11px 18px;
+  transition:border-color .2s ease, color .2s ease;
+}
+.viewtabs button.sel{ border-color:rgba(255,255,255,.45); color:var(--ink); }
+.viewbody{ margin-top:clamp(18px,3.6vw,26px); text-align:left; }
+
+.tree{ font-size:clamp(12px,2.1vw,15px); font-weight:300; line-height:1.6; }
+.tree .t-goal{ color:var(--ink); font-weight:400; }
+.tree .t-cp{ margin-top:14px; margin-left:18px; color:var(--ink); }
+.tree .t-st{ margin-top:4px; margin-left:44px; color:var(--ink-soft); font-size:0.92em; }
+.tree .t-date{ color:var(--ink-faint); font-size:0.85em; font-variant-numeric:tabular-nums; }
+
+.cal{ display:flex; flex-direction:column; gap:20px; }
+.cal .mon h4{ font-size:clamp(10px,1.7vw,12px); font-weight:400; color:var(--ink-soft); margin-bottom:8px; }
+.cal .grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+.cal .dow{ font-size:9px; color:var(--ink-faint); text-align:center; padding:2px 0; }
+.cal .day{
+  aspect-ratio:1; border:1px solid transparent; border-radius:2px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  font-size:10px; color:var(--ink-faint); font-variant-numeric:tabular-nums;
+}
+.cal .day.mark{ border-color:var(--line); background:var(--bg-raise); color:var(--ink); }
+.cal .day .g{ font-size:9px; line-height:1; margin-top:1px; }
+.cal .legend{ margin-top:6px; font-size:10px; color:var(--ink-faint); display:flex; gap:14px; flex-wrap:wrap; }
+
+/* --------------------------------- Win ----------------------------------- */
+#win .goal{ font-size:clamp(20px,4.8vw,40px); font-weight:300; line-height:1.3; word-break:break-word; }
+#win .whenline{ margin-top:10px; font-size:clamp(11px,1.9vw,14px); color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+#win .tagline{
+  margin-top:clamp(26px,5vw,40px); padding-top:clamp(22px,4.4vw,34px);
+  border-top:1px solid var(--line);
+  font-size:clamp(11px,1.9vw,14px); font-weight:300; color:var(--ink-faint);
+  font-style:italic; letter-spacing:0.03em;
+}
+#win .win-actions{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:clamp(20px,4vw,30px); }
 #win .again{
-  display:block; margin:22px auto 0; background:none; border:0; cursor:pointer;
+  display:block; margin:20px auto 0; background:none; border:0; cursor:pointer;
   color:#2e2e34; font-family:inherit; font-size:clamp(9px,1.4vw,10px);
 }
 #win .again:hover{ color:var(--ink-faint); }
 
-/* Print: the whole point of the end screen is a goal tree someone can hold.
-   Hide everything else, force the summary to plain black-on-white. */
+/* Print: the deliverable is the plan. Hide the game, force black-on-white. */
 @media print{
   body *{ visibility:hidden; }
   #win, #win *{ visibility:visible; }
-  #win{ position:static; opacity:1; background:#fff; color:#000; padding:24px; }
-  #win .goal{ color:#000; text-shadow:none; }
-  #win .stats{ color:#000; }
-  #win .stats .half-row{ color:#000; }
-  #win .stats .sub-row{ color:#111; }
-  #win .stats .subsub-row{ color:#222; }
+  #win{ position:static; opacity:1; background:#fff; color:#000; padding:24px; display:block; overflow:visible; }
+  #win .goal, #win .whenline, #win .tree, #win .tree *{ color:#000 !important; text-shadow:none; }
   #win .tagline{ color:#444; }
-  #win .win-actions, #win .again{ display:none; }
+  #win .win-actions, #win .again, #win .viewtabs{ display:none; }
+  #win .cal{ display:none; }
+  #win #winTree{ display:block !important; }
   canvas, .glow-field, #hud, #confront, #levelUp{ display:none; }
 }
 </style>
@@ -228,15 +292,16 @@ canvas{ display:block; position:fixed; inset:0; z-index:1; }
 </div>
 
 <div id="levelUp">
-  <div class="lu-label tracked-sm">Level up available</div>
-  <div class="lu-main">Set a goal</div>
-  <div class="lu-sub tracked-sm">Enter</div>
+  <div class="lu-label tracked-sm" id="luLabel">Level up available</div>
+  <div class="lu-main" id="luMain">Set a goal</div>
+  <div class="lu-sub tracked-sm" id="luSub">Enter</div>
 </div>
 
 <div id="title" class="overlay on">
   <div class="inner">
     <div id="titleBallWrap">
-      <canvas id="titleCv" width="140" height="36"></canvas>
+      <canvas id="titleCv" width="220" height="60"></canvas>
+      <div id="titleGlow"></div>
       <div id="titleBall"></div>
     </div>
     <h1 class="tracked glow-text">Drift</h1>
@@ -247,9 +312,11 @@ canvas{ display:block; position:fixed; inset:0; z-index:1; }
 <div id="field" class="overlay">
   <div class="inner">
     <p class="ctx tracked-sm" id="fieldContext"></p>
-    <p class="q" id="fieldQ">What do you want 30 days from now?</p>
-    <input id="goalInput" type="text" maxlength="72" autocomplete="off" autocapitalize="sentences"
-           spellcheck="false" placeholder="say it plainly">
+    <p class="q" id="fieldQ">What do you want?</p>
+    <p class="hint" id="fieldHint">Write it as if it already happened. Not &ldquo;I want to&rdquo; &mdash; &ldquo;I have.&rdquo;</p>
+    <p class="eg" id="fieldEg">e.g. &ldquo;I have paid off all $12,000 of my debt.&rdquo;</p>
+    <input id="goalInput" type="text" maxlength="90" autocomplete="off" autocapitalize="sentences"
+           spellcheck="false" placeholder="I have&hellip;">
     <div class="keys tracked-sm">
       <span><b>Enter</b> &nbsp;<span id="fieldEnterHint">to write it</span></span>
       <span class="refuse" id="fieldRefuse"><b>Esc</b> &nbsp;to keep drifting</span>
@@ -257,14 +324,70 @@ canvas{ display:block; position:fixed; inset:0; z-index:1; }
   </div>
 </div>
 
+<div id="cpPanel" class="overlay panel">
+  <div class="inner">
+    <p class="head">Break it into checkpoints.</p>
+    <p class="why">A goal with no checkpoints is a wish. Checkpoints are how you find out you're off track while there's still time to fix it &mdash; and how you keep moving when motivation runs out.</p>
+    <div class="goalline"><span class="lbl tracked-sm">Your goal</span><span id="cpGoalEcho"></span></div>
+    <p class="eg">Write each one the same way &mdash; as if it already happened. e.g. &ldquo;I have paid off $3,000.&rdquo;</p>
+    <div class="rows" id="cpRows"></div>
+    <button class="addbtn tracked-sm" id="cpAdd">+ &nbsp;Add checkpoint</button>
+    <div><button class="cta tracked-sm" id="cpDone">Continue &nbsp;&rarr;</button></div>
+  </div>
+</div>
+
+<div id="dtPanel" class="overlay panel">
+  <div class="inner">
+    <p class="head">Put dates on them.</p>
+    <p class="why">A checkpoint with no date is still just an idea. Start with the finish line &mdash; the rest will space themselves out evenly, and you can move any of them.</p>
+    <div class="goalline"><span class="lbl tracked-sm">Your goal</span><span id="dtGoalEcho"></span></div>
+    <div class="rows">
+      <div class="row">
+        <span class="num">&#9670;</span>
+        <input type="text" id="dtGoalText" readonly>
+        <input type="date" id="dtGoalDate">
+      </div>
+    </div>
+    <div id="dtBody" style="display:none">
+      <p class="eg" style="margin-top:18px">Each checkpoint, and any smaller steps underneath it.</p>
+      <div class="rows" id="dtRows"></div>
+    </div>
+    <div><button class="cta tracked-sm" id="dtDone" disabled>See the plan &nbsp;&rarr;</button></div>
+  </div>
+</div>
+
+<div id="planPanel" class="overlay panel">
+  <div class="inner">
+    <p class="head">Here's the whole thing.</p>
+    <p class="why">This is what you just built &mdash; one goal, broken down, with dates. Most people never get this far.</p>
+    <div class="viewtabs">
+      <button id="planTabList" class="tracked-sm sel">Goal list</button>
+      <button id="planTabCal" class="tracked-sm">Calendar view</button>
+    </div>
+    <div class="viewbody">
+      <div id="planTree" class="tree"></div>
+      <div id="planCal" class="cal" style="display:none"></div>
+    </div>
+    <div><button class="cta tracked-sm" id="planDone">Begin the climb &nbsp;&rarr;</button></div>
+  </div>
+</div>
+
 <div id="win" class="overlay">
   <div class="inner">
-    <p class="sub tracked-sm">Your 30 days</p>
+    <p class="sub tracked-sm" style="color:var(--ink-faint);font-size:clamp(10px,1.8vw,12px)">Your goal</p>
     <p class="goal tracked glow-text" id="winGoal"></p>
-    <div class="stats" id="winStats"></div>
+    <p class="whenline" id="winWhen"></p>
+    <div class="viewtabs">
+      <button id="winTabList" class="tracked-sm sel">Goal list</button>
+      <button id="winTabCal" class="tracked-sm">Calendar view</button>
+    </div>
+    <div class="viewbody">
+      <div id="winTree" class="tree"></div>
+      <div id="winCal" class="cal" style="display:none"></div>
+    </div>
     <p class="tagline">Most people never write the life they say they want.</p>
     <div class="win-actions">
-      <button class="cta tracked-sm" id="winPrint" type="button">Print your goals</button>
+      <button class="cta tracked-sm" id="winPrint" type="button">Print / save PDF</button>
       <a class="cta tracked-sm" id="winCta" href="#" target="_blank" rel="noopener">
         The Dream Designer Blueprint &nbsp;&rarr;
       </a>
@@ -280,36 +403,31 @@ canvas{ display:block; position:fixed; inset:0; z-index:1; }
    CONFIG
    =========================================================================== */
 const CFG = {
-  // Where the win screen sends people. This is the whole funnel — Drift is the
-  // hook, the Blueprint is the gate that already captures the email.
   DREAMDESIGNER_URL : "https://dreamdesigner.lifesong.io",
-
   CONFRONT_AT : 10,    // seconds of drifting before the game says so out loud
-  DRIFT_SPEED : 190,   // px/s the camera shoves you right, whether you press anything or not
+  DRIFT_SPEED : 190,   // px/s the camera shoves you right whether you press anything or not
   PX_PER_M    : 8,     // world pixels per displayed "meter"
+  MAX_CP      : 8,
 };
 
 /* ===========================================================================
    CANVAS + VIEW
-   World is authored against a 540px-tall band. Taller viewports simply reveal
-   more sky above it, so world y=540 is always the bottom of the screen and the
-   ground never moves under the player when someone resizes the window.
+   World is authored against a 540px band. camY lets the view climb for World 4.
    =========================================================================== */
 const BASE_H = 540;
 const cv = document.getElementById("c");
 const ctx = cv.getContext("2d");
 let scale = 1, viewW = 960, viewH = 540, dpr = 1;
-let offY = 0;          // world y=0 sits this far down the screen
-let worldBottom = 620; // world y at the bottom edge of the screen
+let offY = 0, worldBottom = 620;
 
 function resize(){
   const w = innerWidth, h = innerHeight;
   dpr = Math.min(devicePixelRatio || 1, 2);
   scale = h / BASE_H;
-  if (w / scale < 640) scale = w / 640;   // narrow phones show extra sky, never a squeezed world
+  if (w / scale < 640) scale = w / 640;
   viewW = w / scale;
   viewH = h / scale;
-  offY = (viewH - BASE_H) * 0.5;   // centre the band; tall screens got a dead column below it
+  offY = (viewH - BASE_H) * 0.5;
   worldBottom = BASE_H + offY;
   cv.width  = Math.round(w * dpr);
   cv.height = Math.round(h * dpr);
@@ -321,39 +439,29 @@ resize();
 
 /* ===========================================================================
    STATE
-   phase: title -> drift -> (field) -> turn -> walk -> (breakdown) -> walk -> ... -> win
-   "field" and "breakdown" are overlays on top of drift/paused-walk, not phases
-   of their own for physics purposes — the frame loop only steps drift/walk/turn.
+   phase: title -> drift -> turn -> walk -> (panels) -> walk -> ... -> win
    =========================================================================== */
 const S = {
-  phase      : "title",
-  t          : 0,      // seconds spent drifting
-  deaths     : 0,      // deaths during the drift. Counted, never shown, used at the end.
-  walkDeaths : 0,
-  goal30     : "",      // the 30-day goal, set at the turn
-  half       : "",       // the halfway point to the 30-day goal — World 2's flag
-  subs       : ["", ""],        // halfway points for each half of that (World 3)
-  subsubs    : ["", "", "", ""],// halfway points for each of THOSE (World 4)
-  stage      : "",      // "world2" | "world3" | "world4" — which goal flag we're walking toward
-  camX       : 0,
-  camVel     : CFG.DRIFT_SPEED,
-  flashT     : 0,      // white pulse timer, used on the turn
-  turnT      : 0,
-  confronted : false,   // the confrontation fires exactly once
-  walkStart  : 0,
-  lastCheck  : null,   // {x,y} last flag reached, where a walk-phase death sends you back
+  phase : "title",
+  t : 0, deaths : 0, walkDeaths : 0,
+  goal : "", goalDate : "",
+  checkpoints : [],      // {text, date, steps:[{text,date}]}
+  stage : "",            // world2 | world3 | world4
+  camX : 0, camY : 0, camVel : CFG.DRIFT_SPEED,
+  flashT : 0, turnT : 0, confronted : false,
+  walkStart : 0, lastCheck : null, floorY : 720,
 };
 
 const player = { x:120, y:360, vx:0, vy:0, w:22, h:26, onGround:false, coyote:0, buffer:0, trail:[] };
 
-let plats  = [];   // {x,y,w,h}
-let spikes = [];   // {x,y,w} — World 2 only, drawn as a row of triangles
-let flags  = [];   // {x,y,kind:"circle"|"way"|"goal",got:false,label?:string}
-let motes  = [];   // ambient drifting dust
-let genX   = 0;    // right edge of generated drift world
-let lastY  = 430;  // height of the last drift ledge, so runs can stay level
+let plats  = [];   // {x,y,w,h,float?}  float = one-way sky platform / block
+let spikes = [];   // {x,y,w}
+let flags  = [];   // {x,y,kind:"way"|"goal",got,label,sub?}
+let motes  = [];
+let genX   = 0, lastY = 430;
 
 const GRAV = 2000, JUMP = -740, RUN = 330, SPIKE_H = 15;
+// max jump height at these constants is ~137px — every rise below stays under it.
 
 /* ===========================================================================
    INPUT
@@ -363,22 +471,19 @@ let touchL = false, touchR = false, touchJump = false;
 
 addEventListener("keydown", e => {
   if (S.phase === "title"){ start(); e.preventDefault(); return; }
-
   if (e.key === "Escape"){
-    if (S.phase === "drift"){ fieldOpen ? closeField() : openField(); e.preventDefault(); }
+    if (S.phase === "drift"){ fieldOpen ? closeField() : askGoal(); e.preventDefault(); }
     return;
   }
-  if (e.key === "Enter" && S.phase === "drift" && !fieldOpen){ openField(); e.preventDefault(); return; }
-  if (fieldOpen) return;                       // the input owns the keyboard while it's open
+  if (e.key === "Enter" && S.phase === "drift" && !fieldOpen){ askGoal(); e.preventDefault(); return; }
+  if (anyPanelOpen()) return;
   keys[e.key.toLowerCase()] = true;
   if ([" ","ArrowUp","ArrowLeft","ArrowRight","ArrowDown"].includes(e.key)) e.preventDefault();
   if (e.key === " " || e.key === "ArrowUp" || e.key.toLowerCase() === "w") player.buffer = 0.11;
 });
 addEventListener("keyup", e => { keys[e.key.toLowerCase()] = false; });
-
 function held(...names){ return names.some(n => keys[n]); }
 
-// Touch: outer thirds steer, anywhere else jumps. Enough for both phases.
 function touchAt(list){
   touchL = touchR = false; touchJump = false;
   for (const t of list){
@@ -393,9 +498,9 @@ cv.addEventListener("touchstart", e => {
   if (S.phase === "title"){ start(); return; }
   touchAt(e.touches); e.preventDefault();
 }, {passive:false});
-cv.addEventListener("touchmove",  e => { touchAt(e.touches); e.preventDefault(); }, {passive:false});
-cv.addEventListener("touchend",   e => { touchAt(e.touches); }, {passive:false});
-cv.addEventListener("mousedown",  () => { if (S.phase === "title") start(); });
+cv.addEventListener("touchmove", e => { touchAt(e.touches); e.preventDefault(); }, {passive:false});
+cv.addEventListener("touchend",  e => { touchAt(e.touches); }, {passive:false});
+cv.addEventListener("mousedown", () => { if (S.phase === "title") start(); });
 
 /* ===========================================================================
    WORLD GENERATION
@@ -403,13 +508,9 @@ cv.addEventListener("mousedown",  () => { if (S.phase === "title") start(); });
 const rnd  = (a,b) => a + Math.random() * (b - a);
 const rint = (a,b) => Math.floor(rnd(a, b + 1));
 
-// World 1, the drift itself: continuous rolling hills, nothing to jump over yet.
-// A "hill" is a run of small stair-steps, each shallow enough that the new
-// step-up assist in physics() climbs it automatically while walking — no gap,
-// no jump required. One cycle: rise a ball-height, rise another, then fall
-// back down twice as far. Net zero per cycle — a wave, not a staircase.
-const BALL_H = 24;    // the hill unit, matched to the player's own diameter
-
+// --- World 1: rolling hills. Continuous ground, no gaps, no hazards. A hill
+// is a run of tiny stair-steps that the step-up assist walks straight up.
+const BALL_H = 24;
 function pushRamp(totalDy, totalW){
   const steps = Math.max(2, Math.round(Math.abs(totalDy) / 6));
   const stepW = totalW / steps, stepDy = totalDy / steps;
@@ -419,117 +520,129 @@ function pushRamp(totalDy, totalW){
     genX += stepW;
   }
 }
-
 function genDriftChunk(){
   pushRamp(-BALL_H, rnd(90, 130));
   pushRamp(-BALL_H, rnd(90, 130));
   pushRamp(BALL_H * 2, rnd(160, 220));
 }
-
 function trimBehind(){
   const cut = S.camX - 900;
   plats  = plats.filter(p => p.x + p.w > cut);
   spikes = spikes.filter(s => s.x + s.w > cut);
 }
 
-// World 2: a long main level — real gaps, real spikes — that eventually climbs
-// up onto a second, permanently higher level. The 30-day goal's flag stands
-// at the far end of that upper level: you have to choose to go up to reach it.
-function buildWorld2Path(startX, startY, goalText){
-  plats  = plats.filter(p => p.x + p.w < startX - 40);
-  plats.push({ x:startX - 150, y:startY, w:330, h:BASE_H + 80 - startY });
-  spikes = [];
-  flags  = [];
-
-  let x = startX + 260;
-  const LOWER_Y = Math.min(startY, 430), UPPER_Y = LOWER_Y - 88;
-
-  // The main (lower) level. A quiet checkpoint circle partway through means
-  // a death here doesn't send you all the way back to the very start.
-  for (let i = 0; i < 4; i++){
-    const w = rnd(140, 220);
-    plats.push({ x, y:LOWER_Y, w, h:BASE_H + 80 - LOWER_Y });
-    const checkpoint = (i === 1);
-    if (!checkpoint && Math.random() < 0.4 && w > 160){
-      const sw = rnd(36, 58);
-      spikes.push({ x: x + rnd(40, w - sw - 30), y:LOWER_Y - SPIKE_H, w: sw });
-    }
-    if (checkpoint) flags.push({ x: x + w * 0.5, y:LOWER_Y, kind:"circle", got:false });
-    x += w + rnd(80, 130);
-  }
-
-  // The jump up onto the new, higher level — the one real turning point.
-  // Landing here is its own checkpoint — you never have to re-clear this jump.
-  {
-    x += rnd(60, 90);
-    const w = rnd(160, 220);
-    plats.push({ x, y:UPPER_Y, w, h:BASE_H + 80 - UPPER_Y });
-    flags.push({ x: x + w * 0.5, y:UPPER_Y, kind:"circle", got:false });
-    x += w;
-  }
-
-  // The upper level — where the goal actually lives. One more checkpoint
-  // partway across, since it's still a real distance to the flag from here.
-  for (let i = 0; i < 3; i++){
-    x += rnd(85, 120);
-    const w = rnd(140, 210);
-    plats.push({ x, y:UPPER_Y, w, h:BASE_H + 80 - UPPER_Y });
-    const checkpoint = (i === 1);
-    if (!checkpoint && Math.random() < 0.4 && w > 160){
-      const sw = rnd(36, 58);
-      spikes.push({ x: x + rnd(40, w - sw - 30), y:UPPER_Y - SPIKE_H, w: sw });
-    }
-    if (checkpoint) flags.push({ x: x + w * 0.5, y:UPPER_Y, kind:"circle", got:false });
-    x += w;
-  }
-
-  // The final, largest flag on this world — the 30-day goal itself.
-  x += rnd(70, 100);
-  const holdW = 380;
-  plats.push({ x, y:UPPER_Y, w:holdW, h:BASE_H + 80 - UPPER_Y });
-  flags.push({ x: x + holdW * 0.5, y:UPPER_Y, kind:"goal", got:false, label:goalText });
-}
-
-// The final climb: two smaller steps (small circle markers — "keep jumping up"),
-// then a main flag for that sub-goal achieved; twice; then the 30-day goal
-// itself as the last, largest flag. Every entry climbs one tier higher than
-// the last, so the whole thing reads as one long ascent.
-function buildFinalClimb(startX, startY, defs){
+function launchPad(startX, startY){
   plats = plats.filter(p => p.x + p.w < startX - 40);
   plats.push({ x:startX - 150, y:startY, w:330, h:BASE_H + 80 - startY });
-  spikes = [];
-  flags = [];
+}
+function setFloor(){
+  let lowest = 0;
+  for (const p of plats) if (!p.float && p.y > lowest) lowest = p.y;
+  S.floorY = lowest + 240;
+}
 
-  let x = startX + 260;
-  let y = startY;
-  const RISE = 40;
+// --- World 2: pits only. No spikes, no climbing. The surface stays in a low
+// narrow band so the only thing being asked is "can you clear a gap".
+function buildWorld2(startX, startY, goalText){
+  launchPad(startX, startY);
+  spikes = []; flags = [];
 
-  defs.forEach(def => {
-    const hops = rint(3, 4);
-    for (let h = 0; h < hops; h++){
-      const w = rnd(120, 190);
-      plats.push({ x, y, w, h:BASE_H + 80 - y });
-      if (Math.random() < 0.3 && w > 150){
-        const sw = rnd(32, 50);
-        spikes.push({ x: x + rnd(30, w - sw - 20), y: y - SPIKE_H, w: sw });
+  let x = startX + 250;
+  let y = Math.min(Math.max(startY, 415), 452);
+
+  for (let i = 0; i < 7; i++){
+    const w = rnd(170, 250);
+    plats.push({ x, y, w, h:BASE_H + 80 - y });
+    if (i === 3) flags.push({ x:x + w * 0.5, y, kind:"way", got:false });   // silent checkpoint
+    x += w + rnd(95, 135);                                                  // the pit
+    y = Math.max(415, Math.min(452, y + rnd(-18, 18)));                     // stays low
+  }
+
+  const holdW = 380;
+  plats.push({ x, y, w:holdW, h:BASE_H + 80 - y });
+  flags.push({ x:x + holdW * 0.5, y, kind:"goal", got:false, label:goalText });
+  setFloor();
+}
+
+// --- World 3: the real level. Ground with pits and spikes, plus lines in the
+// sky and square blocks to jump to. Checkpoint flags alternate between the
+// ground and the sky, so reaching them all means using the whole space.
+function buildWorld3(startX, startY, cps, goalText){
+  launchPad(startX, startY);
+  spikes = []; flags = [];
+
+  const GY = 430, SKY = 316, HIGH = 250;
+  let x = startX + 250;
+
+  cps.forEach((cp, i) => {
+    const inSky = (i % 2 === 1);
+
+    for (let k = 0; k < 2; k++){
+      const w = rnd(150, 210);
+      plats.push({ x, y:GY, w, h:BASE_H + 80 - GY });
+      if (Math.random() < 0.45 && w > 165){
+        const sw = rnd(34, 54);
+        spikes.push({ x:x + rnd(38, w - sw - 28), y:GY - SPIKE_H, w:sw });
       }
-      x += w + rnd(85, 115);
-      if (h < hops - 1) y = Math.max(210, y - RISE * 0.5);
+      x += w + rnd(95, 130);
     }
-    y = Math.max(210, y - RISE);
-    const holdW = def.kind === "goal" ? 380 : (def.kind === "way" ? 340 : 280);
-    plats.push({ x, y, w:holdW, h:BASE_H + 80 - y });   // never a spike here — a flag always stands on it
 
-    flags.push({ x: x + holdW * 0.5, y, kind:def.kind, got:false, label:def.text });
-
-    x += holdW;
+    if (inSky){
+      plats.push({ x, y:SKY, w:rnd(120, 170), h:12, float:true });
+      x += 190;
+      const bw = 96;
+      plats.push({ x, y:HIGH, w:bw, h:40, float:true });
+      flags.push({ x:x + bw * 0.5, y:HIGH, kind:"way", got:false, label:cp.text });
+      x += bw + rnd(120, 160);
+      plats.push({ x:x - 320, y:GY, w:300, h:BASE_H + 80 - GY });
+    } else {
+      const w = rnd(300, 380);
+      plats.push({ x, y:GY, w, h:BASE_H + 80 - GY });
+      flags.push({ x:x + w * 0.5, y:GY, kind:"way", got:false, label:cp.text });
+      x += w + rnd(95, 130);
+    }
   });
+
+  plats.push({ x, y:GY, w:200, h:BASE_H + 80 - GY });
+  plats.push({ x:x + 90, y:SKY, w:150, h:12, float:true });
+  x += 200 + rnd(100, 130);
+
+  const holdW = 400;
+  plats.push({ x, y:GY, w:holdW, h:BASE_H + 80 - GY });
+  flags.push({ x:x + holdW * 0.5, y:GY, kind:"goal", got:false, label:goalText });
+  setFloor();
+}
+
+// --- World 4: the mountain. Square blocks climbing up and up; the only way on
+// is to jump. The summit carries the goal and the date it's due.
+function buildWorld4(startX, startY, goalText, dateText){
+  launchPad(startX, startY);
+  spikes = []; flags = [];
+
+  let x = startX + 230;
+  let y = Math.min(startY, 440);
+  const RISE = 82;          // well under the ~137px jump ceiling
+  const TIERS = 11;
+
+  for (let i = 0; i < TIERS; i++){
+    const bw = rnd(92, 128);
+    plats.push({ x, y, w:bw, h:34, float:true });
+    if (i === 3 || i === 7) flags.push({ x:x + bw * 0.5, y, kind:"way", got:false });
+    x += bw + rnd(52, 84);
+    y = y - RISE;
+  }
+
+  const holdW = 300;
+  plats.push({ x, y:y + 10, w:holdW, h:40, float:true });
+  flags.push({ x:x + holdW * 0.5, y:y + 10, kind:"goal", got:false, label:goalText, sub:dateText });
+  setFloor();
 }
 
 function seedMotes(){
   motes = [];
-  for (let i = 0; i < 70; i++){
-    motes.push({ x:rnd(0,1600), y:rnd(-offY, BASE_H), r:rnd(0.5,1.7), d:rnd(0.12,0.5), a:rnd(0.05,0.3) });
+  // seeded well above the band so stars still fill the sky during the climb
+  for (let i = 0; i < 130; i++){
+    motes.push({ x:rnd(0,1600), y:rnd(-offY - 1100, BASE_H), r:rnd(0.5,1.7), d:rnd(0.12,0.5), a:rnd(0.05,0.3) });
   }
 }
 
@@ -548,8 +661,6 @@ function physics(dt){
   let target = 0;
   if (left)  target -= RUN;
   if (right) target += RUN;
-
-  // In the drift you never fully stop — the world keeps its own momentum through you.
   if (S.phase === "drift" && target === 0) target = CFG.DRIFT_SPEED * 0.45;
 
   player.vx += (target - player.vx) * Math.min(1, dt * 14);
@@ -557,41 +668,39 @@ function physics(dt){
 
   player.coyote = player.onGround ? 0.1 : Math.max(0, player.coyote - dt);
   player.buffer = Math.max(0, player.buffer - dt);
-
   if (player.buffer > 0 && player.coyote > 0){
     player.vy = JUMP; player.buffer = 0; player.coyote = 0; player.onGround = false;
   }
-  if (!jumpHeld && player.vy < -190) player.vy += 2600 * dt;   // variable jump height
+  if (!jumpHeld && player.vy < -190) player.vy += 2600 * dt;
 
-  // Horizontal, then vertical, resolved separately so corners behave. A small
-  // rise (<= STEP_UP) is auto-climbed while grounded instead of blocking —
-  // that's what makes a run of tiny stairs read as a walkable hill.
+  // Horizontal. Nothing blocks sideways any more — the block bodies holding a
+  // surface up are pass-through, Mario style, so only the top face is solid.
+  // A small rise is still stepped up while grounded, which is what keeps
+  // World 1's hills walkable without jumping.
   const STEP_UP = 14;
   player.x += player.vx * dt;
   for (const p of plats){
     if (!aabb(player, p)) continue;
     const overlap = (player.y + player.h) - p.y;
-    if (player.onGround && overlap > 0 && overlap <= STEP_UP){
-      player.y = p.y - player.h;
-      continue;
-    }
-    if (player.vx > 0) player.x = p.x - player.w; else if (player.vx < 0) player.x = p.x + p.w;
-    player.vx = 0;
+    if (player.onGround && overlap > 0 && overlap <= STEP_UP) player.y = p.y - player.h;
   }
 
+  // Vertical. Every platform is one-way: you rise straight through it and land
+  // on top coming down. Same rule for ground, sky lines and mountain blocks.
+  const prevBottom = player.y + player.h;
   player.y += player.vy * dt;
   player.onGround = false;
   for (const p of plats){
     if (!aabb(player, p)) continue;
-    if (player.vy > 0){ player.y = p.y - player.h; player.vy = 0; player.onGround = true; }
-    else if (player.vy < 0){ player.y = p.y + p.h; player.vy = 0; }
+    if (player.vy >= 0 && prevBottom <= p.y + 2){
+      player.y = p.y - player.h; player.vy = 0; player.onGround = true;
+    }
   }
 
   player.trail.unshift({ x:player.x + player.w/2, y:player.y + player.h/2 });
   if (player.trail.length > 14) player.trail.pop();
 
-  // Death. In the drift it costs nothing at all — which is the point.
-  let dead = player.y > worldBottom + 90;
+  let dead = S.phase === "drift" ? (player.y > worldBottom + 90) : (player.y > S.floorY);
   if (S.phase === "drift" && player.x + player.w < S.camX + 8) dead = true;
   if (!dead){
     for (const sp of spikes){
@@ -602,27 +711,20 @@ function physics(dt){
 }
 
 function die(){
-  if (S.phase === "drift"){
-    S.deaths++;
-    respawnDrift();
-  } else if (S.phase === "walk"){
+  if (S.phase === "drift"){ S.deaths++; respawnDrift(); }
+  else if (S.phase === "walk"){
     S.walkDeaths++;
-    const c = S.lastCheck || { x:S.walkStart, y:400 };
+    const c = S.lastCheck || { x:S.walkStart, y:430 };
     player.x = c.x - player.w/2; player.y = c.y - player.h - 4;
   }
   player.vx = 0; player.vy = 0; player.trail.length = 0;
 }
 
-// Put the player back on the nearest ledge ahead of the camera. No penalty,
-// no counter, no ceremony — you just carry on going nowhere.
 function respawnDrift(){
   const zone = plats.filter(p => p.x < S.camX + 330 && p.x + p.w > S.camX + 190);
   let best = null;
   for (const p of zone) if (!best || p.y < best.y) best = p;
-  if (!best){
-    best = { x:S.camX + 200, y:420, w:220, h:BASE_H + 80 - 420 };
-    plats.push(best);
-  }
+  if (!best){ best = { x:S.camX + 200, y:420, w:220, h:BASE_H + 80 - 420 }; plats.push(best); }
   player.x = best.x + best.w/2;
   player.y = best.y - player.h - 6;
 }
@@ -637,7 +739,7 @@ function draw(){
   ctx.fillRect(0, 0, cv.width, cv.height);
 
   const k = dpr * scale;
-  ctx.setTransform(k, 0, 0, k, -S.camX * k, offY * k);
+  ctx.setTransform(k, 0, 0, k, -S.camX * k, (offY - S.camY) * k);
 
   drawBackdrop();
   drawPlatforms();
@@ -654,20 +756,19 @@ function draw(){
   }
 }
 
-// Identical monoliths at a fixed interval. In the drift they slide past forever
-// and each one looks exactly like the last, because it is.
 function drawBackdrop(){
   const step = 520, x0 = Math.floor((S.camX - 400) / step) * step;
+  const top = S.camY - offY - 60;
   ctx.save();
   ctx.globalAlpha = 0.5;
   for (let x = x0; x < S.camX + viewW + 400; x += step){
-    const px = x + (S.camX - x) * 0.45;   // parallax
-    const mh = worldBottom - 190;
+    const px = x + (S.camX - x) * 0.45;
+    const my = Math.min(190, top + 120);
     ctx.fillStyle = "#08080a";
-    ctx.fillRect(px, 190, 66, mh);
+    ctx.fillRect(px, my, 66, worldBottom - my + 200);
     ctx.strokeStyle = "rgba(255,255,255,0.05)";
     ctx.lineWidth = 1;
-    ctx.strokeRect(px + 0.5, 190.5, 66, mh);
+    ctx.strokeRect(px + 0.5, my + 0.5, 66, worldBottom - my + 200);
   }
   ctx.restore();
 
@@ -684,13 +785,12 @@ function drawBackdrop(){
 function drawPlatforms(){
   for (const p of plats){
     if (p.x + p.w < S.camX - 60 || p.x > S.camX + viewW + 60) continue;
-    const depth = Math.max(p.h, worldBottom + 40 - p.y);
+    const depth = p.float ? p.h : Math.max(p.h, worldBottom + S.camY + 40 - p.y);
     ctx.fillStyle = "#0a0a0c";
     ctx.fillRect(p.x, p.y, p.w, depth);
     ctx.strokeStyle = "#1e1e22";
     ctx.lineWidth = 1;
     ctx.strokeRect(p.x + 0.5, p.y + 0.5, p.w - 1, depth);
-    // Lit top edge — the only surface that matters is the one you can stand on.
     ctx.save();
     ctx.shadowColor = "rgba(255,255,255,0.5)"; ctx.shadowBlur = 14;
     ctx.strokeStyle = "rgba(255,255,255,0.62)"; ctx.lineWidth = 2;
@@ -699,7 +799,6 @@ function drawPlatforms(){
   }
 }
 
-// Restored — World 2's hazards. A row of triangles, shape not colour.
 function drawSpikes(){
   ctx.save();
   ctx.strokeStyle = "rgba(255,255,255,0.75)";
@@ -723,54 +822,48 @@ function drawSpikes(){
 
 function drawFlags(){
   for (const f of flags){
-    if (f.x < S.camX - 120 || f.x > S.camX + viewW + 120) continue;
-
-    // Every flag is the same lit-up flag shape — small steps, medium
-    // sub-goals, large finals — brighter once reached, dim until then.
+    if (f.x < S.camX - 140 || f.x > S.camX + viewW + 140) continue;
     const goal = f.kind === "goal";
-    const small = f.kind === "circle";
-    const h = goal ? 118 : (small ? 44 : 68);
+    const h = goal ? 118 : 62;
+
     ctx.save();
     ctx.strokeStyle = f.got ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.4)";
     ctx.lineWidth = goal ? 3 : 2;
     if (goal){ ctx.shadowColor = "rgba(255,255,255,0.55)"; ctx.shadowBlur = 26; }
     else if (f.got){ ctx.shadowColor = "rgba(255,255,255,0.5)"; ctx.shadowBlur = 14; }
     ctx.beginPath(); ctx.moveTo(f.x, f.y); ctx.lineTo(f.x, f.y - h); ctx.stroke();
-
-    const flagLen = goal ? 54 : (small ? 24 : 34);
+    const fl = goal ? 54 : 32;
     ctx.beginPath();
     ctx.moveTo(f.x, f.y - h);
-    ctx.lineTo(f.x + flagLen, f.y - h + flagLen * 0.32);
-    ctx.lineTo(f.x, f.y - h + flagLen * 0.63);
+    ctx.lineTo(f.x + fl, f.y - h + fl * 0.32);
+    ctx.lineTo(f.x, f.y - h + fl * 0.63);
     ctx.closePath();
     ctx.fillStyle = f.got || goal ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.32)";
     ctx.fill();
     ctx.restore();
 
-    // The goal that flag represents, written on the thing you're walking toward.
-    if (f.label){
-      const txt = f.label.toUpperCase();
-      ctx.save();
-      ctx.textAlign = "center";
-      ctx.fillStyle = goal ? "rgba(255,255,255,0.62)" : (small ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.42)");
-      if (ctx.letterSpacing !== undefined) ctx.letterSpacing = small ? "2px" : "3px";
-
-      let size = goal ? 15 : (small ? 11 : 12);
-      ctx.font = "300 " + size + "px Montserrat, sans-serif";
-      const room = viewW - 56;
-      const wide = ctx.measureText(txt).width;
-      if (wide > room){
-        size = Math.max(8, size * room / wide);
-        ctx.font = "300 " + size.toFixed(1) + "px Montserrat, sans-serif";
-      }
-      const half = ctx.measureText(txt).width / 2 + 12;
-      const tx = Math.min(Math.max(f.x, S.camX + half), S.camX + viewW - half);
-
-      ctx.shadowColor = "rgba(255,255,255,0.3)"; ctx.shadowBlur = 16;
-      ctx.fillText(txt, tx, f.y - h - 22);
-      ctx.restore();
-    }
+    if (f.label) flagText(f.label.toUpperCase(), f.x, f.y - h - 22, goal ? 15 : 12,
+                          goal ? "rgba(255,255,255,0.62)" : "rgba(255,255,255,0.44)");
+    if (f.sub)   flagText(f.sub.toUpperCase(), f.x, f.y - h - 44, 11, "rgba(255,255,255,0.4)");
   }
+}
+function flagText(txt, fx, fy, size, colour){
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.fillStyle = colour;
+  if (ctx.letterSpacing !== undefined) ctx.letterSpacing = "3px";
+  ctx.font = "300 " + size + "px Montserrat, sans-serif";
+  const room = viewW - 56;
+  const wide = ctx.measureText(txt).width;
+  if (wide > room){
+    size = Math.max(8, size * room / wide);
+    ctx.font = "300 " + size.toFixed(1) + "px Montserrat, sans-serif";
+  }
+  const half = ctx.measureText(txt).width / 2 + 12;
+  const tx = Math.min(Math.max(fx, S.camX + half), S.camX + viewW - half);
+  ctx.shadowColor = "rgba(255,255,255,0.3)"; ctx.shadowBlur = 16;
+  ctx.fillText(txt, tx, fy);
+  ctx.restore();
 }
 
 function drawPlayer(){
@@ -783,12 +876,11 @@ function drawPlayer(){
     ctx.beginPath(); ctx.arc(t.x, t.y, 11 * (1 - i / player.trail.length), 0, 6.284); ctx.fill();
   }
   ctx.restore();
-
   ctx.save();
   ctx.shadowColor = "rgba(255,255,255,0.85)";
-  let blur = 26;                                    // deciding makes you brighter
+  let blur = 26;
   if (S.phase === "walk") blur = 46;
-  else if (S.confronted) blur = 26 + 8 * (0.5 + 0.5 * Math.sin(S.t * 2.4));  // the light itself is asking
+  else if (S.confronted) blur = 26 + 8 * (0.5 + 0.5 * Math.sin(S.t * 2.4));
   ctx.shadowBlur = blur;
   ctx.fillStyle = "#fff";
   ctx.beginPath(); ctx.arc(cx, cy, 12, 0, 6.284); ctx.fill();
@@ -796,46 +888,59 @@ function drawPlayer(){
 }
 
 /* ===========================================================================
-   HUD + OVERLAYS
+   DOM + FLOW
    =========================================================================== */
+const el = id => document.getElementById(id);
 function esc(s){
   return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 }
 
-const el = id => document.getElementById(id);
 const hud = el("hud"), meter = el("meter"), meterValue = el("meterValue");
 const confront = el("confront"), levelUp = el("levelUp");
 const confrontL1 = confront.querySelector(".l1"), confrontL2 = confront.querySelector(".l2"), confrontL3 = confront.querySelector(".l3");
 const titleO = el("title"), fieldO = el("field"), winO = el("win");
-const goalInput = el("goalInput"), fieldContext = el("fieldContext"), fieldQ = el("fieldQ");
-const fieldEnterHint = el("fieldEnterHint"), fieldRefuse = el("fieldRefuse");
+const cpPanel = el("cpPanel"), dtPanel = el("dtPanel"), planPanel = el("planPanel");
+const goalInput = el("goalInput");
 
-// The title overlay sits above the canvas (it has to, for "Press any key" to
-// render), which means it also intercepts every tap before the canvas ever
-// sees it — cv's touchstart/mousedown start() handlers never fire on mobile.
-// Bind directly to the overlay so a tap works exactly like a keypress does.
 titleO.addEventListener("touchstart", e => { start(); e.preventDefault(); }, {passive:false});
 titleO.addEventListener("click", () => start());
+
 let fieldOpen = false;
+function anyPanelOpen(){
+  return fieldOpen || cpPanel.classList.contains("on") || dtPanel.classList.contains("on") || planPanel.classList.contains("on");
+}
 
 function clock(s){
   const m = Math.floor(s / 60), r = Math.floor(s % 60);
   return m + ":" + String(r).padStart(2, "0");
 }
-
 function updateHud(){
-  if (S.phase === "drift"){
-    meterValue.textContent = clock(S.t);
-  } else if (S.phase === "walk"){
-    const next = flags.find(f => !f.got);
-    const left = next ? Math.max(0, Math.round((next.x - (player.x + player.w/2)) / CFG.PX_PER_M)) : 0;
-    meterValue.textContent = left + "m";
+  if (S.phase === "drift"){ meterValue.textContent = clock(S.t); return; }
+  if (S.phase !== "walk") return;
+  const next = flags.find(f => !f.got);
+  if (!next){ meterValue.textContent = "0m"; return; }
+  if (S.stage === "world4"){
+    meterValue.textContent = Math.max(0, Math.round((player.y - next.y) / CFG.PX_PER_M)) + "m";
+  } else {
+    meterValue.textContent = Math.max(0, Math.round((next.x - (player.x + player.w/2)) / CFG.PX_PER_M)) + "m";
   }
 }
+function setMeterLabel(txt){ meter.querySelector(".label").textContent = txt; }
 
-// The confrontation: three lines, 20s in, fires once. The world keeps scrolling
-// under it on purpose — nothing pauses for a realization. Ends on the level-up
-// invitation, which is the only way out.
+/* ---- the level-up invitation, reused between every world ---- */
+let levelUpAction = null;
+function showLevelUp(label, main, sub, action){
+  el("luLabel").textContent = label;
+  el("luMain").textContent = main;
+  el("luSub").textContent = sub;
+  levelUpAction = action;
+  levelUp.style.display = "";
+  levelUp.classList.add("on");
+}
+function hideLevelUp(){ levelUp.classList.remove("on"); levelUpAction = null; }
+levelUp.addEventListener("click", () => { if (levelUpAction){ const a = levelUpAction; hideLevelUp(); a(); } });
+
+/* ---- the confrontation ---- */
 function runConfrontation(){
   S.confronted = true;
   confront.classList.add("dim");
@@ -843,223 +948,318 @@ function runConfrontation(){
   setTimeout(() => confrontL2.classList.add("on"), 2100);
   setTimeout(() => confrontL3.classList.add("on"), 4100);
   setTimeout(() => {
-    confrontL1.classList.remove("on");
-    confrontL2.classList.remove("on");
-    confrontL3.classList.remove("on");
+    confrontL1.classList.remove("on"); confrontL2.classList.remove("on"); confrontL3.classList.remove("on");
     confront.classList.remove("dim");
   }, 6600);
-  setTimeout(() => levelUp.classList.add("on"), 7300);
+  setTimeout(() => showLevelUp("Level up available", "Set a goal", "Enter", askGoal), 7300);
 }
 
-function openField(){
+/* ---- the goal prompt ---- */
+function askGoal(){
   fieldOpen = true;
   fieldO.classList.add("on");
   goalInput.value = "";
-  fieldContext.style.display = "none";   // callers that need context set it after this
-  if (S.phase === "breakdown"){
-    fieldEnterHint.textContent = "to continue";
-    fieldRefuse.style.display = "none";
-  } else {
-    fieldEnterHint.textContent = "to write it";
-    fieldRefuse.style.display = "";
-    fieldQ.textContent = "What do you want 30 days from now?";
-    goalInput.placeholder = "say it plainly";
-  }
   setTimeout(() => goalInput.focus(), 60);
 }
-function closeField(){
-  fieldOpen = false;
-  fieldO.classList.remove("on");
-  goalInput.blur();
-}
-
-// Sequential goal-collection queue, used for every breakdown step after the
-// first goal. Each step asks one question, stores one answer, then the next
-// step (or the world it unlocks) begins.
-let queue = [];
-let queueStep = null;
-let afterQueue = null;
-
-function pushStep(context, prompt, placeholder, onValue){
-  queue.push({ context, prompt, placeholder, onValue });
-}
-function runQueue(onDone){
-  afterQueue = onDone;
-  advanceQueue();
-}
-function advanceQueue(){
-  if (!queue.length){
-    const done = afterQueue; afterQueue = null;
-    if (done) done();
-    return;
-  }
-  queueStep = queue.shift();
-  S.phase = "breakdown";
-  openField();
-  fieldQ.textContent = queueStep.prompt;
-  goalInput.placeholder = queueStep.placeholder || "";
-  if (queueStep.context){
-    fieldContext.textContent = queueStep.context;
-    fieldContext.style.display = "block";
-  }
-}
+function closeField(){ fieldOpen = false; fieldO.classList.remove("on"); goalInput.blur(); }
 
 goalInput.addEventListener("keydown", e => {
   e.stopPropagation();
   if (e.key === "Enter"){
     const v = goalInput.value.trim();
-    if (v.length < 2) return;
-    if (S.phase === "drift"){
-      commit(v);
-    } else if (S.phase === "breakdown"){
-      closeField();
-      const step = queueStep; queueStep = null;
-      if (step && step.onValue) step.onValue(v);
-      advanceQueue();
-    }
+    if (v.length >= 3) commitGoal(v);
   } else if (e.key === "Escape"){
-    if (S.phase === "drift") closeField();   // walking back out is allowed here. It has to be.
+    closeField();   // walking back out is allowed. It has to be.
   }
 });
 
-// The turn. Everything the game has been withholding arrives here at once.
-function commit(text){
-  S.goal30 = text;
+function commitGoal(text){
+  S.goal = text;
   closeField();
-  S.phase = "turn";
-  S.turnT = 0;
-  S.flashT = 1;
-  meter.classList.add("struck");
-  levelUp.classList.remove("on");
-  levelUp.style.display = "none";
+  hideLevelUp();
   confront.style.display = "none";
+  S.phase = "turn"; S.turnT = 0; S.flashT = 1;
+  meter.classList.add("struck");
 }
 
-// The turn ends here — instead of one flag full of goal30 again, World 2
-// asks for ONE halfway point first, and climbs to THAT.
 function finishTurn(){
-  meter.classList.remove("struck");
-  meter.querySelector(".label").textContent = "Distance to flag";
-  queue = [];
-  pushStep(
-    "YOUR 30-DAY GOAL: " + S.goal30.toUpperCase(),
-    "What's the halfway point to that?",
-    "the halfway point",
-    v => { S.half = v; }
-  );
-  runQueue(launchWorld2);
-}
-
-function launchWorld2(){
-  const ly = Math.min(Math.max(player.y + player.h, 300), 462);
-  S.walkStart = player.x;
-  S.stage = "world2";
-  buildWorld2Path(player.x, ly, S.half);
-  player.y  = ly - player.h - 2;
-  player.vy = 0;
+  const ly = Math.min(Math.max(player.y + player.h, 380), 452);
+  S.walkStart = player.x; S.stage = "world2";
+  buildWorld2(player.x, ly, S.goal);
+  player.y = ly - player.h - 2; player.vy = 0;
   S.lastCheck = { x:player.x + player.w/2, y:ly };
+  meter.classList.remove("struck");
+  setMeterLabel("Distance to goal");
   S.phase = "walk";
 }
+
+/* ---- checkpoints panel ---- */
+function openCheckpoints(){
+  el("cpGoalEcho").textContent = S.goal;
+  const rows = el("cpRows");
+  rows.innerHTML = "";
+  if (!S.checkpoints.length) S.checkpoints = [{text:"",date:"",steps:[]},{text:"",date:"",steps:[]},{text:"",date:"",steps:[]}];
+  S.checkpoints.forEach((c, i) => rows.appendChild(cpRow(c, i)));
+  cpPanel.classList.add("on");
+  setTimeout(() => { const f = rows.querySelector("input"); if (f) f.focus(); }, 80);
+}
+function cpRow(c, i){
+  const d = document.createElement("div");
+  d.className = "row";
+  d.innerHTML = '<span class="num">' + (i + 1) + '</span>' +
+    '<input type="text" maxlength="90" placeholder="I have&hellip;">' +
+    '<button class="kill" title="Remove">&times;</button>';
+  const inp = d.querySelector("input");
+  inp.value = c.text;
+  inp.addEventListener("input", () => { c.text = inp.value; });
+  inp.addEventListener("keydown", e => {
+    e.stopPropagation();
+    if (e.key === "Enter"){ e.preventDefault(); addCp(); }
+  });
+  d.querySelector(".kill").addEventListener("click", () => {
+    if (S.checkpoints.length <= 1) return;
+    S.checkpoints.splice(S.checkpoints.indexOf(c), 1);
+    redrawCp();
+  });
+  return d;
+}
+function redrawCp(){
+  const rows = el("cpRows"); rows.innerHTML = "";
+  S.checkpoints.forEach((c, i) => rows.appendChild(cpRow(c, i)));
+}
+function addCp(){
+  if (S.checkpoints.length >= CFG.MAX_CP) return;
+  S.checkpoints.push({text:"",date:"",steps:[]});
+  redrawCp();
+  const inputs = el("cpRows").querySelectorAll("input");
+  inputs[inputs.length - 1].focus();
+}
+el("cpAdd").addEventListener("click", addCp);
+el("cpDone").addEventListener("click", () => {
+  S.checkpoints = S.checkpoints.filter(c => c.text.trim().length >= 3);
+  if (!S.checkpoints.length){ redrawCp(); return; }   // need at least one real checkpoint
+  cpPanel.classList.remove("on");
+  launchWorld3();
+});
 
 function launchWorld3(){
-  const ly = Math.min(Math.max(player.y + player.h, 300), 462);
-  S.walkStart = player.x;
-  S.stage = "world3";
-  buildFinalClimb(player.x, ly, [
-    { text:S.subs[0], kind:"way"  },
-    { text:S.subs[1], kind:"way"  },
-    { text:S.goal30,  kind:"goal" },
-  ]);
-  player.y  = ly - player.h - 2;
-  player.vy = 0;
+  const ly = 430;
+  S.walkStart = player.x; S.stage = "world3";
+  buildWorld3(player.x, ly, S.checkpoints, S.goal);
+  player.y = ly - player.h - 2; player.vy = 0;
   S.lastCheck = { x:player.x + player.w/2, y:ly };
+  setMeterLabel("Distance to next");
+  hud.classList.add("on");
   S.phase = "walk";
 }
+
+/* ---- dates panel ---- */
+function fmtDate(iso){
+  if (!iso) return "";
+  const p = iso.split("-").map(Number);
+  return new Date(p[0], p[1]-1, p[2]).toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
+}
+function isoAddDays(base, days){
+  const d = new Date(base.getTime() + days * 86400000);
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+function openDates(){
+  el("dtGoalEcho").textContent = S.goal;
+  el("dtGoalText").value = S.goal;
+  const gd = el("dtGoalDate");
+  gd.min = isoAddDays(new Date(), 1);
+  gd.value = S.goalDate || "";
+  gd.onchange = () => {
+    S.goalDate = gd.value;
+    if (!S.goalDate) return;
+    spreadDates();
+    el("dtBody").style.display = "block";
+    el("dtDone").disabled = false;
+    redrawDates();
+  };
+  if (S.goalDate){ el("dtBody").style.display = "block"; el("dtDone").disabled = false; redrawDates(); }
+  else { el("dtBody").style.display = "none"; el("dtDone").disabled = true; }
+  dtPanel.classList.add("on");
+}
+// Evenly space the checkpoints between today and the goal date — the user can
+// move any of them off that default afterwards.
+function spreadDates(){
+  const today = new Date(); today.setHours(0,0,0,0);
+  const g = S.goalDate.split("-").map(Number);
+  const goalD = new Date(g[0], g[1]-1, g[2]);
+  const span = Math.max(1, Math.round((goalD - today) / 86400000));
+  const n = S.checkpoints.length;
+  S.checkpoints.forEach((c, i) => {
+    if (!c.date) c.date = isoAddDays(today, Math.round(span * (i + 1) / (n + 1)));
+  });
+}
+function redrawDates(){
+  const rows = el("dtRows"); rows.innerHTML = "";
+  S.checkpoints.forEach((c, i) => {
+    const d = document.createElement("div");
+    d.className = "row";
+    d.innerHTML = '<span class="num">' + (i+1) + '</span>' +
+      '<input type="text" maxlength="90"><input type="date">';
+    const ins = d.querySelectorAll("input");
+    const ti = ins[0], di = ins[1];
+    ti.value = c.text; di.value = c.date || "";
+    ti.addEventListener("input", () => { c.text = ti.value; });
+    ti.addEventListener("keydown", e => e.stopPropagation());
+    di.addEventListener("change", () => { c.date = di.value; });
+    rows.appendChild(d);
+
+    c.steps.forEach((st, j) => {
+      const sd = document.createElement("div");
+      sd.className = "row step";
+      sd.innerHTML = '<span class="num">&middot;</span>' +
+        '<input type="text" maxlength="90" placeholder="a smaller step"><input type="date">' +
+        '<button class="kill">&times;</button>';
+      const sins = sd.querySelectorAll("input");
+      const sti = sins[0], sdi = sins[1];
+      sti.value = st.text; sdi.value = st.date || "";
+      sti.addEventListener("input", () => { st.text = sti.value; });
+      sti.addEventListener("keydown", e => e.stopPropagation());
+      sdi.addEventListener("change", () => { st.date = sdi.value; });
+      sd.querySelector(".kill").addEventListener("click", () => { c.steps.splice(j,1); redrawDates(); });
+      rows.appendChild(sd);
+    });
+
+    const add = document.createElement("button");
+    add.className = "addbtn step tracked-sm";
+    add.innerHTML = "+ &nbsp;Add a step under this";
+    add.addEventListener("click", () => {
+      c.steps.push({ text:"", date:c.date || "" });
+      redrawDates();
+    });
+    rows.appendChild(add);
+  });
+}
+el("dtDone").addEventListener("click", () => {
+  if (!S.goalDate) return;
+  S.checkpoints.forEach(c => { c.steps = c.steps.filter(s => s.text.trim().length >= 2); });
+  dtPanel.classList.remove("on");
+  buildTree(el("planTree"));
+  buildCalendar(el("planCal"));
+  planPanel.classList.add("on");
+});
+
+/* ---- plan review ---- */
+function wireTabs(listBtn, calBtn, treeEl, calEl){
+  listBtn.addEventListener("click", () => {
+    listBtn.classList.add("sel"); calBtn.classList.remove("sel");
+    treeEl.style.display = "block"; calEl.style.display = "none";
+  });
+  calBtn.addEventListener("click", () => {
+    calBtn.classList.add("sel"); listBtn.classList.remove("sel");
+    calEl.style.display = "flex"; treeEl.style.display = "none";
+  });
+}
+wireTabs(el("planTabList"), el("planTabCal"), el("planTree"), el("planCal"));
+wireTabs(el("winTabList"), el("winTabCal"), el("winTree"), el("winCal"));
+
+function buildTree(target){
+  let h = '<div class="t-goal">&#9670; ' + esc(S.goal) +
+          ' <span class="t-date">' + esc(fmtDate(S.goalDate)) + '</span></div>';
+  S.checkpoints.forEach(c => {
+    h += '<div class="t-cp">&#9873; ' + esc(c.text) +
+         ' <span class="t-date">' + esc(fmtDate(c.date)) + '</span></div>';
+    c.steps.forEach(st => {
+      h += '<div class="t-st">&middot; ' + esc(st.text) +
+           ' <span class="t-date">' + esc(fmtDate(st.date)) + '</span></div>';
+    });
+  });
+  target.innerHTML = h;
+}
+
+// Calendar: markers are glyphs, not colours — a diamond for the goal, a flag
+// for a checkpoint, a dot for a step, so it survives being printed in mono.
+function buildCalendar(target){
+  const events = {};
+  const put = (iso, glyph) => { if (!iso) return; (events[iso] = events[iso] || []).push(glyph); };
+  S.checkpoints.forEach(c => { put(c.date, "⚑"); c.steps.forEach(s => put(s.date, "·")); });
+  put(S.goalDate, "◆");
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const g = (S.goalDate || "").split("-").map(Number);
+  const end = S.goalDate ? new Date(g[0], g[1]-1, g[2]) : today;
+  let h = "";
+  let cur = new Date(today.getFullYear(), today.getMonth(), 1);
+  let guard = 0;
+  while (cur <= end && guard++ < 18){
+    const y = cur.getFullYear(), m = cur.getMonth();
+    h += '<div class="mon"><h4 class="tracked-sm">' +
+         cur.toLocaleDateString(undefined,{month:"long",year:"numeric"}) + '</h4><div class="grid">';
+    ["S","M","T","W","T","F","S"].forEach(function(d){ h += '<div class="dow">' + d + '</div>'; });
+    const first = new Date(y, m, 1).getDay();
+    const days = new Date(y, m+1, 0).getDate();
+    for (let i = 0; i < first; i++) h += '<div></div>';
+    for (let d = 1; d <= days; d++){
+      const iso = y + "-" + String(m+1).padStart(2,"0") + "-" + String(d).padStart(2,"0");
+      const ev = events[iso];
+      h += '<div class="day' + (ev ? ' mark' : '') + '">' + d +
+           (ev ? '<span class="g">' + ev.slice(0,3).join("") + '</span>' : '') + '</div>';
+    }
+    h += '</div></div>';
+    cur = new Date(y, m+1, 1);
+  }
+  h += '<div class="legend"><span>&#9670; goal</span><span>&#9873; checkpoint</span><span>&middot; step</span></div>';
+  target.innerHTML = h;
+}
+
+el("planDone").addEventListener("click", () => {
+  planPanel.classList.remove("on");
+  launchWorld4();
+});
 
 function launchWorld4(){
-  const ly = Math.min(Math.max(player.y + player.h, 300), 462);
-  S.walkStart = player.x;
-  S.stage = "world4";
-  buildFinalClimb(player.x, ly, [
-    { text:S.subsubs[0], kind:"circle" },
-    { text:S.subsubs[1], kind:"circle" },
-    { text:S.subsubs[2], kind:"circle" },
-    { text:S.subsubs[3], kind:"goal"   },
-  ]);
-  player.y  = ly - player.h - 2;
-  player.vy = 0;
+  const ly = 440;
+  S.walkStart = player.x; S.stage = "world4";
+  buildWorld4(player.x, ly, S.goal, fmtDate(S.goalDate));
+  player.y = ly - player.h - 2; player.vy = 0;
   S.lastCheck = { x:player.x + player.w/2, y:ly };
+  setMeterLabel("Height to summit");
+  hud.classList.add("on");
   S.phase = "walk";
 }
 
-// Reached World 2's halfway-point flag. Now that halfway point gets its OWN
-// two halfway points — one for the stretch before it, one for the stretch
-// after it, up to the real 30-day goal. World 3 is its own level to reach both.
-function afterWorld2(){
-  queue = [];
-  const ctxHalf = "YOUR HALFWAY POINT: " + S.half.toUpperCase();
-  pushStep(ctxHalf, "What's halfway between now and that?", "the first stretch", v => { S.subs[0] = v; });
-  pushStep(ctxHalf, "What's halfway between that and your 30-day goal?", "the second stretch", v => { S.subs[1] = v; });
-  runQueue(launchWorld3);
-}
-
-// Reached both of those, plus the 30-day goal again, in World 3. Now each of
-// THOSE two halfway points gets its own halfway point — World 4, its own level.
-function afterWorld3(){
-  queue = [];
-  const ctxA = "YOUR HALFWAY POINT: " + S.subs[0].toUpperCase();
-  const ctxB = "YOUR HALFWAY POINT: " + S.subs[1].toUpperCase();
-  pushStep(ctxA, "What's halfway to that?",  "the first stretch",  v => { S.subsubs[0] = v; });
-  pushStep(ctxA, "And the stretch after?",   "the second stretch", v => { S.subsubs[1] = v; });
-  pushStep(ctxB, "What's halfway to that?",  "the first stretch",  v => { S.subsubs[2] = v; });
-  pushStep(ctxB, "And the stretch after?",   "the second stretch", v => { S.subsubs[3] = v; });
-  runQueue(launchWorld4);
-}
-
+/* ---- win ---- */
 function win(){
   S.phase = "win";
   hud.classList.remove("on");
-  el("winGoal").textContent = S.goal30;
-
-  let html = "<div class='half-row'>&rarr; " + esc(S.half) + "</div>";
-  for (let i = 0; i < 2; i++){
-    html += "<div class='sub-row'>&rarr; " + esc(S.subs[i]) + "</div>";
-    html += "<div class='subsub-row'>&middot; " + esc(S.subsubs[i*2]) + "</div>";
-    html += "<div class='subsub-row'>&middot; " + esc(S.subsubs[i*2 + 1]) + "</div>";
-  }
-  el("winStats").innerHTML = html;
-
+  el("winGoal").textContent = S.goal;
+  el("winWhen").textContent = S.goalDate ? "By " + fmtDate(S.goalDate) : "";
+  buildTree(el("winTree"));
+  buildCalendar(el("winCal"));
   el("winCta").href = CFG.DREAMDESIGNER_URL;
   winO.classList.add("on");
 }
-
 el("winPrint").addEventListener("click", () => window.print());
 el("winAgain").addEventListener("click", () => location.reload());
 
+/* ---- start ---- */
 function start(){
   titleO.classList.remove("on");
   hud.classList.add("on");
+  setMeterLabel("Time drifted");
   S.phase = "drift";
   plats = []; spikes = []; flags = [];
   genX = 0;
-  plats.push({ x:-200, y:430, w:700, h:BASE_H + 80 - 430 });   // opening ground
-  genX = 500;
-  lastY = 430;
+  plats.push({ x:-200, y:430, w:700, h:BASE_H + 80 - 430 });
+  genX = 500; lastY = 430;
   seedMotes();
   player.x = 120; player.y = 380; player.vx = 0; player.vy = 0; player.trail = [];
-  S.camX = 0;
-  S.confronted = false;
+  S.camX = 0; S.camY = 0; S.confronted = false;
+  S.goal = ""; S.goalDate = ""; S.checkpoints = []; S.stage = "";
+  S.deaths = 0; S.walkDeaths = 0; S.t = 0;
 }
 
 /* ===========================================================================
    LOOP
    =========================================================================== */
 let last = performance.now();
-
 function frame(now){
   const dt = Math.min(0.033, (now - last) / 1000);
   last = now;
-
   if (S.flashT > 0) S.flashT = Math.max(0, S.flashT - dt * 1.4);
 
   if (S.phase === "drift"){
@@ -1071,8 +1271,6 @@ function frame(now){
     if (S.t > CFG.CONFRONT_AT && !S.confronted) runConfrontation();
 
   } else if (S.phase === "turn"){
-    // The camera's momentum bleeds out. This is the only place in the game
-    // where the player has no input and nothing is asked of them.
     S.turnT += dt;
     S.camVel *= Math.pow(0.02, dt);
     S.camX += S.camVel * dt;
@@ -1080,23 +1278,25 @@ function frame(now){
     if (S.turnT > 1.25) finishTurn();
 
   } else if (S.phase === "walk"){
-    physics(dt);
-    // Camera follows you now, instead of the other way round.
-    const want = player.x - viewW * 0.4;
-    S.camX += (want - S.camX) * Math.min(1, dt * 4.5);
+    if (!anyPanelOpen()) physics(dt);
+    const wantX = player.x - viewW * 0.4;
+    S.camX += (wantX - S.camX) * Math.min(1, dt * 4.5);
     S.camX = Math.max(S.walkStart - viewW * 0.5, S.camX);
+    // vertical follow, only ever upward — the mountain needs it
+    const wantY = Math.min(0, player.y + offY - viewH * 0.60);
+    S.camY += (wantY - S.camY) * Math.min(1, dt * 3.5);
 
     for (const f of flags){
       if (f.got) continue;
-      const near = Math.abs((player.x + player.w/2) - f.x) < 26 && Math.abs((player.y + player.h) - f.y) < 90;
+      const near = Math.abs((player.x + player.w/2) - f.x) < 30 && Math.abs((player.y + player.h) - f.y) < 95;
       if (!near) continue;
       f.got = true;
-      if (f.kind !== "goal"){
-        S.lastCheck = { x:f.x, y:f.y };
-      } else if (S.stage === "world2"){
-        afterWorld2();
+      if (f.kind !== "goal"){ S.lastCheck = { x:f.x, y:f.y }; break; }
+
+      if (S.stage === "world2"){
+        showLevelUp("Level up", "Create checkpoints", "Click", openCheckpoints);
       } else if (S.stage === "world3"){
-        afterWorld3();
+        showLevelUp("Level up", "Add dates", "Click", openDates);
       } else {
         win();
       }
@@ -1104,45 +1304,38 @@ function frame(now){
     }
   }
 
-  if (S.phase === "drift" || S.phase === "walk" || S.phase === "turn"){
-    updateHud();
-    draw();
-  }
+  if (S.phase === "drift" || S.phase === "walk" || S.phase === "turn"){ updateHud(); draw(); }
   requestAnimationFrame(frame);
 }
-
-levelUp.addEventListener("click", () => { if (S.phase === "drift" && !fieldOpen) openField(); });
 requestAnimationFrame(frame);
 
-// The title screen's own ball, with a real directional trail — a position
-// history, same fade math as drawPlayer(), just smaller. Whichever way the
-// ball is currently heading, the trail only ever appears behind it, because
-// it's genuinely where the ball just was, not a decorative streak.
+/* ---- the title screen's own ball: real directional trail + ambient halo ---- */
 const titleCv = document.getElementById("titleCv");
 const titleBall = document.getElementById("titleBall");
+const titleGlow = document.getElementById("titleGlow");
 const tctx = titleCv.getContext("2d");
 let titleTrail = [];
 function titleBallFrame(now){
   if (S.phase === "title"){
-    const cx = 70, cy = 18, amp = 16, period = 3.6;
+    const cx = 110, cy = 30, amp = 34, period = 3.6;
     const x = cx + amp * Math.sin((now / 1000) * (2 * Math.PI / period));
-    titleTrail.unshift({ x, y:cy });
+    titleTrail.unshift({ x:x, y:cy });
     if (titleTrail.length > 14) titleTrail.pop();
 
     tctx.clearRect(0, 0, titleCv.width, titleCv.height);
     for (let i = titleTrail.length - 1; i > 0; i--){
       const t = titleTrail[i];
-      tctx.globalAlpha = (1 - i / titleTrail.length) * 0.22;
+      const k = 1 - i / titleTrail.length;
+      tctx.globalAlpha = k * 0.22;
       tctx.fillStyle = "#fff";
       tctx.shadowColor = "rgba(255,255,255,0.8)";
-      tctx.shadowBlur = 8 * (1 - i / titleTrail.length);
-      tctx.beginPath(); tctx.arc(t.x, t.y, 5.5 * (1 - i / titleTrail.length), 0, 6.284); tctx.fill();
+      tctx.shadowBlur = 8 * k;
+      tctx.beginPath(); tctx.arc(t.x, t.y, 5.5 * k, 0, 6.284); tctx.fill();
     }
-    tctx.globalAlpha = 1;
-    tctx.shadowBlur = 0;
+    tctx.globalAlpha = 1; tctx.shadowBlur = 0;
 
     titleBall.style.left = x + "px";
-    titleBall.style.top = cy + "px";
+    titleGlow.style.left = x + "px";
   } else if (titleTrail.length){
     titleTrail = [];
     tctx.clearRect(0, 0, titleCv.width, titleCv.height);

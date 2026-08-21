@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Drift</title>
+<meta name="description" content="A short game about what happens before you decide what you want.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ---------------------------------------------------------------------------
+   Drift — visual system is DreamDesigner's: black ground, ambient white glow,
+   Montserrat, Josh's 30% tracking on anything that reads as a heading or label.
+   Tokens are copied from dreamdesigner-app/app/globals.css on purpose. If that
+   file's palette moves, move this one too — the handoff at the end only feels
+   like one product while these match.
+
+   Nothing in this game is encoded by colour alone. Platforms are rectangles,
+   hazards are triangles, flags are flags. Shape carries every meaning.
+--------------------------------------------------------------------------- */
+:root{
+  --ink:#ffffff; --ink-soft:#a8a8ad; --ink-faint:#5c5c63;
+  --bg:#000000; --bg-raise:#0a0a0c; --line:#1e1e22;
+  --track-wide:0.30em; --track-body:0.02em;
+}
+@media (max-width:640px){ :root{ --track-wide:0.18em; } }
+
+*{ box-sizing:border-box; margin:0; padding:0; }
+html,body{ height:100%; overflow:hidden; background:var(--bg); color:var(--ink); }
+body{
+  font-family:"Montserrat", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  letter-spacing:var(--track-body);
+  -webkit-font-smoothing:antialiased;
+  touch-action:none;
+  user-select:none; -webkit-user-select:none;
+}
+canvas{ display:block; position:fixed; inset:0; z-index:1; }
+
+/* The ambient glow sits above the canvas at very low opacity so the world is lit
+   by the same light DreamDesigner uses, not by a different one. */
+.glow-field{
+  position:fixed; inset:0; pointer-events:none; z-index:2;
+  background:
+    radial-gradient(60rem 40rem at 50% -10%, rgba(255,255,255,0.10), transparent 70%),
+    radial-gradient(40rem 30rem at 15% 110%, rgba(255,255,255,0.05), transparent 70%),
+    radial-gradient(35rem 28rem at 88% 85%, rgba(255,255,255,0.04), transparent 70%);
+}
+
+.tracked{ letter-spacing:var(--track-wide); text-transform:uppercase; }
+.tracked-sm{ letter-spacing:0.22em; text-transform:uppercase; }
+.glow-text{ text-shadow:0 0 28px rgba(255,255,255,0.35), 0 0 6px rgba(255,255,255,0.18); }
+
+/* ------------------------------- HUD ------------------------------------- */
+#hud{
+  position:fixed; z-index:5; top:0; left:0; right:0;
+  padding:clamp(16px,3vw,32px);
+  display:flex; justify-content:space-between; align-items:flex-start;
+  pointer-events:none; opacity:0; transition:opacity .6s ease;
+}
+#hud.on{ opacity:1; }
+#meter{ font-size:clamp(10px,1.6vw,12px); font-weight:400; color:var(--ink-soft); }
+#meter .label{ display:block; color:var(--ink-faint); margin-bottom:6px; }
+#meter .value{ display:block; font-size:clamp(18px,3.2vw,26px); font-weight:300; color:var(--ink);
+               letter-spacing:0.12em; font-variant-numeric:tabular-nums; }
+#meter.struck .value{ text-decoration:line-through; color:var(--ink-faint); }
+
+/* The only nudge the drift phase ever gives. It names a key. It does not say
+   what the key is for — finding that out is the entire first act. */
+#escHint{
+  font-size:clamp(9px,1.4vw,11px); color:var(--ink-faint);
+  border:1px solid var(--line); border-radius:3px;
+  padding:8px 12px; opacity:0; transition:opacity 1.6s ease;
+  pointer-events:auto; cursor:pointer;
+}
+#escHint.on{ opacity:.55; animation:breathe 3.2s ease-in-out infinite; }
+@keyframes breathe{ 0%,100%{opacity:.32} 50%{opacity:.7} }
+
+/* ----------------------------- Overlays ---------------------------------- */
+.overlay{
+  position:fixed; inset:0; z-index:10;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; padding:clamp(24px,6vw,64px);
+  background:rgba(0,0,0,0.94);
+  opacity:0; pointer-events:none; transition:opacity .5s ease;
+}
+.overlay.on{ opacity:1; pointer-events:auto; }
+.overlay .inner{ max-width:min(720px,92vw); width:100%; }
+
+#title h1{ font-size:clamp(44px,12vw,110px); font-weight:200; }
+#title .sub{ margin-top:clamp(28px,6vw,48px); font-size:clamp(10px,1.8vw,12px); color:var(--ink-faint); }
+
+#field .q{ font-size:clamp(18px,4.4vw,34px); font-weight:300; line-height:1.35; }
+#field input{
+  margin-top:clamp(28px,6vw,44px); width:100%;
+  background:transparent; border:0; border-bottom:1px solid var(--line);
+  color:var(--ink); font-family:inherit; font-weight:300;
+  font-size:clamp(16px,3.4vw,24px); letter-spacing:0.04em;
+  padding:14px 4px; text-align:center; outline:none;
+  transition:border-color .25s ease;
+}
+#field input:focus{ border-bottom-color:rgba(255,255,255,0.55); }
+#field input::placeholder{ color:#2e2e34; letter-spacing:0.04em; }
+#field .keys{
+  margin-top:clamp(26px,5vw,40px); display:flex; gap:clamp(14px,4vw,34px);
+  justify-content:center; flex-wrap:wrap;
+  font-size:clamp(9px,1.5vw,11px); color:var(--ink-faint);
+}
+#field .keys b{ font-weight:500; color:var(--ink-soft); }
+#field .keys .refuse{ opacity:.55; }
+
+#win .goal{
+  font-size:clamp(22px,5.4vw,46px); font-weight:300; line-height:1.3;
+  word-break:break-word;
+}
+#win .stats{
+  margin-top:clamp(30px,6vw,48px); font-size:clamp(12px,2.1vw,15px);
+  font-weight:300; line-height:2; color:var(--ink-soft);
+}
+#win .tagline{
+  margin-top:clamp(30px,6vw,48px); padding-top:clamp(26px,5vw,40px);
+  border-top:1px solid var(--line);
+  font-size:clamp(11px,1.9vw,14px); font-weight:300; color:var(--ink-faint);
+  font-style:italic; letter-spacing:0.03em;
+}
+#win .cta{
+  display:inline-block; margin-top:clamp(24px,5vw,36px);
+  padding:16px clamp(20px,4vw,34px);
+  border:1px solid var(--line); border-radius:3px;
+  background:var(--bg-raise); color:var(--ink-soft);
+  font-size:clamp(9px,1.5vw,11px); text-decoration:none;
+  transition:border-color .2s ease, color .2s ease, box-shadow .2s ease;
+}
+#win .cta:hover{
+  border-color:rgba(255,255,255,0.4); color:var(--ink);
+  box-shadow:0 0 40px rgba(255,255,255,0.06) inset;
+}
+#win .again{
+  display:block; margin:22px auto 0; background:none; border:0; cursor:pointer;
+  color:#2e2e34; font-family:inherit; font-size:clamp(9px,1.4vw,10px);
+}
+#win .again:hover{ color:var(--ink-faint); }
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div class="glow-field"></div>
+
+<div id="hud">
+  <div id="meter">
+    <span class="label tracked-sm">Time drifted</span>
+    <span class="value" id="meterValue">0:00</span>
+  </div>
+  <div id="escHint" class="tracked-sm">Esc</div>
+</div>
+
+<div id="title" class="overlay on">
+  <div class="inner">
+    <h1 class="tracked glow-text">Drift</h1>
+    <p class="sub tracked-sm">Press any key</p>
+  </div>
+</div>
+
+<div id="field" class="overlay">
+  <div class="inner">
+    <p class="q">What do you actually want?</p>
+    <input id="goalInput" type="text" maxlength="72" autocomplete="off" autocapitalize="sentences"
+           spellcheck="false" placeholder="say it plainly">
+    <div class="keys tracked-sm">
+      <span><b>Enter</b> &nbsp;to write it</span>
+      <span class="refuse"><b>Esc</b> &nbsp;to keep drifting</span>
+    </div>
+  </div>
+</div>
+
+<div id="win" class="overlay">
+  <div class="inner">
+    <p class="goal tracked glow-text" id="winGoal"></p>
+    <div class="stats" id="winStats"></div>
+    <p class="tagline">Most people never write the life they say they want.</p>
+    <a class="cta tracked-sm" id="winCta" href="#" target="_blank" rel="noopener">
+      The Dream Designer Blueprint &nbsp;&rarr;
+    </a>
+    <button class="again tracked-sm" id="winAgain">Drift again</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ===========================================================================
+   CONFIG
+   =========================================================================== */
+const CFG = {
+  // Where the win screen sends people. This is the whole funnel — Drift is the
+  // hook, the Blueprint is the gate that already captures the email.
+  DREAMDESIGNER_URL : "https://dreamdesigner.lifesong.io",
+
+  ESC_HINT_AT : 40,    // seconds of drifting before the "Esc" nudge fades in
+  DRIFT_SPEED : 190,   // px/s the camera shoves you right, whether you press anything or not
+  WALK_LENGTH : 2600,  // px of designed path once you've decided where you're going
+  PX_PER_M    : 8,     // world pixels per displayed "meter"
+};
+
+/* ===========================================================================
+   CANVAS + VIEW
+   World is authored against a 540px-tall band. Taller viewports simply reveal
+   more sky above it, so world y=540 is always the bottom of the screen and the
+   ground never moves under the player when someone resizes the window.
+   =========================================================================== */
+const BASE_H = 540;
+const cv = document.getElementById("c");
+const ctx = cv.getContext("2d");
+let scale = 1, viewW = 960, viewH = 540, dpr = 1;
+let offY = 0;          // world y=0 sits this far down the screen
+let worldBottom = 620; // world y at the bottom edge of the screen
+
+function resize(){
+  const w = innerWidth, h = innerHeight;
+  dpr = Math.min(devicePixelRatio || 1, 2);
+  scale = h / BASE_H;
+  if (w / scale < 640) scale = w / 640;   // narrow phones show extra sky, never a squeezed world
+  viewW = w / scale;
+  viewH = h / scale;
+  offY = (viewH - BASE_H) * 0.5;   // centre the band; tall screens got a dead column below it
+  worldBottom = BASE_H + offY;
+  cv.width  = Math.round(w * dpr);
+  cv.height = Math.round(h * dpr);
+  cv.style.width  = w + "px";
+  cv.style.height = h + "px";
+}
+addEventListener("resize", resize);
+resize();
+
+/* ===========================================================================
+   STATE
+   phase: title -> drift -> (field) -> turn -> walk -> win
+   "field" is an overlay on top of drift, not a phase of its own, because you
+   are allowed to walk back out of it and keep drifting. That refusal matters.
+   =========================================================================== */
+const S = {
+  phase      : "title",
+  t          : 0,      // seconds spent drifting
+  deaths     : 0,      // deaths during the drift. Counted, never shown, used at the end.
+  walkDeaths : 0,
+  goal       : "",
+  camX       : 0,
+  camVel     : CFG.DRIFT_SPEED,
+  flashT     : 0,      // white pulse timer, used on the turn
+  turnT      : 0,
+  walkStart  : 0,
+  goalX      : 0,
+  lastCheck  : null,   // {x,y} last waypoint flag reached
+};
+
+const player = { x:120, y:360, vx:0, vy:0, w:22, h:26, onGround:false, coyote:0, buffer:0, trail:[] };
+
+let plats  = [];   // {x,y,w,h}
+let spikes = [];   // {x,y,w}   drawn as a row of triangles — shape, not colour
+let flags  = [];   // {x,y,kind:"way"|"goal",got:false}
+let motes  = [];   // ambient drifting dust
+let genX   = 0;    // right edge of generated drift world
+let lastY  = 430;  // height of the last drift ledge, so runs can stay level
+
+const GRAV = 2000, JUMP = -690, RUN = 330, SPIKE_H = 15;
+
+/* ===========================================================================
+   INPUT
+   =========================================================================== */
+const keys = Object.create(null);
+let touchL = false, touchR = false, touchJump = false;
+
+addEventListener("keydown", e => {
+  if (S.phase === "title"){ start(); e.preventDefault(); return; }
+
+  if (e.key === "Escape"){
+    if (S.phase === "drift"){ fieldOpen ? closeField() : openField(); e.preventDefault(); }
+    return;
+  }
+  if (fieldOpen) return;                       // the input owns the keyboard while it's open
+  keys[e.key.toLowerCase()] = true;
+  if ([" ","ArrowUp","ArrowLeft","ArrowRight","ArrowDown"].includes(e.key)) e.preventDefault();
+  if (e.key === " " || e.key === "ArrowUp" || e.key.toLowerCase() === "w") player.buffer = 0.11;
+});
+addEventListener("keyup", e => { keys[e.key.toLowerCase()] = false; });
+
+function held(...names){ return names.some(n => keys[n]); }
+
+// Touch: outer thirds steer, anywhere else jumps. Enough for both phases.
+function touchAt(list){
+  touchL = touchR = false; touchJump = false;
+  for (const t of list){
+    const f = t.clientX / innerWidth;
+    if (f < 0.28) touchL = true;
+    else if (f > 0.72) touchR = true;
+    else touchJump = true;
+  }
+  if (touchJump) player.buffer = 0.11;
+}
+cv.addEventListener("touchstart", e => {
+  if (S.phase === "title"){ start(); return; }
+  touchAt(e.touches); e.preventDefault();
+}, {passive:false});
+cv.addEventListener("touchmove",  e => { touchAt(e.touches); e.preventDefault(); }, {passive:false});
+cv.addEventListener("touchend",   e => { touchAt(e.touches); }, {passive:false});
+cv.addEventListener("mousedown",  () => { if (S.phase === "title") start(); });
+
+/* ===========================================================================
+   WORLD GENERATION
+   =========================================================================== */
+const rnd = (a,b) => a + Math.random() * (b - a);
+const rint = (a,b) => Math.floor(rnd(a, b + 1));
+
+// Drift chunks. Deliberately competent and deliberately meaningless — always
+// survivable, never leading anywhere. Nothing here is a destination.
+function genDriftChunk(){
+  const flat = Math.random() < 0.58;                  // most of it is just... ground
+  const y = flat ? lastY : Math.max(360, Math.min(462, lastY + rnd(-58, 58)));
+  const w = rnd(230, 400);
+  plats.push({ x:genX, y, w, h:BASE_H + 80 - y });
+
+  // A spike patch often enough to keep hands honest, never enough to wall you off.
+  if (Math.random() < 0.14 && w > 260){
+    const sw = rnd(38, 62);
+    spikes.push({ x: genX + rnd(60, w - sw - 50), y: y - SPIKE_H, w: sw });
+  }
+
+  lastY = y;
+  genX += w + (flat ? 0 : rnd(70, 112));              // gap only when the ground steps
+}
+
+function trimBehind(){
+  const cut = S.camX - 900;
+  plats  = plats.filter(p => p.x + p.w > cut);
+  spikes = spikes.filter(s => s.x + s.w > cut);
+}
+
+// The designed path. Built once, the moment a goal exists — finite, legible,
+// and ending in a flag with the player's own words on it.
+function buildWalkPath(startX, startY){
+  plats  = plats.filter(p => p.x + p.w < startX - 40);    // clear everything ahead
+  plats.push({ x:startX - 150, y:startY, w:330, h:BASE_H + 80 - startY });  // guaranteed launch pad
+  spikes = [];
+  flags  = [];
+
+  let x = startX + 260;
+  let y = Math.min(startY, 440);
+  const end = startX + CFG.WALK_LENGTH;
+  const wayAt = [0.28, 0.56, 0.82].map(f => startX + CFG.WALK_LENGTH * f);
+  let wi = 0;
+
+  while (x < end){
+    const w = rnd(150, 250);
+    plats.push({ x, y, w, h:BASE_H + 80 - y });
+
+    if (wi < wayAt.length && x + w > wayAt[wi]){
+      flags.push({ x: x + w * 0.5, y, kind:"way", got:false });
+      wi++;
+    } else if (Math.random() < 0.62 && w > 160){
+      const sw = rnd(38, 62);
+      spikes.push({ x: x + rnd(50, w - sw - 40), y: y - SPIKE_H, w: sw });
+    }
+
+    x += w + rnd(85, 145);
+    y = Math.max(250, Math.min(462, y + rnd(-72, 62)));
+  }
+
+  // The flag stands on its own ground so arriving always reads as arriving.
+  const fy = 400;
+  plats.push({ x:end + 40, y:fy, w:340, h:BASE_H + 80 - fy });
+  S.goalX = end + 170;
+  flags.push({ x:S.goalX, y:fy, kind:"goal", got:false });
+}
+
+function seedMotes(){
+  motes = [];
+  for (let i = 0; i < 70; i++){
+    motes.push({ x:rnd(0,1600), y:rnd(-offY, BASE_H), r:rnd(0.5,1.7), d:rnd(0.12,0.5), a:rnd(0.05,0.3) });
+  }
+}
+
+/* ===========================================================================
+   PHYSICS
+   =========================================================================== */
+function aabb(a, b){
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+function physics(dt){
+  const left  = held("arrowleft","a")  || touchL;
+  const right = held("arrowright","d") || touchR;
+  const jumpHeld = held(" ","arrowup","w") || touchJump;
+
+  let target = 0;
+  if (left)  target -= RUN;
+  if (right) target += RUN;
+
+  // In the drift you never fully stop — the world keeps its own momentum through you.
+  if (S.phase === "drift" && target === 0) target = CFG.DRIFT_SPEED * 0.45;
+
+  player.vx += (target - player.vx) * Math.min(1, dt * 14);
+  player.vy += GRAV * dt;
+
+  player.coyote = player.onGround ? 0.1 : Math.max(0, player.coyote - dt);
+  player.buffer = Math.max(0, player.buffer - dt);
+
+  if (player.buffer > 0 && player.coyote > 0){
+    player.vy = JUMP; player.buffer = 0; player.coyote = 0; player.onGround = false;
+  }
+  if (!jumpHeld && player.vy < -190) player.vy += 2600 * dt;   // variable jump height
+
+  // Horizontal, then vertical, resolved separately so corners behave.
+  player.x += player.vx * dt;
+  for (const p of plats){
+    if (!aabb(player, p)) continue;
+    if (player.vx > 0) player.x = p.x - player.w; else if (player.vx < 0) player.x = p.x + p.w;
+    player.vx = 0;
+  }
+
+  player.y += player.vy * dt;
+  player.onGround = false;
+  for (const p of plats){
+    if (!aabb(player, p)) continue;
+    if (player.vy > 0){ player.y = p.y - player.h; player.vy = 0; player.onGround = true; }
+    else if (player.vy < 0){ player.y = p.y + p.h; player.vy = 0; }
+  }
+
+  player.trail.unshift({ x:player.x + player.w/2, y:player.y + player.h/2 });
+  if (player.trail.length > 14) player.trail.pop();
+
+  // Death. In the drift it costs nothing at all — which is the point.
+  let dead = player.y > worldBottom + 90;
+  if (S.phase === "drift" && player.x + player.w < S.camX + 8) dead = true;
+  if (!dead){
+    for (const s of spikes){
+      if (aabb(player, { x:s.x, y:s.y, w:s.w, h:SPIKE_H })){ dead = true; break; }
+    }
+  }
+  if (dead) die();
+}
+
+function die(){
+  if (S.phase === "drift"){
+    S.deaths++;
+    respawnDrift();
+  } else if (S.phase === "walk"){
+    S.walkDeaths++;
+    const c = S.lastCheck || { x:S.walkStart, y:400 };
+    player.x = c.x - player.w/2; player.y = c.y - player.h - 4;
+  }
+  player.vx = 0; player.vy = 0; player.trail.length = 0;
+}
+
+// Put the player back on the nearest ledge ahead of the camera. No penalty,
+// no counter, no ceremony — you just carry on going nowhere.
+function respawnDrift(){
+  const zone = plats.filter(p => p.x < S.camX + 330 && p.x + p.w > S.camX + 190);
+  let best = null;
+  for (const p of zone) if (!best || p.y < best.y) best = p;
+  if (!best){
+    best = { x:S.camX + 200, y:420, w:220, h:BASE_H + 80 - 420 };
+    plats.push(best);
+  }
+  player.x = best.x + best.w/2;
+  player.y = best.y - player.h - 6;
+
+  // Never set someone down on top of a hazard.
+  const pad = { x:player.x - 34, y:best.y - 40, w:player.w + 68, h:46 };
+  spikes = spikes.filter(s => !aabb(pad, { x:s.x, y:s.y, w:s.w, h:SPIKE_H }));
+}
+
+/* ===========================================================================
+   RENDER
+   =========================================================================== */
+function draw(){
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, cv.width, cv.height);
+
+  const k = dpr * scale;
+  ctx.setTransform(k, 0, 0, k, -S.camX * k, offY * k);
+
+  drawBackdrop();
+  drawPlatforms();
+  drawSpikes();
+  drawFlags();
+  drawPlayer();
+
+  if (S.flashT > 0){
+    ctx.save();
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = "rgba(255,255,255," + (S.flashT * 0.5).toFixed(3) + ")";
+    ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.restore();
+  }
+}
+
+// Identical monoliths at a fixed interval. In the drift they slide past forever
+// and each one looks exactly like the last, because it is.
+function drawBackdrop(){
+  const step = 520, x0 = Math.floor((S.camX - 400) / step) * step;
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  for (let x = x0; x < S.camX + viewW + 400; x += step){
+    const px = x + (S.camX - x) * 0.45;   // parallax
+    const mh = worldBottom - 190;
+    ctx.fillStyle = "#08080a";
+    ctx.fillRect(px, 190, 66, mh);
+    ctx.strokeStyle = "rgba(255,255,255,0.05)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(px + 0.5, 190.5, 66, mh);
+  }
+  ctx.restore();
+
+  ctx.save();
+  for (const m of motes){
+    const px = S.camX * (1 - m.d) + ((m.x - S.camX * m.d) % 1600 + 1600) % 1600;
+    ctx.globalAlpha = m.a;
+    ctx.fillStyle = "#fff";
+    ctx.beginPath(); ctx.arc(px, m.y, m.r, 0, 6.284); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawPlatforms(){
+  for (const p of plats){
+    if (p.x + p.w < S.camX - 60 || p.x > S.camX + viewW + 60) continue;
+    const depth = Math.max(p.h, worldBottom + 40 - p.y);
+    ctx.fillStyle = "#0a0a0c";
+    ctx.fillRect(p.x, p.y, p.w, depth);
+    ctx.strokeStyle = "#1e1e22";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(p.x + 0.5, p.y + 0.5, p.w - 1, depth);
+    // Lit top edge — the only surface that matters is the one you can stand on.
+    ctx.save();
+    ctx.shadowColor = "rgba(255,255,255,0.5)"; ctx.shadowBlur = 14;
+    ctx.strokeStyle = "rgba(255,255,255,0.62)"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + p.w, p.y); ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function drawSpikes(){
+  ctx.save();
+  ctx.strokeStyle = "rgba(255,255,255,0.75)";
+  ctx.fillStyle = "#000";
+  ctx.lineWidth = 1.5;
+  for (const s of spikes){
+    if (s.x + s.w < S.camX - 60 || s.x > S.camX + viewW + 60) continue;
+    const n = Math.max(2, Math.round(s.w / 13)), tw = s.w / n;
+    for (let i = 0; i < n; i++){
+      const x = s.x + i * tw;
+      ctx.beginPath();
+      ctx.moveTo(x, s.y + SPIKE_H);
+      ctx.lineTo(x + tw / 2, s.y);
+      ctx.lineTo(x + tw, s.y + SPIKE_H);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+function drawFlags(){
+  for (const f of flags){
+    if (f.x < S.camX - 120 || f.x > S.camX + viewW + 120) continue;
+    const goal = f.kind === "goal";
+    const h = goal ? 118 : 60;
+    ctx.save();
+    ctx.strokeStyle = f.got ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.4)";
+    ctx.lineWidth = goal ? 3 : 2;
+    if (goal){ ctx.shadowColor = "rgba(255,255,255,0.55)"; ctx.shadowBlur = 26; }
+    ctx.beginPath(); ctx.moveTo(f.x, f.y); ctx.lineTo(f.x, f.y - h); ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(f.x, f.y - h);
+    ctx.lineTo(f.x + (goal ? 54 : 30), f.y - h + (goal ? 17 : 10));
+    ctx.lineTo(f.x, f.y - h + (goal ? 34 : 20));
+    ctx.closePath();
+    ctx.fillStyle = f.got || goal ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.28)";
+    ctx.fill();
+    ctx.restore();
+
+    // Your own words, on the thing you're walking toward.
+    if (goal && S.goal){
+      const txt = S.goal.toUpperCase();
+      ctx.save();
+      ctx.textAlign = "center";
+      ctx.fillStyle = "rgba(255,255,255,0.62)";
+      if (ctx.letterSpacing !== undefined) ctx.letterSpacing = "3px";
+
+      let size = 15;
+      ctx.font = "300 " + size + "px Montserrat, sans-serif";
+      const room = viewW - 56;
+      const wide = ctx.measureText(txt).width;
+      if (wide > room){
+        size = Math.max(9, size * room / wide);
+        ctx.font = "300 " + size.toFixed(1) + "px Montserrat, sans-serif";
+      }
+      const half = ctx.measureText(txt).width / 2 + 12;
+      const tx = Math.min(Math.max(f.x, S.camX + half), S.camX + viewW - half);
+
+      ctx.shadowColor = "rgba(255,255,255,0.3)"; ctx.shadowBlur = 18;
+      ctx.fillText(txt, tx, f.y - h - 26);
+      ctx.restore();
+    }
+  }
+}
+
+function drawPlayer(){
+  const cx = player.x + player.w/2, cy = player.y + player.h/2;
+  ctx.save();
+  for (let i = player.trail.length - 1; i > 0; i--){
+    const t = player.trail[i];
+    ctx.globalAlpha = (1 - i / player.trail.length) * 0.16;
+    ctx.fillStyle = "#fff";
+    ctx.beginPath(); ctx.arc(t.x, t.y, 11 * (1 - i / player.trail.length), 0, 6.284); ctx.fill();
+  }
+  ctx.restore();
+
+  ctx.save();
+  ctx.shadowColor = "rgba(255,255,255,0.85)";
+  ctx.shadowBlur = S.phase === "walk" ? 46 : 26;   // deciding makes you brighter
+  ctx.fillStyle = "#fff";
+  ctx.beginPath(); ctx.arc(cx, cy, 12, 0, 6.284); ctx.fill();
+  ctx.restore();
+}
+
+/* ===========================================================================
+   HUD + OVERLAYS
+   =========================================================================== */
+const el = id => document.getElementById(id);
+const hud = el("hud"), meter = el("meter"), meterValue = el("meterValue"), escHint = el("escHint");
+const titleO = el("title"), fieldO = el("field"), winO = el("win"), goalInput = el("goalInput");
+let fieldOpen = false;
+
+function clock(s){
+  const m = Math.floor(s / 60), r = Math.floor(s % 60);
+  return m + ":" + String(r).padStart(2, "0");
+}
+
+function updateHud(){
+  if (S.phase === "drift"){
+    meterValue.textContent = clock(S.t);
+  } else if (S.phase === "walk"){
+    const left = Math.max(0, Math.round((S.goalX - (player.x + player.w/2)) / CFG.PX_PER_M));
+    meterValue.textContent = left + "m";
+  }
+}
+
+function openField(){
+  fieldOpen = true;
+  fieldO.classList.add("on");
+  goalInput.value = "";
+  setTimeout(() => goalInput.focus(), 60);
+}
+function closeField(){
+  fieldOpen = false;
+  fieldO.classList.remove("on");
+  goalInput.blur();
+}
+
+goalInput.addEventListener("keydown", e => {
+  e.stopPropagation();
+  if (e.key === "Enter"){
+    const v = goalInput.value.trim();
+    if (v.length >= 2) commit(v);
+  } else if (e.key === "Escape"){
+    closeField();   // walking back out is allowed. It has to be.
+  }
+});
+
+// The turn. Everything the game has been withholding arrives here at once.
+function commit(text){
+  S.goal = text;
+  closeField();
+  S.phase = "turn";
+  S.turnT = 0;
+  S.flashT = 1;
+  meter.classList.add("struck");
+  escHint.classList.remove("on");
+  escHint.style.display = "none";
+}
+
+function finishTurn(){
+  const ly = Math.min(Math.max(player.y + player.h, 300), 462);
+  S.walkStart = player.x;
+  buildWalkPath(player.x, ly);
+  player.y  = ly - player.h - 2;
+  player.vy = 0;
+  S.lastCheck = { x:player.x + player.w/2, y:ly };
+  meter.classList.remove("struck");
+  meter.querySelector(".label").textContent = "Distance to flag";
+  S.phase = "walk";
+}
+
+function win(){
+  S.phase = "win";
+  hud.classList.remove("on");
+  el("winGoal").textContent = S.goal;
+
+  const walked = Math.round(CFG.WALK_LENGTH / CFG.PX_PER_M);
+  const deathLine = S.deaths === 0
+    ? "You never died out there. You never got anywhere either."
+    : "You died " + S.deaths + (S.deaths === 1 ? " time" : " times") + ". It didn't matter.";
+
+  el("winStats").innerHTML =
+      "<div>You drifted for " + clock(S.t) + ".</div>"
+    + "<div>" + deathLine + "</div>"
+    + "<div>Then you walked " + walked + " meters, and it did.</div>";
+
+  el("winCta").href = CFG.DREAMDESIGNER_URL;
+  winO.classList.add("on");
+}
+
+el("winAgain").addEventListener("click", () => location.reload());
+
+function start(){
+  titleO.classList.remove("on");
+  hud.classList.add("on");
+  S.phase = "drift";
+  plats = []; spikes = []; flags = [];
+  genX = 0;
+  plats.push({ x:-200, y:430, w:700, h:BASE_H + 80 - 430 });   // opening ground
+  genX = 520;
+  lastY = 430;
+  seedMotes();
+  player.x = 120; player.y = 380; player.vx = 0; player.vy = 0; player.trail = [];
+  S.camX = 0;
+}
+
+/* ===========================================================================
+   LOOP
+   =========================================================================== */
+let last = performance.now();
+
+function frame(now){
+  const dt = Math.min(0.033, (now - last) / 1000);
+  last = now;
+
+  if (S.flashT > 0) S.flashT = Math.max(0, S.flashT - dt * 1.4);
+
+  if (S.phase === "drift"){
+    if (!fieldOpen) S.t += dt;
+    S.camX += CFG.DRIFT_SPEED * dt;
+    while (genX < S.camX + viewW + 700) genDriftChunk();
+    trimBehind();
+    if (!fieldOpen) physics(dt);
+    if (S.t > CFG.ESC_HINT_AT) escHint.classList.add("on");
+
+  } else if (S.phase === "turn"){
+    // The camera's momentum bleeds out. This is the only place in the game
+    // where the player has no input and nothing is asked of them.
+    S.turnT += dt;
+    S.camVel *= Math.pow(0.02, dt);
+    S.camX += S.camVel * dt;
+    physics(dt);
+    if (S.turnT > 1.25) finishTurn();
+
+  } else if (S.phase === "walk"){
+    physics(dt);
+    // Camera follows you now, instead of the other way round.
+    const want = player.x - viewW * 0.4;
+    S.camX += (want - S.camX) * Math.min(1, dt * 4.5);
+    S.camX = Math.max(S.walkStart - viewW * 0.5, S.camX);
+
+    for (const f of flags){
+      if (f.got) continue;
+      if (Math.abs((player.x + player.w/2) - f.x) < 26 && Math.abs((player.y + player.h) - f.y) < 90){
+        f.got = true;
+        if (f.kind === "way"){ S.lastCheck = { x:f.x, y:f.y }; }
+        else { win(); }
+      }
+    }
+  }
+
+  if (S.phase === "drift" || S.phase === "walk" || S.phase === "turn"){
+    updateHud();
+    draw();
+  }
+  requestAnimationFrame(frame);
+}
+
+escHint.addEventListener("click", () => { if (S.phase === "drift") fieldOpen ? closeField() : openField(); });
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

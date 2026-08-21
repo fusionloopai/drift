@@ -98,14 +98,16 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 /* ----------------------------- Overlays ---------------------------------- */
 .overlay{
   position:fixed; inset:0; z-index:10;
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  text-align:center; padding:clamp(24px,6vw,64px);
+  display:flex; flex-direction:column; align-items:center;
+  justify-content:flex-start;              /* centring is done by the inner's auto margins */
+  text-align:center;
+  padding:clamp(28px,6vw,64px) clamp(24px,6vw,64px) clamp(56px,10vh,110px);
   background:rgba(0,0,0,0.94);
   opacity:0; pointer-events:none; transition:opacity .5s ease;
-  overflow-y:auto;
+  overflow-y:auto; -webkit-overflow-scrolling:touch;
 }
 .overlay.on{ opacity:1; pointer-events:auto; }
-.overlay .inner{ max-width:min(720px,92vw); width:100%; }
+.overlay .inner{ max-width:min(720px,92vw); width:100%; margin:auto; }
 
 #title h1{
   font-size:clamp(44px,12vw,110px); font-weight:200;
@@ -280,6 +282,28 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 }
 #minimap.on{ opacity:1; }
 
+/* On-screen controls. Only shown on touch devices — a phone player had no way
+   of knowing the screen thirds were the controls. */
+#pad{
+  position:fixed; z-index:7; left:0; right:0; bottom:0;
+  display:none; justify-content:space-between; align-items:flex-end;
+  padding:0 clamp(12px,3vw,22px) calc(env(safe-area-inset-bottom, 0px) + 14px);
+  pointer-events:none;
+}
+#pad.on{ display:flex; }
+.padgrp{ display:flex; gap:10px; pointer-events:auto; }
+.padbtn{
+  pointer-events:auto; -webkit-tap-highlight-color:transparent; touch-action:none;
+  width:62px; height:62px; border-radius:50%;
+  border:1px solid var(--line); background:rgba(10,10,12,.72);
+  color:var(--ink-soft); font-family:inherit; font-size:17px; line-height:1;
+  display:flex; align-items:center; justify-content:center;
+  opacity:.85;
+}
+.padbtn.jump{ width:78px; height:78px; font-size:11px; letter-spacing:.18em; text-transform:uppercase; }
+.padbtn:active, .padbtn.down{ border-color:rgba(255,255,255,.6); color:var(--ink); background:rgba(255,255,255,.1); }
+body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:calc(env(safe-area-inset-bottom, 0px) + 108px); }
+
 #skipBtn{
   position:fixed; z-index:6; right:clamp(16px,3vw,32px); bottom:clamp(16px,3vh,28px);
   background:rgba(10,10,12,.8); border:1px solid var(--line); border-radius:3px;
@@ -356,6 +380,18 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 #win .ddsection .ddwhy{ color:var(--ink); }
 
 /* --------------------------------- Win ----------------------------------- */
+#win .wordmark{
+  font-size:clamp(22px,4.6vw,34px); font-weight:200;
+  background:linear-gradient(90deg,#0d0d0d 0%,#1b1b1b 22%,#c0c0c0 50%,#1b1b1b 78%,#0d0d0d 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+#winScene{ display:block; width:min(520px,88vw); height:auto; margin:clamp(6px,1.6vw,12px) auto 0; }
+#win .congrats{ margin-top:clamp(4px,1vw,10px); font-size:clamp(24px,5.6vw,44px); font-weight:200; }
+#win .congratsub{
+  margin-top:12px; font-size:clamp(11px,2vw,14px); color:var(--ink-soft); font-weight:300; line-height:1.7;
+  max-width:48ch; margin-left:auto; margin-right:auto;
+}
+#win .winrule{ height:1px; background:var(--line); margin:clamp(26px,5vw,40px) auto clamp(22px,4vw,32px); max-width:220px; }
 #win .goal{ font-size:clamp(20px,4.8vw,40px); font-weight:300; line-height:1.3; word-break:break-word; }
 #win .whenline{ margin-top:10px; font-size:clamp(11px,1.9vw,14px); color:var(--ink-soft); font-variant-numeric:tabular-nums; }
 #win .tagline{
@@ -399,6 +435,9 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
   #win .cal{ display:none; }                    /* the agenda-first list prints; grids don't */
   #win #winTree{ display:block !important; }
   canvas, .glow-field, #hud, #confront, #levelUp, #splash, #minimap, #skipBtn{ display:none !important; }
+  #win .wordmark{ -webkit-text-fill-color:#000 !important; color:#000 !important; background:none !important; font-size:16pt; }
+  #win .congrats{ font-size:15pt; }
+  #win .winrule{ background:#999 !important; }
 }
 </style>
 </head>
@@ -516,6 +555,14 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 <canvas id="minimap" width="1120" height="104"></canvas>
 <button id="skipBtn" class="tracked-sm">Skip level &nbsp;&rarr;</button>
 
+<div id="pad">
+  <div class="padgrp">
+    <button class="padbtn" id="padL" aria-label="Move left">&#9664;</button>
+    <button class="padbtn" id="padR" aria-label="Move right">&#9654;</button>
+  </div>
+  <button class="padbtn jump" id="padJ" aria-label="Jump">Jump</button>
+</div>
+
 <div id="listPanel" class="overlay panel">
   <div class="inner">
     <p class="head" id="lpHead"></p>
@@ -550,6 +597,11 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 
 <div id="win" class="overlay">
   <div class="inner">
+    <p class="wordmark tracked" id="winMark">Drift</p>
+    <canvas id="winScene" width="520" height="190"></canvas>
+    <p class="congrats tracked glow-text">You made it.</p>
+    <p class="congratsub" id="winCongratSub"></p>
+    <div class="winrule"></div>
     <p class="sub tracked-sm" style="color:var(--ink-faint);font-size:clamp(10px,1.8vw,12px)">Your goal</p>
     <p class="goal tracked glow-text" id="winGoal"></p>
     <p class="whenline" id="winWhen"></p>
@@ -722,6 +774,29 @@ cv.addEventListener("touchstart", e => {
 cv.addEventListener("touchmove", e => { touchAt(e.touches); e.preventDefault(); }, {passive:false});
 cv.addEventListener("touchend",  e => { touchAt(e.touches); }, {passive:false});
 cv.addEventListener("mousedown", () => { if (S.phase === "title") start(); });
+
+// Visible controls for touch. They set the same flags the screen-zone handler
+// does, so both paths work and neither has to know about the other.
+(function(){
+  const touch = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
+  if (!touch) return;
+  document.body.classList.add("touch");
+  document.getElementById("pad").classList.add("on");
+  const bind = function(id, down, up){
+    const b = document.getElementById(id);
+    const on  = function(e){ e.preventDefault(); e.stopPropagation(); b.classList.add("down"); down(); };
+    const off = function(e){ e.preventDefault(); e.stopPropagation(); b.classList.remove("down"); up(); };
+    b.addEventListener("touchstart", on,  {passive:false});
+    b.addEventListener("touchend",   off, {passive:false});
+    b.addEventListener("touchcancel",off, {passive:false});
+    b.addEventListener("mousedown",  on);
+    b.addEventListener("mouseup",    off);
+    b.addEventListener("mouseleave", off);
+  };
+  bind("padL", function(){ touchL = true; },  function(){ touchL = false; });
+  bind("padR", function(){ touchR = true; },  function(){ touchR = false; });
+  bind("padJ", function(){ touchJump = true; player.buffer = 0.11; }, function(){ touchJump = false; });
+})();
 
 /* ===========================================================================
    WORLD GENERATION
@@ -1592,6 +1667,8 @@ function skipLevel(){
   orbs.forEach(function(o){ if (!o.got){ o.got = true; S.ballR = Math.min(20, S.ballR + 0.9); } });
   folk.forEach(function(f){ f.got = true; });
   // Straight to the next step — the platforming is optional, the exercise isn't.
+  clearTimeout(splashTimer);
+  splashEl.classList.remove("on");
   minimap.classList.remove("on");
   hideLevelUp();
   nextStep().run();
@@ -2107,6 +2184,17 @@ function win(){
   buildTree(el("winTree"));
   buildCalendar(el("winCal"));
 
+  drawWinScene();
+  const nCp = S.checkpoints.length;
+  const nSteps = S.checkpoints.reduce(function(a,c){ return a + c.steps.length; }, 0);
+  const bits = [nCp + (nCp === 1 ? " checkpoint" : " checkpoints")];
+  if (nSteps) bits.push(nSteps + (nSteps === 1 ? " step" : " steps"));
+  if (S.obstacles.length) bits.push(S.obstacles.length + " named obstacles");
+  if (S.people.length) bits.push(S.people.length + " people");
+  el("winCongratSub").textContent =
+    "You took a goal you were drifting past and built it out \u2014 " +
+    bits.join(", ") + ", every one of them dated. Most people never do this once.";
+
   el("winFirst").innerHTML = S.firstAction
     ? '<span class="lbl tracked-sm">Do this first</span><div class="act">' + esc(S.firstAction) +
       '</div><div class="by">by ' + esc(fmtDate(S.firstActionBy)) + '</div>' : "";
@@ -2117,6 +2205,51 @@ function win(){
   el("winCta").href = CFG.DREAMDESIGNER_URL;
   winO.classList.add("on");
 }
+// The last picture: the ball standing on the summit next to the flag it
+// planted, drawn with the same shapes the game itself uses.
+function drawWinScene(){
+  const c = el("winScene"); if (!c) return;
+  const g = c.getContext("2d"), W = c.width, H = c.height;
+  g.clearRect(0,0,W,H);
+
+  for (let i = 0; i < 46; i++){
+    const x = (i*97 % W), y = (i*53 % (H-60));
+    g.globalAlpha = 0.05 + (i % 5) * 0.03;
+    g.fillStyle = "#fff";
+    g.beginPath(); g.arc(x, y, (i % 3) * 0.5 + 0.6, 0, 6.284); g.fill();
+  }
+  g.globalAlpha = 1;
+
+  const gy = H - 34, cx = W/2;
+  g.save();                                     // the summit
+  g.shadowColor = "rgba(255,255,255,.45)"; g.shadowBlur = 14;
+  g.strokeStyle = "rgba(255,255,255,.62)"; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(cx-120, gy); g.lineTo(cx+120, gy); g.stroke();
+  g.restore();
+  g.fillStyle = "#0a0a0c"; g.fillRect(cx-120, gy, 240, 34);
+  g.strokeStyle = "#1e1e22"; g.lineWidth = 1; g.strokeRect(cx-120.5, gy+0.5, 240, 34);
+
+  g.save();                                     // the planted flag, lit
+  g.strokeStyle = "rgba(255,255,255,.9)"; g.lineWidth = 3;
+  g.shadowColor = "rgba(255,255,255,.6)"; g.shadowBlur = 22;
+  g.beginPath(); g.moveTo(cx+42, gy); g.lineTo(cx+42, gy-96); g.stroke();
+  g.beginPath(); g.moveTo(cx+42, gy-96); g.lineTo(cx+96, gy-79); g.lineTo(cx+42, gy-62);
+  g.closePath(); g.fillStyle = "rgba(255,255,255,.92)"; g.fill();
+  g.restore();
+
+  g.save();                                     // the light that walked here
+  for (let i = 7; i > 0; i--){
+    g.globalAlpha = (1 - i/8) * 0.13;
+    g.fillStyle = "#fff";
+    g.beginPath(); g.arc(cx-30 - i*13, gy-13, 11 * (1 - i/8), 0, 6.284); g.fill();
+  }
+  g.globalAlpha = 1;
+  g.shadowColor = "rgba(255,255,255,.95)"; g.shadowBlur = 34;
+  g.fillStyle = "#fff";
+  g.beginPath(); g.arc(cx-30, gy-14, 14, 0, 6.284); g.fill();
+  g.restore();
+}
+
 function renderDeclarations(){
   if (!S.declarations.length){ el("winDecl").innerHTML = ""; return; }
   let h = '<h4 class="tracked-sm">Your declarations &mdash; read them morning and night</h4><div class="decls">';
@@ -2320,6 +2453,9 @@ function frame(now){
   }
 
   if (S.phase === "drift" || S.phase === "walk" || S.phase === "turn" || S.phase === "splash"){ updateHud(); draw(); }
+  const playing = (S.phase === "walk" || S.phase === "drift") && !anyPanelOpen();
+  const padEl = el("pad");
+  if (padEl && document.body.classList.contains("touch")) padEl.classList.toggle("on", playing);
   const showSkip = S.phase === "walk" && !anyPanelOpen();
   el("skipBtn").classList.toggle("on", showSkip);
   if (showSkip){

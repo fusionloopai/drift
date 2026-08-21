@@ -86,7 +86,7 @@ canvas{ display:block; position:fixed; inset:0; z-index:1; }
 #levelUp{
   position:fixed; z-index:6; top:clamp(16px,3vw,32px); right:clamp(16px,3vw,32px);
   transform:translateY(-8px);
-  text-align:right; cursor:pointer; user-select:none;
+  text-align:center; cursor:pointer; user-select:none;
   border:1px solid var(--line); border-radius:4px; background:var(--bg-raise);
   padding:clamp(10px,2vw,15px) clamp(16px,3.2vw,24px);
   opacity:0; pointer-events:none;
@@ -334,12 +334,13 @@ const S = {
 const player = { x:120, y:360, vx:0, vy:0, w:22, h:26, onGround:false, coyote:0, buffer:0, trail:[] };
 
 let plats  = [];   // {x,y,w,h}
-let flags  = [];   // {x,y,kind:"way"|"goal",got:false,label?:string}
+let spikes = [];   // {x,y,w} — World 2 only, drawn as a row of triangles
+let flags  = [];   // {x,y,kind:"circle"|"way"|"goal",got:false,label?:string}
 let motes  = [];   // ambient drifting dust
 let genX   = 0;    // right edge of generated drift world
 let lastY  = 430;  // height of the last drift ledge, so runs can stay level
 
-const GRAV = 2000, JUMP = -690, RUN = 330;
+const GRAV = 2000, JUMP = -690, RUN = 330, SPIKE_H = 15;
 
 /* ===========================================================================
    INPUT
@@ -389,49 +390,110 @@ cv.addEventListener("mousedown",  () => { if (S.phase === "title") start(); });
 const rnd  = (a,b) => a + Math.random() * (b - a);
 const rint = (a,b) => Math.floor(rnd(a, b + 1));
 
-// World 1, the drift itself: continuous ground, gentle bumps roughly the ball's
-// own height, nothing to jump over yet. No gaps, no hazards — just movement.
+// World 1, the drift itself: continuous rolling hills, nothing to jump over yet.
+// A "hill" is a run of small stair-steps, each shallow enough that the new
+// step-up assist in physics() climbs it automatically while walking — no gap,
+// no jump required. One cycle: rise a ball-height, rise another, then fall
+// back down twice as far. Net zero per cycle — a wave, not a staircase.
+const BALL_H = 24;    // the hill unit, matched to the player's own diameter
+
+function pushRamp(totalDy, totalW){
+  const steps = Math.max(2, Math.round(Math.abs(totalDy) / 6));
+  const stepW = totalW / steps, stepDy = totalDy / steps;
+  for (let i = 0; i < steps; i++){
+    lastY = Math.max(300, Math.min(462, lastY + stepDy));
+    plats.push({ x:genX, y:lastY, w:stepW + 1, h:BASE_H + 80 - lastY });
+    genX += stepW;
+  }
+}
+
 function genDriftChunk(){
-  const amp = 22;   // roughly the ball's own diameter
-  const y = Math.max(410, Math.min(454, lastY + rnd(-amp, amp)));
-  const w = rnd(260, 420);
-  plats.push({ x:genX, y, w, h:BASE_H + 80 - y });
-  lastY = y;
-  genX += w;   // always continuous — no gaps
+  pushRamp(-BALL_H, rnd(90, 130));
+  pushRamp(-BALL_H, rnd(90, 130));
+  pushRamp(BALL_H * 2, rnd(160, 220));
 }
 
 function trimBehind(){
   const cut = S.camX - 900;
-  plats = plats.filter(p => p.x + p.w > cut);
+  plats  = plats.filter(p => p.x + p.w > cut);
+  spikes = spikes.filter(s => s.x + s.w > cut);
 }
 
-// Worlds 2-4: the goal path. Each entry in flagDefs becomes one flag, and the
-// path rises one tier to reach it — a short climb of 2-3 jumps, then a flat
-// landing the flag stands on. More flags means more tiers means literally
-// higher, which is the point: each world climbs further than the last.
-function buildGoalPath(startX, startY, flagDefs){
+// World 2: a long main level — real gaps, real spikes — that eventually climbs
+// up onto a second, permanently higher level. The 30-day goal's flag stands
+// at the far end of that upper level: you have to choose to go up to reach it.
+function buildWorld2Path(startX, startY, goalText){
+  plats  = plats.filter(p => p.x + p.w < startX - 40);
+  plats.push({ x:startX - 150, y:startY, w:330, h:BASE_H + 80 - startY });
+  spikes = [];
+  flags  = [];
+
+  let x = startX + 260;
+  const LOWER_Y = Math.min(startY, 430), UPPER_Y = LOWER_Y - 140;
+
+  // The main (lower) level.
+  for (let i = 0; i < 8; i++){
+    const w = rnd(140, 220);
+    plats.push({ x, y:LOWER_Y, w, h:BASE_H + 80 - LOWER_Y });
+    if (Math.random() < 0.35 && w > 160){
+      const sw = rnd(36, 58);
+      spikes.push({ x: x + rnd(40, w - sw - 30), y:LOWER_Y - SPIKE_H, w: sw });
+    }
+    x += w + rnd(80, 130);
+  }
+
+  // The jump up onto the new, higher level — the one real turning point.
+  {
+    const w = rnd(160, 220);
+    plats.push({ x, y:UPPER_Y, w, h:BASE_H + 80 - UPPER_Y });
+    x += w;
+  }
+
+  // The upper level — where the goal actually lives.
+  for (let i = 0; i < 6; i++){
+    x += rnd(85, 120);
+    const w = rnd(140, 210);
+    plats.push({ x, y:UPPER_Y, w, h:BASE_H + 80 - UPPER_Y });
+    if (Math.random() < 0.35 && w > 160){
+      const sw = rnd(36, 58);
+      spikes.push({ x: x + rnd(40, w - sw - 30), y:UPPER_Y - SPIKE_H, w: sw });
+    }
+    x += w;
+  }
+
+  // The final, largest flag on this world — the 30-day goal itself.
+  x += rnd(70, 100);
+  const holdW = 380;
+  plats.push({ x, y:UPPER_Y, w:holdW, h:BASE_H + 80 - UPPER_Y });
+  flags.push({ x: x + holdW * 0.5, y:UPPER_Y, kind:"goal", got:false, label:goalText });
+}
+
+// The final climb: two smaller steps (small circle markers — "keep jumping up"),
+// then a main flag for that sub-goal achieved; twice; then the 30-day goal
+// itself as the last, largest flag. Every entry climbs one tier higher than
+// the last, so the whole thing reads as one long ascent.
+function buildFinalClimb(startX, startY, defs){
   plats = plats.filter(p => p.x + p.w < startX - 40);
   plats.push({ x:startX - 150, y:startY, w:330, h:BASE_H + 80 - startY });
   flags = [];
 
   let x = startX + 260;
   let y = startY;
-  const RISE = 46;
+  const RISE = 40;
 
-  flagDefs.forEach(def => {
-    const hops = rint(2, 3);
+  defs.forEach(def => {
+    const hops = rint(3, 4);
     for (let h = 0; h < hops; h++){
       const w = rnd(120, 190);
       plats.push({ x, y, w, h:BASE_H + 80 - y });
       x += w + rnd(85, 115);
-      if (h < hops - 1) y = Math.max(210, y - RISE * 0.55);
+      if (h < hops - 1) y = Math.max(210, y - RISE * 0.5);
     }
     y = Math.max(210, y - RISE);
-    const holdW = rnd(300, 420);
+    const holdW = def.kind === "goal" ? 380 : (def.kind === "way" ? 340 : 280);
     plats.push({ x, y, w:holdW, h:BASE_H + 80 - y });
 
-    const fx = x + holdW * 0.5;
-    flags.push({ x:fx, y, kind: def.final ? "goal" : "way", got:false, label: def.text });
+    flags.push({ x: x + holdW * 0.5, y, kind:def.kind, got:false, label:def.text });
 
     x += holdW;
   });
@@ -474,10 +536,18 @@ function physics(dt){
   }
   if (!jumpHeld && player.vy < -190) player.vy += 2600 * dt;   // variable jump height
 
-  // Horizontal, then vertical, resolved separately so corners behave.
+  // Horizontal, then vertical, resolved separately so corners behave. A small
+  // rise (<= STEP_UP) is auto-climbed while grounded instead of blocking —
+  // that's what makes a run of tiny stairs read as a walkable hill.
+  const STEP_UP = 14;
   player.x += player.vx * dt;
   for (const p of plats){
     if (!aabb(player, p)) continue;
+    const overlap = (player.y + player.h) - p.y;
+    if (player.onGround && overlap > 0 && overlap <= STEP_UP){
+      player.y = p.y - player.h;
+      continue;
+    }
     if (player.vx > 0) player.x = p.x - player.w; else if (player.vx < 0) player.x = p.x + p.w;
     player.vx = 0;
   }
@@ -496,6 +566,11 @@ function physics(dt){
   // Death. In the drift it costs nothing at all — which is the point.
   let dead = player.y > worldBottom + 90;
   if (S.phase === "drift" && player.x + player.w < S.camX + 8) dead = true;
+  if (!dead){
+    for (const sp of spikes){
+      if (aabb(player, { x:sp.x, y:sp.y, w:sp.w, h:SPIKE_H })){ dead = true; break; }
+    }
+  }
   if (dead) die();
 }
 
@@ -539,6 +614,7 @@ function draw(){
 
   drawBackdrop();
   drawPlatforms();
+  drawSpikes();
   drawFlags();
   drawPlayer();
 
@@ -596,9 +672,64 @@ function drawPlatforms(){
   }
 }
 
+// Restored — World 2's hazards. A row of triangles, shape not colour.
+function drawSpikes(){
+  ctx.save();
+  ctx.strokeStyle = "rgba(255,255,255,0.75)";
+  ctx.fillStyle = "#000";
+  ctx.lineWidth = 1.5;
+  for (const s of spikes){
+    if (s.x + s.w < S.camX - 60 || s.x > S.camX + viewW + 60) continue;
+    const n = Math.max(2, Math.round(s.w / 13)), tw = s.w / n;
+    for (let i = 0; i < n; i++){
+      const x = s.x + i * tw;
+      ctx.beginPath();
+      ctx.moveTo(x, s.y + SPIKE_H);
+      ctx.lineTo(x + tw / 2, s.y);
+      ctx.lineTo(x + tw, s.y + SPIKE_H);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
 function drawFlags(){
   for (const f of flags){
     if (f.x < S.camX - 120 || f.x > S.camX + viewW + 120) continue;
+
+    // The small step-level markers — "keep jumping up" — are circles, not
+    // flags, so a colorblind player reads the difference by shape alone.
+    if (f.kind === "circle"){
+      ctx.save();
+      ctx.strokeStyle = f.got ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.5)";
+      ctx.lineWidth = 2;
+      if (!f.got){ ctx.shadowColor = "rgba(255,255,255,0.4)"; ctx.shadowBlur = 10; }
+      ctx.beginPath(); ctx.arc(f.x, f.y - 15, 9, 0, 6.284); ctx.stroke();
+      ctx.restore();
+
+      if (f.label){
+        const txt = f.label.toUpperCase();
+        ctx.save();
+        ctx.textAlign = "center";
+        ctx.fillStyle = "rgba(255,255,255,0.4)";
+        if (ctx.letterSpacing !== undefined) ctx.letterSpacing = "2px";
+        let size = 11;
+        ctx.font = "300 " + size + "px Montserrat, sans-serif";
+        const room = viewW - 56;
+        const wide = ctx.measureText(txt).width;
+        if (wide > room){
+          size = Math.max(8, size * room / wide);
+          ctx.font = "300 " + size.toFixed(1) + "px Montserrat, sans-serif";
+        }
+        const half = ctx.measureText(txt).width / 2 + 12;
+        const tx = Math.min(Math.max(f.x, S.camX + half), S.camX + viewW - half);
+        ctx.shadowColor = "rgba(255,255,255,0.25)"; ctx.shadowBlur = 12;
+        ctx.fillText(txt, tx, f.y - 40);
+        ctx.restore();
+      }
+      continue;
+    }
 
     const goal = f.kind === "goal";
     const h = goal ? 118 : 68;
@@ -809,7 +940,7 @@ function finishTurn(){
   const ly = Math.min(Math.max(player.y + player.h, 300), 462);
   S.walkStart = player.x;
   S.stage = "world2";
-  buildGoalPath(player.x, ly, [{ text:S.goal30, final:true }]);
+  buildWorld2Path(player.x, ly, S.goal30);
   player.y  = ly - player.h - 2;
   player.vy = 0;
   S.lastCheck = { x:player.x + player.w/2, y:ly };
@@ -818,49 +949,43 @@ function finishTurn(){
   S.phase = "walk";
 }
 
-function launchFrom(flagDefs, stage){
+function launchWorld3(){
   const ly = Math.min(Math.max(player.y + player.h, 300), 462);
   S.walkStart = player.x;
-  S.stage = stage;
-  buildGoalPath(player.x, ly, flagDefs);
+  S.stage = "world3";
+  buildFinalClimb(player.x, ly, [
+    { text:S.subsubs[0], kind:"circle" },
+    { text:S.subsubs[1], kind:"circle" },
+    { text:S.subs[0],    kind:"way"    },
+    { text:S.subsubs[2], kind:"circle" },
+    { text:S.subsubs[3], kind:"circle" },
+    { text:S.subs[1],    kind:"way"    },
+    { text:S.goal30,     kind:"goal"   },
+  ]);
   player.y  = ly - player.h - 2;
   player.vy = 0;
   S.lastCheck = { x:player.x + player.w/2, y:ly };
   S.phase = "walk";
 }
 
-// Reached the 30-day goal flag. Break it into two smaller goals, then climb
-// toward both of them plus a final confirmation of the 30-day goal itself.
+// Reached the 30-day goal flag. Collect all six pieces of the breakdown back
+// to back — two sub-goals, then two smaller steps under each — then launch
+// the one long final climb that visits all seven in order.
 function afterWorld2(){
   queue = [];
   const ctx30 = "YOUR 30-DAY GOAL: " + S.goal30.toUpperCase();
   pushStep(ctx30, "Break it into two smaller goals. First:", "smaller goal one", v => { S.subs[0] = v; });
   pushStep(ctx30, "Second:", "smaller goal two", v => { S.subs[1] = v; });
-  runQueue(() => launchFrom(
-    [{ text:S.subs[0], final:false }, { text:S.subs[1], final:false }, { text:S.goal30, final:true }],
-    "world3"
-  ));
-}
-
-// Reached the two sub-goals and the 30-day goal again. Split each sub-goal
-// into two smaller steps, then climb toward all four.
-function afterWorld3(){
-  queue = [];
-  const ctxA = "BREAKING DOWN: " + S.subs[0].toUpperCase();
-  const ctxB = "BREAKING DOWN: " + S.subs[1].toUpperCase();
-  pushStep(ctxA, "First smaller step:",  "step one", v => { S.subsubs[0] = v; });
-  pushStep(ctxA, "Second smaller step:", "step two", v => { S.subsubs[1] = v; });
-  pushStep(ctxB, "First smaller step:",  "step one", v => { S.subsubs[2] = v; });
-  pushStep(ctxB, "Second smaller step:", "step two", v => { S.subsubs[3] = v; });
-  runQueue(() => launchFrom(
-    [
-      { text:S.subsubs[0], final:false },
-      { text:S.subsubs[1], final:false },
-      { text:S.subsubs[2], final:false },
-      { text:S.subsubs[3], final:true  },
-    ],
-    "world4"
-  ));
+  runQueue(() => {
+    const ctxA = "BREAKING DOWN: " + S.subs[0].toUpperCase();
+    const ctxB = "BREAKING DOWN: " + S.subs[1].toUpperCase();
+    queue = [];
+    pushStep(ctxA, "First smaller step:",  "step one", v => { S.subsubs[0] = v; });
+    pushStep(ctxA, "Second smaller step:", "step two", v => { S.subsubs[1] = v; });
+    pushStep(ctxB, "First smaller step:",  "step one", v => { S.subsubs[2] = v; });
+    pushStep(ctxB, "Second smaller step:", "step two", v => { S.subsubs[3] = v; });
+    runQueue(launchWorld3);
+  });
 }
 
 function win(){
@@ -887,7 +1012,7 @@ function start(){
   titleO.classList.remove("on");
   hud.classList.add("on");
   S.phase = "drift";
-  plats = []; flags = [];
+  plats = []; spikes = []; flags = [];
   genX = 0;
   plats.push({ x:-200, y:430, w:700, h:BASE_H + 80 - 430 });   // opening ground
   genX = 500;
@@ -938,12 +1063,12 @@ function frame(now){
       const near = Math.abs((player.x + player.w/2) - f.x) < 26 && Math.abs((player.y + player.h) - f.y) < 90;
       if (!near) continue;
       f.got = true;
-      if (f.kind === "way"){
+      if (f.kind !== "goal"){
         S.lastCheck = { x:f.x, y:f.y };
+      } else if (S.stage === "world2"){
+        afterWorld2();
       } else {
-        if (S.stage === "world2") afterWorld2();
-        else if (S.stage === "world3") afterWorld3();
-        else win();
+        win();
       }
       break;
     }

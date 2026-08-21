@@ -62,6 +62,9 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 #meter .value{ display:block; font-size:clamp(18px,3.2vw,26px); font-weight:300; color:var(--ink);
                letter-spacing:0.12em; font-variant-numeric:tabular-nums; }
 #meter.struck .value{ text-decoration:line-through; color:var(--ink-faint); }
+#meter .pts{ display:block; margin-top:9px; font-size:clamp(11px,2vw,14px); color:var(--ink-soft);
+             letter-spacing:.1em; font-variant-numeric:tabular-nums; }
+#meter .pts b{ color:var(--ink); font-weight:500; }
 
 /* The confrontation. Fires once, 10s in. The world keeps scrolling under it —
    nothing pauses for a realization, that's the whole point being made. */
@@ -80,20 +83,24 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 /* The invitation between worlds. Framed the way a game already knows how to
    ask: level up. Top-right so it never covers terrain on a phone. */
 #levelUp{
-  position:fixed; z-index:6; top:clamp(16px,3vw,32px); right:clamp(16px,3vw,32px);
-  transform:translateY(-8px);
+  position:fixed; z-index:8; top:clamp(16px,3vw,32px); right:clamp(16px,3vw,32px);
+  transform:translateY(-10px);
   text-align:center; cursor:pointer; user-select:none;
-  border:1px solid var(--line); border-radius:4px; background:var(--bg-raise);
-  padding:clamp(10px,2vw,15px) clamp(16px,3.2vw,24px);
+  border:2px solid rgba(255,255,255,.5); border-radius:6px;
+  background:linear-gradient(180deg, rgba(28,28,32,.96), rgba(12,12,15,.96));
+  padding:clamp(14px,2.6vw,20px) clamp(22px,4vw,34px);
   opacity:0; pointer-events:none;
-  transition:opacity 1s ease, transform 1s ease, border-color .2s ease, box-shadow .2s ease;
+  transition:opacity .8s ease, transform .8s ease, border-color .2s ease, box-shadow .2s ease;
 }
-#levelUp.on{ opacity:1; pointer-events:auto; transform:translateY(0); animation:panelPulse 3.4s ease-in-out infinite; }
-#levelUp:hover{ border-color:rgba(255,255,255,.42); }
-#levelUp .lu-label{ font-size:clamp(9px,1.4vw,11px); color:var(--ink-faint); }
-#levelUp .lu-main{ margin-top:6px; font-size:clamp(14px,2.6vw,19px); font-weight:400; }
-#levelUp .lu-sub{ margin-top:8px; font-size:clamp(8px,1.3vw,10px); color:var(--ink-faint); }
-@keyframes panelPulse{ 0%,100%{ box-shadow:0 0 0 rgba(255,255,255,0); } 50%{ box-shadow:0 0 34px rgba(255,255,255,.07) inset; } }
+#levelUp.on{ opacity:1; pointer-events:auto; transform:translateY(0); animation:panelPulse 2.2s ease-in-out infinite; }
+#levelUp:hover{ border-color:#fff; transform:translateY(-2px); }
+#levelUp .lu-label{ font-size:clamp(9px,1.5vw,11px); color:var(--ink-soft); }
+#levelUp .lu-main{ margin-top:7px; font-size:clamp(17px,3.2vw,24px); font-weight:500; color:var(--ink); text-shadow:0 0 18px rgba(255,255,255,.3); }
+#levelUp .lu-sub{ margin-top:9px; font-size:clamp(8px,1.4vw,10px); color:var(--ink-faint); }
+@keyframes panelPulse{
+  0%,100%{ box-shadow:0 0 0 rgba(255,255,255,0), 0 0 26px rgba(255,255,255,.10); }
+  50%{ box-shadow:0 0 30px rgba(255,255,255,.10) inset, 0 0 48px rgba(255,255,255,.26); }
+}
 
 /* ----------------------------- Overlays ---------------------------------- */
 .overlay{
@@ -133,6 +140,16 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 #title .sub{ margin-top:clamp(28px,6vw,48px); font-size:clamp(10px,1.8vw,12px); color:var(--ink-faint); }
 #title .tagline2{ margin-top:clamp(14px,3vw,20px); font-size:clamp(10px,1.9vw,13px); color:var(--ink-soft); }
 #playBtn{ margin-top:clamp(26px,5vw,38px); padding:15px clamp(28px,5vw,42px); }
+#title .howto{
+  margin:clamp(26px,5vw,38px) auto 0; max-width:min(520px,90vw);
+  border:1px solid var(--line); border-radius:5px; background:var(--bg-raise);
+  padding:clamp(14px,3vw,20px); text-align:left;
+}
+#title .ht{ display:flex; gap:12px; align-items:flex-start; margin-bottom:10px; font-size:clamp(10px,1.8vw,12.5px); color:var(--ink-soft); font-weight:400; line-height:1.65; }
+#title .ht:last-of-type{ margin-bottom:0; }
+#title .htk{ flex:0 0 auto; width:62px; color:var(--ink-faint); font-size:9px; padding-top:2px; }
+#title .ht b{ color:var(--ink); font-weight:500; }
+#title .htnote{ margin-top:12px; padding-top:10px; border-top:1px solid var(--line); font-size:clamp(9px,1.6vw,11px); color:var(--ink-faint); font-style:italic; }
 #resume{
   display:none; margin:22px auto 0; background:none; border:1px solid var(--line);
   border-radius:3px; color:var(--ink-faint); font-family:inherit; cursor:pointer;
@@ -146,16 +163,16 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 #field .q{ font-size:clamp(18px,4.4vw,34px); font-weight:300; line-height:1.35; }
 #field .hint{ margin-top:clamp(12px,2.4vw,18px); font-size:clamp(11.5px,2vw,14.5px); color:var(--ink-soft); font-weight:400; }
 #field .eg{ margin-top:10px; font-size:clamp(11px,1.9vw,14px); color:var(--ink-soft); font-style:italic; font-weight:400; }
-#field input{
+#field textarea{
   margin-top:clamp(24px,5vw,38px); width:100%;
-  background:transparent; border:0; border-bottom:1px solid var(--line);
-  color:var(--ink); font-family:inherit; font-weight:300;
-  font-size:clamp(16px,3.4vw,24px); letter-spacing:0.04em;
-  padding:14px 4px; text-align:center; outline:none;
-  transition:border-color .25s ease;
+  background:rgba(0,0,0,.4); border:1px solid var(--line); border-radius:5px;
+  color:var(--ink); font-family:inherit; font-weight:400;
+  font-size:clamp(16px,3.2vw,22px); letter-spacing:0.02em; line-height:1.5;
+  padding:16px 18px; text-align:center; outline:none;
+  transition:border-color .25s ease, background .25s ease; resize:none; overflow:hidden;
 }
-#field input:focus{ border-bottom-color:rgba(255,255,255,0.55); }
-#field input::placeholder{ color:#2e2e34; letter-spacing:0.04em; }
+#field textarea:focus{ border-color:rgba(255,255,255,0.55); background:rgba(0,0,0,.6); }
+#field textarea::placeholder{ color:#2e2e34; letter-spacing:0.02em; }
 #field .keys{
   margin-top:clamp(22px,4.4vw,34px); display:flex; gap:clamp(14px,4vw,34px);
   justify-content:center; flex-wrap:wrap;
@@ -175,15 +192,21 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 .panel .rows{ margin-top:clamp(22px,4.4vw,32px); text-align:left; }
 .row{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
 .row .num{ flex:0 0 auto; width:26px; font-size:11px; color:var(--ink-faint); font-variant-numeric:tabular-nums; }
-.row input[type=text]{
+.row input[type=text], .row textarea{
   flex:1 1 auto; min-width:0;
-  background:transparent; border:0; border-bottom:1px solid var(--line);
-  color:var(--ink); font-family:inherit; font-weight:300;
-  font-size:clamp(13px,2.4vw,17px); padding:9px 2px; outline:none;
-  transition:border-color .2s ease;
+  background:rgba(0,0,0,.35); border:1px solid var(--line); border-radius:4px;
+  color:var(--ink); font-family:inherit; font-weight:400;
+  font-size:clamp(13px,2.4vw,16px); line-height:1.5; padding:11px 13px; outline:none;
+  transition:border-color .2s ease, background .2s ease;
+  resize:none; overflow:hidden;
 }
-.row input[type=text]:focus{ border-bottom-color:rgba(255,255,255,0.55); }
-.row input[type=text]::placeholder{ color:#2e2e34; }
+.row input[type=text]:focus, .row textarea:focus{
+  border-color:rgba(255,255,255,0.5); background:rgba(0,0,0,.55);
+}
+.row input[type=text]::placeholder, .row textarea::placeholder{ color:#2e2e34; }
+.row{ align-items:flex-start; }
+.row .num{ padding-top:12px; }
+.row .kill, .row .mv{ margin-top:5px; }
 .row input[type=date]{
   flex:0 0 auto;
   background:var(--bg-raise); border:1px solid var(--line); border-radius:3px;
@@ -339,16 +362,17 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
 .rsblock{ margin-bottom:20px; }
 .rsblock .ob{ font-size:clamp(12px,2.2vw,15px); color:var(--ink); font-weight:500; margin-bottom:8px; display:flex; gap:9px; align-items:baseline; }
 .rsblock .ob .mk{ color:var(--ink-faint); font-size:.85em; font-weight:400; }
-.rsblock input{
-  width:100%; background:transparent; border:0; border-bottom:1px solid var(--line);
-  color:var(--ink-soft); font-family:inherit; font-weight:400;
-  font-size:clamp(12px,2.2vw,15px); padding:9px 2px; outline:none; transition:border-color .2s ease;
+.rsblock textarea{
+  width:100%; background:rgba(0,0,0,.35); border:1px solid var(--line); border-radius:4px;
+  color:var(--ink); font-family:inherit; font-weight:400; line-height:1.5;
+  font-size:clamp(12px,2.2vw,15px); padding:11px 13px; outline:none;
+  transition:border-color .2s ease, background .2s ease; resize:none; overflow:hidden;
 }
-.rsblock input:focus{ border-bottom-color:rgba(255,255,255,.55); color:var(--ink); }
-.rsblock input::placeholder{ color:#2e2e34; }
+.rsblock textarea:focus{ border-color:rgba(255,255,255,.5); background:rgba(0,0,0,.55); }
+.rsblock textarea::placeholder{ color:#2e2e34; }
 
 .reorder .row.goalrow{ margin-bottom:14px; }
-.reorder .row.goalrow input.tx{ color:var(--ink); font-size:clamp(14px,2.6vw,18px); border-bottom-color:rgba(255,255,255,.3); }
+.reorder .row.goalrow .tx{ color:var(--ink); font-size:clamp(14px,2.6vw,18px); border-bottom-color:rgba(255,255,255,.3); }
 .reorder .row .tx{ cursor:default; }
 .reorder .row.editing .tx{ cursor:text; color:var(--ink); border-bottom-color:rgba(255,255,255,.6); }
 .reorder .row.editing .pencil{ border-color:rgba(255,255,255,.6); color:var(--ink); }
@@ -424,6 +448,13 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
 }
 #winScene{ display:block; width:min(460px,82vw); height:auto; margin:clamp(4px,1.2vw,10px) auto 0; }
 #win .congrats{ margin-top:clamp(10px,2vw,16px); font-size:clamp(30px,6.6vw,54px); font-weight:200; }
+#win .score{ margin-top:clamp(14px,3vw,22px); display:flex; align-items:baseline; justify-content:center; gap:10px; }
+#win .scorenum{
+  font-size:clamp(38px,8vw,64px); font-weight:200; color:var(--ink);
+  letter-spacing:.04em; font-variant-numeric:tabular-nums;
+  text-shadow:0 0 30px rgba(255,255,255,.35);
+}
+#win .scorelbl{ font-size:clamp(10px,1.8vw,13px); color:var(--ink-faint); }
 #win .congratsub{
   margin-top:12px; font-size:clamp(11px,2vw,14px); color:var(--ink-soft); font-weight:300; line-height:1.7;
   max-width:48ch; margin-left:auto; margin-right:auto;
@@ -489,6 +520,7 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
   <div id="meter">
     <span class="label tracked-sm">Time drifted</span>
     <span class="value" id="meterValue">0:00</span>
+    <span class="pts" id="meterPts"></span>
   </div>
 </div>
 
@@ -514,6 +546,17 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
     <h1 class="tracked glow-text">Drift</h1>
     <p class="tagline2 tracked-sm">Goals. Gamified.</p>
     <button id="playBtn" class="cta tracked-sm">Play Game</button>
+    <div class="howto">
+      <div class="ht">
+        <span class="htk tracked-sm">Keyboard</span>
+        <span>Arrow keys or <b>A</b>/<b>D</b> to move &nbsp;&middot;&nbsp; <b>Space</b>, <b>W</b> or <b>&uarr;</b> to jump &nbsp;&middot;&nbsp; <b>Enter</b> to set your goal</span>
+      </div>
+      <div class="ht">
+        <span class="htk tracked-sm">Touch</span>
+        <span>On-screen buttons: <b>&#9664; &#9654;</b> to move, <b>Jump</b> to jump. Tap the panels to answer.</span>
+      </div>
+      <p class="htnote">A mouse won't move the ball &mdash; use the keys on a computer, or the buttons on a phone or tablet.</p>
+    </div>
     <button id="resume" class="tracked-sm">Resume my saved plan</button>
   </div>
 </div>
@@ -525,8 +568,8 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
     <p class="q" id="fieldQ">What do you want?</p>
     <p class="hint" id="fieldHint">Write it as if it already happened. Not &ldquo;I want to&rdquo; &mdash; &ldquo;I have.&rdquo;</p>
     <p class="eg" id="fieldEg">e.g. &ldquo;I went to Europe with my family.&rdquo;</p>
-    <input id="goalInput" type="text" maxlength="90" autocomplete="off" autocapitalize="sentences"
-           spellcheck="false" placeholder="I have&hellip;">
+    <textarea id="goalInput" rows="2" autocomplete="off" autocapitalize="sentences"
+              spellcheck="false" placeholder="I have&hellip;"></textarea>
     <div class="keys tracked-sm">
       <span><b>Enter</b> &nbsp;<span id="fieldEnterHint">to write it</span></span>
       <span class="refuse" id="fieldRefuse"><b>Esc</b> &nbsp;to keep drifting</span>
@@ -542,7 +585,10 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
     <p class="eg">Write each one the same way &mdash; as if it already happened. e.g. &ldquo;I booked the flights.&rdquo;</p>
     <div class="rows" id="cpRows"></div>
     <button class="addbtn tracked-sm" id="cpAdd">+ &nbsp;Add checkpoint</button>
-    <div><button class="cta tracked-sm" id="cpDone">Continue &nbsp;&rarr;</button></div>
+    <div>
+      <button class="cta tracked-sm" id="cpDone">Continue &nbsp;&rarr;</button>
+      <div><button class="backbtn tracked-sm" id="cpBack">&larr; &nbsp;Rewrite my goal</button></div>
+    </div>
   </div>
 </div>
 
@@ -554,7 +600,7 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
     <div class="rows">
       <div class="row">
         <span class="num">&#9670;</span>
-        <input type="text" id="dtGoalText" readonly>
+        <textarea id="dtGoalText" rows="1" readonly></textarea>
         <input type="date" id="dtGoalDate">
       </div>
     </div>
@@ -562,7 +608,10 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
       <p class="eg" style="margin-top:18px">Each checkpoint, and any smaller steps underneath it.</p>
       <div class="rows" id="dtRows"></div>
     </div>
-    <div><button class="cta tracked-sm" id="dtDone" disabled>See the plan &nbsp;&rarr;</button></div>
+    <div>
+      <button class="cta tracked-sm" id="dtDone" disabled>See the plan &nbsp;&rarr;</button>
+      <div><button class="backbtn tracked-sm" id="dtBack">&larr; &nbsp;Edit checkpoints</button></div>
+    </div>
   </div>
 </div>
 
@@ -595,7 +644,7 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
 <canvas id="minimap" width="1120" height="104"></canvas>
 <button id="skipBtn" class="tracked-sm">Skip level &nbsp;&rarr;</button>
 
-<button id="muteBtn" class="tracked-sm" aria-label="Toggle sound">Sound on</button>
+<button id="muteBtn" class="tracked-sm" aria-label="Sound mode">Sound: on</button>
 
 <div id="pad">
   <div class="padgrp">
@@ -613,7 +662,10 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
     <p class="eg" id="lpEg"></p>
     <div class="rows" id="lpRows"></div>
     <button class="addbtn tracked-sm" id="lpAdd">+ &nbsp;Add another</button>
-    <div><button class="cta tracked-sm" id="lpDone">Continue &nbsp;&rarr;</button></div>
+    <div>
+      <button class="cta tracked-sm" id="lpDone">Continue &nbsp;&rarr;</button>
+      <div><button class="backbtn tracked-sm" id="lpBack">&larr; &nbsp;Rewrite my goal</button></div>
+    </div>
   </div>
 </div>
 
@@ -624,7 +676,10 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
     <p class="eg">Untick anything that isn't yours. Add your own with the button below.</p>
     <div class="rows" id="dcRows"></div>
     <button class="addbtn tracked-sm" id="dcAdd">+ &nbsp;Add your own</button>
-    <div><button class="cta tracked-sm" id="dcDone">Carry them down &nbsp;&rarr;</button></div>
+    <div>
+      <button class="cta tracked-sm" id="dcDone">Carry them down &nbsp;&rarr;</button>
+      <div><button class="backbtn tracked-sm" id="dcBack">&larr; &nbsp;Rewrite my goal</button></div>
+    </div>
   </div>
 </div>
 
@@ -634,7 +689,10 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
     <p class="why">This is the part almost nobody does. Deciding your response now, before the obstacle shows up, is the difference between a plan that survives contact and one that doesn't. Write what you will actually do.</p>
     <p class="eg">e.g. for &ldquo;something breaks and eats the savings&rdquo; &mdash; &ldquo;I move the trip back one month rather than cancel it.&rdquo;</p>
     <div class="rows" id="rsRows"></div>
-    <div><button class="cta tracked-sm" id="rsDone">Continue &nbsp;&rarr;</button></div>
+    <div>
+      <button class="cta tracked-sm" id="rsDone">Continue &nbsp;&rarr;</button>
+      <div><button class="backbtn tracked-sm" id="rsBack">&larr; &nbsp;Edit my obstacles</button></div>
+    </div>
   </div>
 </div>
 
@@ -661,6 +719,7 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
       </div>
       <canvas id="winScene" width="520" height="190"></canvas>
       <h2 class="congrats tracked glow-text">You made it.</h2>
+      <div class="score"><span class="scorenum" id="winPoints">0</span><span class="scorelbl tracked-sm">points</span></div>
       <p class="congratsub" id="winCongratSub"></p>
     </section>
 
@@ -800,6 +859,7 @@ const S = {
   camX : 0, camY : 0, camVel : CFG.DRIFT_SPEED,
   showMap : false,
   diff : 0,              // rises one per level, nudges hazard density
+  points : 0, scored : {}, leveldeaths : 0,
   flashT : 0, turnT : 0, confronted : false,
   walkStart : 0, lastCheck : null, floorY : 720,
 };
@@ -1301,7 +1361,7 @@ function die(){
   AUDIO.die();
   if (S.phase === "drift"){ S.deaths++; respawnDrift(); }
   else if (S.phase === "walk"){
-    S.walkDeaths++;
+    S.walkDeaths++; S.leveldeaths++;
     const c = S.lastCheck || { x:S.walkStart, y:430 };
     player.x = c.x - player.w/2; player.y = c.y - player.h - 4;
   }
@@ -1613,11 +1673,34 @@ function anyPanelOpen(){
          el("rsPanel").classList.contains("on");
 }
 
+// Text boxes grow with what's written in them — nothing is ever cut off and
+// there is no length cap anywhere.
+function autoGrow(node){
+  const fit = function(){ node.style.height = "auto"; node.style.height = (node.scrollHeight + 2) + "px"; };
+  node.addEventListener("input", fit);
+  setTimeout(fit, 0);
+  return fit;
+}
+
+// Scored for the thinking, not the reflexes. Naming an obstacle and deciding
+// your answer to it is worth the most, because that's the part almost nobody does.
+const PTS = {
+  goal:150, why:120, checkpoint:60, date:30, step:40,
+  obstacle:50, response:90, supply:35, person:35, declaration:25,
+  flag:10, clean:100, firstAction:120,
+};
+function addPoints(kind, key, n){
+  if (key){ if (S.scored[key]) return; S.scored[key] = true; }
+  S.points += (n == null ? (PTS[kind] || 0) : n);
+}
+function fmtPts(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+
 function clock(s){
   const m = Math.floor(s / 60), r = Math.floor(s % 60);
   return m + ":" + String(r).padStart(2, "0");
 }
 function updateHud(){
+  el("meterPts").innerHTML = S.points ? '<b>' + fmtPts(S.points) + '</b> pts' : "";
   if (S.phase === "drift"){ meterValue.textContent = clock(S.t); return; }
   if (S.phase !== "walk") return;
   const next = flags.find(f => !f.got);
@@ -1680,6 +1763,7 @@ goalInput.addEventListener("keydown", e => {
 
 function commitGoal(text){
   S.goal = text;
+  addPoints("goal", "goal");
   closeField();
   hideLevelUp();
   confront.style.display = "none";
@@ -1690,7 +1774,7 @@ function commitGoal(text){
     hint:"The reason has to be bigger than the effort, or you'll trade it away.",
     eg:"e.g. \u201cMy kids see the world before they leave home.\u201d",
     ph:"because\u2026",
-    val:function(v){ S.why = v; },
+    val:function(v){ S.why = v; addPoints("why", "why"); },
     then:function(){
       AUDIO.turn();
       S.phase = "turn"; S.turnT = 0; S.flashT = 1;
@@ -1737,19 +1821,20 @@ function openCheckpoints(){
   redrawCp();
   cpPanel.classList.add("on");
   setTimeout(function(){
-    const ins = el("cpRows").querySelectorAll("input");
-    if (ins.length) ins[ins.length - 1].focus();   // bottom row = checkpoint 1
+    const ins = el("cpRows").querySelectorAll("textarea");
+    if (ins.length) ins[0].focus();
   }, 80);
 }
 function cpRow(c, i){
   const d = document.createElement("div");
   d.className = "row";
-  d.innerHTML = '<span class="num">' + (i + 1) + '</span>' +
-    '<input type="text" maxlength="90" placeholder="I have&hellip;">' +
+  d.innerHTML = '<span class="num">&middot;</span>' +
+    '<textarea rows="1" placeholder="I have&hellip;"></textarea>' +
     '<button class="mv" title="Move up">&uarr;</button>' +
     '<button class="mv" title="Move down">&darr;</button>' +
     '<button class="kill" title="Remove">&times;</button>';
-  const inp = d.querySelector("input");
+  const inp = d.querySelector("textarea");
+  autoGrow(inp);
   inp.value = c.text;
   inp.addEventListener("input", () => { c.text = inp.value; });
   inp.addEventListener("keydown", e => {
@@ -1766,8 +1851,8 @@ function cpRow(c, i){
     redrawCp();
   };
   const mv = d.querySelectorAll(".mv");
-  mv[0].addEventListener("click", function(){ swap(i, i + 1); });   // visually up
-  mv[1].addEventListener("click", function(){ swap(i, i - 1); });   // visually down
+  mv[0].addEventListener("click", function(){ swap(i, i - 1); });   // up the list
+  mv[1].addEventListener("click", function(){ swap(i, i + 1); });   // down the list
 
   d.querySelector(".kill").addEventListener("click", () => {
     if (S.checkpoints.length <= 1) return;
@@ -1777,23 +1862,61 @@ function cpRow(c, i){
   return d;
 }
 function redrawCp(){
+  // Plain reading order, first to last, top to bottom.
   const rows = el("cpRows"); rows.innerHTML = "";
-  // Rendered highest-number-first so #1 lands at the bottom: the list builds
-  // upward toward the goal, the same direction the climb goes.
-  for (let i = S.checkpoints.length - 1; i >= 0; i--) rows.appendChild(cpRow(S.checkpoints[i], i));
+  S.checkpoints.forEach(function(c, i){ rows.appendChild(cpRow(c, i)); });
 }
 function addCp(){
   S.checkpoints.push({text:"",date:"",steps:[]});
   redrawCp();
-  const inputs = el("cpRows").querySelectorAll("input");
-  if (inputs.length) inputs[0].focus();            // the new one appears on top
+  const inputs = el("cpRows").querySelectorAll("textarea");
+  if (inputs.length) inputs[inputs.length - 1].focus();   // the new one is at the bottom
 
 }
 el("cpAdd").addEventListener("click", addCp);
+
+// Nothing written is ever locked. Every panel can hand you back to the goal or
+// to the step before it, and returning re-opens that panel where you left it.
+function reopenGoal(returnTo){
+  askOne({
+    top:"Make a goal", q:"What do you want?",
+    hint:"Write it as if it already happened. Not \u201cI want to\u201d \u2014 \u201cI have.\u201d",
+    eg:"e.g. \u201cI went to Europe with my family.\u201d", ph:"I have\u2026",
+    val:function(v){ S.goal = v; },
+    then:function(){ if (returnTo) returnTo(); },
+  });
+  goalInput.value = S.goal;
+  setTimeout(function(){ goalInput.dispatchEvent(new Event("input")); }, 10);
+}
+el("cpBack").addEventListener("click", function(){
+  cpPanel.classList.remove("on");
+  reopenGoal(function(){ openCheckpoints(); });
+});
+el("dtBack").addEventListener("click", function(){
+  dtPanel.classList.remove("on");
+  openCheckpointsReturning(openDates);
+});
+el("lpBack").addEventListener("click", function(){
+  const back = lpReopen;
+  el("listPanel").classList.remove("on");
+  reopenGoal(function(){ if (back) back(); });
+});
+el("dcBack").addEventListener("click", function(){
+  el("dcPanel").classList.remove("on");
+  reopenGoal(function(){ openDeclarations(); });
+});
+el("rsBack").addEventListener("click", function(){
+  el("rsPanel").classList.remove("on");
+  openList(lpLastCfg);
+});
+let cpReturn = null;
+function openCheckpointsReturning(fn){ cpReturn = fn; openCheckpoints(); }
 el("cpDone").addEventListener("click", () => {
   S.checkpoints = S.checkpoints.filter(c => c.text.trim().length >= 3);
   if (!S.checkpoints.length){ redrawCp(); return; }   // need at least one real checkpoint
+  S.checkpoints.forEach(function(c){ addPoints("checkpoint", "cp-" + c.text); });
   cpPanel.classList.remove("on");
+  if (cpReturn){ const f = cpReturn; cpReturn = null; f(); return; }
   launchWorld3();
 });
 
@@ -1879,6 +2002,7 @@ function drawSplashArt(n){
   g.shadowBlur = 0;
 }
 function splash(n, name, line, then){
+  S.leveldeaths = 0;
   S.diff = Math.max(0, n - 3);   // levels 1-3 stay gentle, then it tightens
   if (Date.now() >= AUDIO.holdUntil) AUDIO.resume();
   el("splashLv").textContent = "Level " + n;
@@ -1910,9 +2034,11 @@ function skipLevel(){
 el("skipBtn").addEventListener("click", skipLevel);
 
 /* ---- generic list panel (obstacles / things / people) ---- */
-let lpStore = null, lpNext = null;
+let lpStore = null, lpNext = null, lpReopen = null, lpLastCfg = null;
 function openList(cfg){
   lpStore = cfg.store; lpNext = cfg.next;
+  lpLastCfg = cfg;
+  lpReopen = function(){ openList(cfg); };
   el("lpHead").textContent = cfg.head;
   el("lpWhy").textContent = cfg.why;
   el("lpEg").textContent = cfg.eg;
@@ -1921,18 +2047,20 @@ function openList(cfg){
   drawList(cfg.placeholder);
   el("lpAdd").onclick = function(){
     lpStore.push({text:""}); drawList(cfg.placeholder);
-    const ins = el("lpRows").querySelectorAll("input");
+    const ins = el("lpRows").querySelectorAll("textarea");
     ins[ins.length-1].focus();
   };
   el("lpDone").onclick = function(){
     const kept = lpStore.filter(function(o){ return o.text.trim().length >= 2; });
     if (!kept.length) return;
     lpStore.length = 0; kept.forEach(function(k){ lpStore.push(k); });
+    const kind = lpStore === S.obstacles ? "obstacle" : (lpStore === S.things ? "supply" : "person");
+    kept.forEach(function(k){ addPoints(kind, kind + "-named-" + k.text); });
     el("listPanel").classList.remove("on");
     lpNext();
   };
   el("listPanel").classList.add("on");
-  setTimeout(function(){ const f = el("lpRows").querySelector("input"); if (f) f.focus(); }, 80);
+  setTimeout(function(){ const f = el("lpRows").querySelector("textarea"); if (f) f.focus(); }, 80);
 }
 function drawList(ph){
   const rows = el("lpRows"); rows.innerHTML = "";
@@ -1940,8 +2068,9 @@ function drawList(ph){
     const d = document.createElement("div");
     d.className = "row";
     d.innerHTML = '<span class="num">' + (i+1) + '</span>' +
-      '<input type="text" maxlength="70"><button class="kill">&times;</button>';
-    const inp = d.querySelector("input");
+      '<textarea rows="1"></textarea><button class="kill">&times;</button>';
+    const inp = d.querySelector("textarea");
+    autoGrow(inp);
     inp.placeholder = ph; inp.value = o.text;
     inp.addEventListener("input", function(){ o.text = inp.value; });
     inp.addEventListener("keydown", function(e){ e.stopPropagation(); });
@@ -1962,18 +2091,22 @@ function openResponses(){
     const d = document.createElement("div");
     d.className = "rsblock";
     d.innerHTML = '<div class="ob"><span class="mk">When</span><span class="obt"></span></div>' +
-                  '<input type="text" maxlength="120" placeholder="I will\u2026">';
+                  '<textarea rows="2" placeholder="I will\u2026"></textarea>';
     d.querySelector(".obt").textContent = ob.text;
-    const inp = d.querySelector("input");
+    const inp = d.querySelector("textarea");
+    autoGrow(inp);
     inp.value = ob.response || "";
     inp.addEventListener("input", function(){ ob.response = inp.value; });
     inp.addEventListener("keydown", function(e){ e.stopPropagation(); });
     rows.appendChild(d);
   });
   el("rsPanel").classList.add("on");
-  setTimeout(function(){ const f = rows.querySelector("input"); if (f) f.focus(); }, 80);
+  setTimeout(function(){ const f = rows.querySelector("textarea"); if (f) f.focus(); }, 80);
 }
 el("rsDone").addEventListener("click", function(){
+  S.obstacles.forEach(function(o){
+    if (o.response && o.response.trim().length >= 3) addPoints("response", "rs-" + o.response);
+  });
   el("rsPanel").classList.remove("on");
   launchWorld5();
 });
@@ -1992,11 +2125,12 @@ function drawReorder(){
     d.className = "row " + cls;
     d.innerHTML =
       '<span class="num">' + mark + '</span>' +
-      '<input class="tx" type="text" maxlength="120" readonly>' +
+      '<textarea class="tx" rows="1" readonly></textarea>' +
       '<button class="mv pencil" title="Edit">\u270e</button>' +
       '<input class="dt" type="date">' +
       (opts.moves ? '<button class="mv">&uarr;</button><button class="mv">&darr;</button>' : '');
     const tx = d.querySelector(".tx"), dt = d.querySelector(".dt");
+    autoGrow(tx);
     tx.value = obj.text != null ? obj.text : obj.goalText;
     dt.value = obj.date || "";
 
@@ -2061,8 +2195,9 @@ function drawDecRows(){
     const r = document.createElement("div");
     r.className = "row";
     r.innerHTML = '<span class="num">' + (d.on ? "\u2713" : "") + '</span>' +
-      '<input type="text" maxlength="120"><button class="kill">&times;</button>';
-    const inp = r.querySelector("input");
+      '<textarea rows="1"></textarea><button class="kill">&times;</button>';
+    const inp = r.querySelector("textarea");
+    autoGrow(inp);
     inp.value = d.t;
     if (!d.on) inp.style.opacity = ".4";
     inp.addEventListener("input", function(){ d.t = inp.value; });
@@ -2078,12 +2213,13 @@ function drawDecRows(){
 el("dcAdd").addEventListener("click", function(){
   S.declarations.push({ t:"", own:true, on:true });
   drawDecRows();
-  const ins = el("dcRows").querySelectorAll("input");
+  const ins = el("dcRows").querySelectorAll("textarea");
   if (ins.length) ins[ins.length-1].focus();
 });
 el("dcDone").addEventListener("click", function(){
   S.declarations = S.declarations.filter(function(d){ return d.t.trim().length >= 3; });
   if (!S.declarations.length) return;
+  S.declarations.forEach(function(d){ if (d.on) addPoints("declaration", "dc-" + d.t); });
   el("dcPanel").classList.remove("on");
   launchDeclarationLand();
 });
@@ -2223,9 +2359,9 @@ function redrawDates(){
     const d = document.createElement("div");
     d.className = "row";
     d.innerHTML = '<span class="num">' + (i+1) + '</span>' +
-      '<input type="text" maxlength="90"><input type="date">';
-    const ins = d.querySelectorAll("input");
-    const ti = ins[0], di = ins[1];
+      '<textarea rows="1"></textarea><input type="date">';
+    const ti = d.querySelector("textarea"), di = d.querySelector('input[type=date]');
+    autoGrow(ti);
     ti.value = c.text; di.value = c.date || "";
     ti.addEventListener("input", () => { c.text = ti.value; });
     ti.addEventListener("keydown", e => e.stopPropagation());
@@ -2236,10 +2372,10 @@ function redrawDates(){
       const sd = document.createElement("div");
       sd.className = "row step";
       sd.innerHTML = '<span class="num">&middot;</span>' +
-        '<input type="text" maxlength="90" placeholder="a smaller step"><input type="date">' +
+        '<textarea rows="1" placeholder="a smaller step"></textarea><input type="date">' +
         '<button class="kill">&times;</button>';
-      const sins = sd.querySelectorAll("input");
-      const sti = sins[0], sdi = sins[1];
+      const sti = sd.querySelector("textarea"), sdi = sd.querySelector('input[type=date]');
+      autoGrow(sti);
       sti.value = st.text; sdi.value = st.date || "";
       sti.addEventListener("input", () => { st.text = sti.value; });
       sti.addEventListener("keydown", e => e.stopPropagation());
@@ -2260,7 +2396,12 @@ function redrawDates(){
 }
 el("dtDone").addEventListener("click", () => {
   if (!S.goalDate) return;
-  S.checkpoints.forEach(c => { c.steps = c.steps.filter(s => s.text.trim().length >= 2); });
+  S.checkpoints.forEach(function(c, i){
+    c.steps = c.steps.filter(function(s){ return s.text.trim().length >= 2; });
+    if (c.date) addPoints("date", "d-" + i + "-" + c.date);
+    c.steps.forEach(function(st){ addPoints("step", "st-" + st.text); });
+  });
+  if (S.goalDate) addPoints("date", "d-goal-" + S.goalDate);
   dtPanel.classList.remove("on");
   buildTree(el("planTree"));
   buildCalendar(el("planCal"));
@@ -2422,7 +2563,7 @@ function askFirstAction(){
     hint:"One thing. Small enough that there is no excuse not to.",
     eg:"e.g. \u201cPick the month and tell my wife.\u201d",
     ph:"the very next thing",
-    val:function(v){ S.firstAction = v; },
+    val:function(v){ S.firstAction = v; addPoints("firstAction", "firstAction"); },
     then:function(){ win(); }   // declarations were chosen back in Declaration Land
   });
 }
@@ -2492,6 +2633,7 @@ function win(){
   buildCalendar(el("winCal"));
 
   drawWinScene();
+  el("winPoints").textContent = fmtPts(S.points);
   const nCp = S.checkpoints.length;
   const nSteps = S.checkpoints.reduce(function(a,c){ return a + c.steps.length; }, 0);
   const bits = [nCp + (nCp === 1 ? " checkpoint" : " checkpoints")];
@@ -2584,6 +2726,7 @@ function saveToUrl(){
       t:S.things.map(function(x){ return x.text; }),
       p:S.people.map(function(x){ return x.text; }),
       dc:S.declarations.filter(function(x){ return x.on; }).map(function(x){ return x.t; }),
+      pt:S.points,
     };
     const enc = btoa(unescape(encodeURIComponent(JSON.stringify(pack))));
     history.replaceState(null, "", "#p=" + enc);
@@ -2609,6 +2752,7 @@ function loadFromUrl(fromStorage){
     S.things    = (o.t||[]).map(function(t){ return {text:t}; });
     S.people    = (o.p||[]).map(function(t){ return {text:t}; });
     S.declarations = (o.dc||[]).map(function(t){ return { t:t, own:false, on:true }; });
+    S.points = o.pt || 0;
     return true;
   } catch(e){ return false; }
 }
@@ -2678,6 +2822,7 @@ function start(){
   S.goal = ""; S.goalDate = ""; S.checkpoints = []; S.stage = "";
   S.obstacles = []; S.things = []; S.people = []; S.ballR = 12; S.freeCam = false; S.showMap = false; S.diff = 0;
   S.why = ""; S.firstAction = ""; S.firstActionBy = ""; S.declarations = []; S.descend = false;
+  S.points = 0; S.scored = {}; S.leveldeaths = 0;
   birds = []; orbs = []; folk = [];
   minimap.classList.remove("on");
   S.deaths = 0; S.walkDeaths = 0; S.t = 0;
@@ -2690,7 +2835,8 @@ function start(){
    be the loudest thing in the room.
    =========================================================================== */
 const AUDIO = {
-  ctx:null, master:null, on:true, timer:null, step:0, track:null, holdUntil:0,
+  ctx:null, master:null, mode:"all", timer:null, step:0, track:null, holdUntil:0,
+  get on(){ return this.mode !== "off"; },
 
   boot:function(){
     if (this.ctx) { if (this.ctx.state === "suspended") this.ctx.resume(); return; }
@@ -2706,7 +2852,7 @@ const AUDIO = {
   // seconds from now, so a whole phrase can be scheduled in one go and stay in
   // time — setTimeout jitter is what made the old fanfare sound broken up.
   voice:function(freq, at, dur, vol, type, detune){
-    if (!this.ctx || !this.on || !freq) return;
+    if (!this.ctx || this.mode === "off" || !freq) return;
     const t = this.ctx.currentTime + (at || 0);
     const o = this.ctx.createOscillator(), g = this.ctx.createGain();
     o.type = type || "triangle";
@@ -2729,7 +2875,7 @@ const AUDIO = {
 
   // one short square-wave note
   note:function(freq, dur, vol, type){
-    if (!this.ctx || !this.on || !freq) return;
+    if (!this.ctx || this.mode === "off" || !freq) return;
     const t = this.ctx.currentTime;
     const o = this.ctx.createOscillator(), g = this.ctx.createGain();
     o.type = type || "square";
@@ -2741,7 +2887,7 @@ const AUDIO = {
     o.start(t); o.stop(t + (dur || 0.12) + 0.02);
   },
   slide:function(f1, f2, dur, vol){
-    if (!this.ctx || !this.on) return;
+    if (!this.ctx || this.mode === "off") return;
     const t = this.ctx.currentTime;
     const o = this.ctx.createOscillator(), g = this.ctx.createGain();
     o.type = "square";
@@ -2822,6 +2968,7 @@ const AUDIO = {
   resume:function(){ this.holdUntil = 0; },
 
   play:function(key){
+    if (this.mode !== "all"){ this.stop(); return; }   // effects-only keeps the blips, drops the track
     if (Date.now() < this.holdUntil) return;
     this.boot();
     const t = this.TRACKS[key];
@@ -2831,7 +2978,7 @@ const AUDIO = {
     this.track = key; this.step = 0;
     const self = this;
     this.timer = setInterval(function(){
-      if (!self.on) return;
+      if (self.mode !== "all") return;
       const f = t.n[self.step % t.n.length];
       self.step++;
       if (f) self.note(f, t.ms/1000 * 0.75, t.v, "square");
@@ -2839,14 +2986,18 @@ const AUDIO = {
   },
   stop:function(){ if (this.timer){ clearInterval(this.timer); this.timer = null; } this.track = null; },
   resume:function(){ this.holdUntil = 0; },
-  toggle:function(){
-    this.on = !this.on;
-    if (this.on) this.boot();
-    el("muteBtn").textContent = this.on ? "Sound on" : "Sound off";
-    return this.on;
+  MODES:["all","sfx","off"],
+  LABELS:{ all:"Sound: on", sfx:"Sound: effects only", off:"Sound: off" },
+  cycle:function(){
+    const i = this.MODES.indexOf(this.mode);
+    this.mode = this.MODES[(i + 1) % this.MODES.length];
+    if (this.mode !== "off") this.boot();
+    if (this.mode !== "all") this.stop();
+    el("muteBtn").textContent = this.LABELS[this.mode];
+    return this.mode;
   }
 };
-el("muteBtn").addEventListener("click", function(e){ e.stopPropagation(); AUDIO.toggle(); });
+el("muteBtn").addEventListener("click", function(e){ e.stopPropagation(); AUDIO.cycle(); });
 
 /* ===========================================================================
    LOOP
@@ -2904,7 +3055,7 @@ function frame(now){
     for (const o of orbs){
       if (o.got) continue;
       if (Math.abs(o.x - pcx) < 24 && Math.abs(o.y - pcy) < 24){
-        o.got = true; AUDIO.collect();
+        o.got = true; AUDIO.collect(); addPoints("supply");
         S.lastCheck = { x:o.x, y:groundUnder(o.x, o.y) };
       }
     }
@@ -2916,7 +3067,7 @@ function frame(now){
       }
       if (f.got) continue;
       if (Math.abs(f.x - pcx) < 34 && Math.abs(f.y - (player.y + player.h)) < 70){
-        f.got = true; AUDIO.wave(); S.lastCheck = { x:f.x, y:f.y };
+        f.got = true; AUDIO.wave(); addPoints("person"); S.lastCheck = { x:f.x, y:f.y };
       }
     }
 
@@ -2924,7 +3075,11 @@ function frame(now){
       if (f.got) continue;
       if (!aabb(player, flagBox(f))) continue;   // you have to actually touch it
       f.got = true;
-      if (f.kind === "goal") AUDIO.goal(); else AUDIO.flag();
+      addPoints("flag");
+      if (f.kind === "goal"){
+        AUDIO.goal();
+        if (!S.leveldeaths) addPoints("clean", "clean-" + S.stage);
+      } else AUDIO.flag();
       // The goal flag is a checkpoint too — you can keep playing while the
       // level-up panel is up, so falling after it shouldn't throw you back.
       S.lastCheck = { x:f.x, y:f.y };

@@ -132,6 +132,7 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 
 /* --------------------------- Field (one prompt) --------------------------- */
 #field .ctx{ margin-bottom:clamp(12px,2.6vw,18px); color:var(--ink-faint); display:none; }
+#field .qtop{ font-size:clamp(10px,1.8vw,12px); color:var(--ink-faint); margin-bottom:clamp(12px,2.4vw,18px); }
 #field .q{ font-size:clamp(18px,4.4vw,34px); font-weight:300; line-height:1.35; }
 #field .hint{ margin-top:clamp(12px,2.4vw,18px); font-size:clamp(11px,1.9vw,14px); color:var(--ink-faint); font-weight:300; }
 #field .eg{ margin-top:10px; font-size:clamp(11px,1.9vw,14px); color:var(--ink-soft); font-style:italic; font-weight:300; }
@@ -207,9 +208,9 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 .cta[disabled]{ opacity:.35; cursor:not-allowed; }
 .cta[disabled]:hover{ border-color:var(--line); color:var(--ink-soft); box-shadow:none; }
 .goalline{
-  margin-top:clamp(16px,3vw,24px); padding:14px 16px;
+  margin-top:clamp(16px,3vw,24px); padding:18px 20px;
   border:1px solid var(--line); border-radius:3px; background:var(--bg-raise);
-  font-size:clamp(12px,2.1vw,15px); font-weight:300; color:var(--ink);
+  font-size:clamp(16px,3.2vw,24px); font-weight:300; color:var(--ink); line-height:1.35;
 }
 .goalline .lbl{ display:block; font-size:10px; color:var(--ink-faint); margin-bottom:6px; }
 
@@ -230,14 +231,21 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 .tree .t-st{ margin-top:4px; margin-left:44px; color:var(--ink-soft); font-size:0.92em; }
 .tree .t-date{ color:var(--ink-faint); font-size:0.85em; font-variant-numeric:tabular-nums; }
 
-.cal{ display:flex; flex-direction:column; gap:20px; }
+.cal{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:16px; }
+.cal .agenda{
+  grid-column:1/-1; margin-bottom:4px; font-size:clamp(11px,1.9vw,13px);
+  color:var(--ink-soft); font-weight:300; line-height:1.9;
+}
+.cal .agenda .ln{ display:flex; gap:10px; align-items:baseline; }
+.cal .agenda .dt{ flex:0 0 auto; width:78px; color:var(--ink-faint); font-size:.85em; font-variant-numeric:tabular-nums; }
+.cal .agenda .cd{ flex:0 0 auto; width:52px; color:var(--ink-faint); font-size:.8em; }
 .cal .mon h4{ font-size:clamp(10px,1.7vw,12px); font-weight:400; color:var(--ink-soft); margin-bottom:8px; }
 .cal .grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
 .cal .dow{ font-size:9px; color:var(--ink-faint); text-align:center; padding:2px 0; }
 .cal .day{
   aspect-ratio:1; border:1px solid transparent; border-radius:2px;
   display:flex; flex-direction:column; align-items:center; justify-content:center;
-  font-size:10px; color:var(--ink-faint); font-variant-numeric:tabular-nums;
+  font-size:8px; color:#3a3a40; font-variant-numeric:tabular-nums;
 }
 .cal .day.mark{ border-color:var(--line); background:var(--bg-raise); color:var(--ink); }
 .cal .day .g{ font-size:9px; line-height:1; margin-top:1px; }
@@ -247,13 +255,15 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 #splash{
   position:fixed; inset:0; z-index:11; pointer-events:none;
   display:flex; flex-direction:column; align-items:center; justify-content:center;
-  text-align:center; background:rgba(0,0,0,.93);
-  opacity:0; transition:opacity .55s ease;
+  text-align:center;
+  background:radial-gradient(ellipse at 50% 40%, rgba(0,0,0,.86) 0%, rgba(0,0,0,.55) 45%, rgba(0,0,0,0) 78%);
+  opacity:0; transition:opacity .9s ease;
 }
 #splash.on{ opacity:1; }
 #splash .lv{ font-size:clamp(10px,1.8vw,13px); color:var(--ink-faint); }
 #splash .nm{ margin-top:14px; font-size:clamp(28px,7vw,62px); font-weight:200; }
-#splash .ln{ margin-top:18px; font-size:clamp(12px,2.2vw,16px); color:var(--ink-soft); font-weight:300; max-width:46ch; }
+#splashArt{ margin-top:18px; width:min(360px,74vw); height:auto; }
+#splash .ln{ margin-top:14px; font-size:clamp(12px,2.2vw,16px); color:var(--ink-soft); font-weight:300; max-width:46ch; }
 
 /* Minimap — Master Land only. Shows the whole level at once. */
 #minimap{
@@ -286,6 +296,26 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 }
 .reorder .row .mv:hover{ border-color:rgba(255,255,255,.4); color:var(--ink); }
 
+#win .firstbox{
+  margin-top:clamp(20px,4vw,30px); padding:16px 18px;
+  border:1px solid var(--line); border-left:3px solid rgba(255,255,255,.55);
+  border-radius:3px; background:var(--bg-raise); text-align:left;
+}
+#win .firstbox .lbl{ display:block; font-size:10px; color:var(--ink-faint); margin-bottom:8px; }
+#win .firstbox .act{ font-size:clamp(13px,2.4vw,17px); color:var(--ink); font-weight:400; }
+#win .firstbox .by{ margin-top:6px; font-size:11px; color:var(--ink-faint); }
+#win .whybox{
+  margin-top:14px; padding:14px 18px; border:1px solid var(--line); border-radius:3px;
+  text-align:left; font-size:clamp(11px,2vw,14px); color:var(--ink-soft); font-weight:300; line-height:1.7;
+}
+#win .whybox .lbl{ display:block; font-size:10px; color:var(--ink-faint); margin-bottom:6px; }
+#win .decls .d{ display:flex; gap:10px; align-items:flex-start; margin-bottom:9px; cursor:pointer; }
+#win .decls .d .bx{
+  flex:0 0 auto; width:15px; height:15px; margin-top:3px; border:1px solid var(--line);
+  border-radius:2px; display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--ink);
+}
+#win .decls .d.on .bx{ border-color:rgba(255,255,255,.6); }
+#win .decls .d.off{ opacity:.4; }
 #win .steps{
   margin-top:clamp(24px,5vw,36px); padding-top:clamp(20px,4vw,30px);
   border-top:1px solid var(--line); text-align:left;
@@ -297,12 +327,23 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
   margin-top:18px; padding:14px 16px; border:1px solid var(--line); border-radius:3px;
   background:var(--bg-raise); font-size:clamp(11px,1.9vw,13px); color:var(--ink-soft); line-height:1.7;
 }
-#win .ddexplain{
-  margin-top:clamp(18px,3.6vw,26px); font-size:clamp(11px,1.9vw,13px);
-  color:var(--ink-soft); font-weight:300; line-height:1.75; max-width:56ch;
-  margin-left:auto; margin-right:auto; text-align:left;
+#win .ddsection{
+  margin-top:clamp(24px,5vw,36px); padding-top:clamp(20px,4vw,30px);
+  border-top:1px solid var(--line); text-align:left;
+  font-size:clamp(11px,1.9vw,13.5px); color:var(--ink-soft); font-weight:300; line-height:1.75;
 }
-#win .ddexplain b{ color:var(--ink); font-weight:400; }
+#win .ddsection h4{ font-size:clamp(10px,1.7vw,12px); color:var(--ink); font-weight:400; margin-bottom:12px; }
+#win .ddsection p{ margin-bottom:10px; }
+#win .ddsection b{ color:var(--ink); font-weight:400; }
+#win .ddsection ul{ padding-left:18px; margin:10px 0 14px; }
+#win .ddsection li{ margin-bottom:6px; }
+#win .ddsection .tiers{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; margin:12px 0 14px; }
+#win .ddsection .tier{
+  border:1px solid var(--line); border-radius:3px; background:var(--bg-raise); padding:12px 14px;
+}
+#win .ddsection .tier b{ display:block; margin-bottom:5px; font-size:.95em; }
+#win .ddsection .tier span{ font-size:.9em; color:var(--ink-faint); line-height:1.6; }
+#win .ddsection .ddwhy{ color:var(--ink); }
 
 /* --------------------------------- Win ----------------------------------- */
 #win .goal{ font-size:clamp(20px,4.8vw,40px); font-weight:300; line-height:1.3; word-break:break-word; }
@@ -322,15 +363,32 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 
 /* Print: the deliverable is the plan. Hide the game, force black-on-white. */
 @media print{
+  /* Ink-conscious: nothing dark prints. Every panel background goes white,
+     every glow and shadow is dropped, borders become hairlines. */
+  *{ background:#fff !important; box-shadow:none !important; text-shadow:none !important;
+     color:#000 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   body *{ visibility:hidden; }
   #win, #win *{ visibility:visible; }
-  #win{ position:static; opacity:1; background:#fff; color:#000; padding:24px; display:block; overflow:visible; }
-  #win .goal, #win .whenline, #win .tree, #win .tree *{ color:#000 !important; text-shadow:none; }
-  #win .tagline{ color:#444; }
+  #win{ position:static; opacity:1; padding:0; display:block; overflow:visible; }
+  #win .inner{ max-width:100%; }
+  #win .goal{ font-size:22pt; letter-spacing:.06em; }
+  #win .whenline{ font-size:10pt; }
+  #win .firstbox{ border:1pt solid #000; border-left:3pt solid #000; padding:10pt 12pt; }
+  #win .whybox, #win .daily{ border:.5pt solid #999; padding:8pt 10pt; }
+  #win .steps{ border-top:.5pt solid #999; }
+  #win .decls .d .bx{ border:.5pt solid #444; }
+  #win .decls .d.off{ display:none; }          /* only the ones they kept */
+  #win .tree .t-date{ color:#444 !important; }
+  #win .tagline{ color:#444 !important; }
+  #win .ddsection{ border-top:.5pt solid #999; }
+  #win .ddsection .tier{ border:.5pt solid #999; }
+  #win .cal .day{ color:#666 !important; }
+  #win .cal .day.mark{ border:.5pt solid #000 !important; }
+  #win .cal .agenda .dt, #win .cal .agenda .cd{ color:#444 !important; }
   #win .win-actions, #win .again, #win .viewtabs{ display:none; }
-  #win .cal{ display:none; }
+  #win .cal{ display:none; }                    /* the agenda-first list prints; grids don't */
   #win #winTree{ display:block !important; }
-  canvas, .glow-field, #hud, #confront, #levelUp{ display:none; }
+  canvas, .glow-field, #hud, #confront, #levelUp, #splash, #minimap, #skipBtn{ display:none !important; }
 }
 </style>
 </head>
@@ -373,6 +431,7 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 <div id="field" class="overlay">
   <div class="inner">
     <p class="ctx tracked-sm" id="fieldContext"></p>
+    <p class="qtop tracked-sm" id="fieldTop">Make a goal</p>
     <p class="q" id="fieldQ">What do you want?</p>
     <p class="hint" id="fieldHint">Write it as if it already happened. Not &ldquo;I want to&rdquo; &mdash; &ldquo;I have.&rdquo;</p>
     <p class="eg" id="fieldEg">e.g. &ldquo;I have paid off all $12,000 of my debt.&rdquo;</p>
@@ -431,7 +490,7 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
     </div>
     <div>
       <button class="cta tracked-sm" id="planDone">Begin the climb &nbsp;&rarr;</button>
-      <div><button class="backbtn tracked-sm" id="planBack">&larr; &nbsp;Back to dates</button></div>
+      <div><button class="backbtn tracked-sm" id="planBack">&larr; &nbsp;Edit checkpoints &amp; dates</button></div>
     </div>
   </div>
 </div>
@@ -439,6 +498,7 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 <div id="splash">
   <p class="lv tracked-sm" id="splashLv"></p>
   <p class="nm tracked glow-text" id="splashNm"></p>
+  <canvas id="splashArt" width="360" height="120"></canvas>
   <p class="ln" id="splashLn"></p>
 </div>
 
@@ -479,6 +539,9 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
       <div id="winTree" class="tree"></div>
       <div id="winCal" class="cal" style="display:none"></div>
     </div>
+    <div id="winFirst" class="firstbox"></div>
+    <div id="winWhy" class="whybox"></div>
+    <div class="steps" id="winDecl"></div>
     <div class="steps">
       <h4 class="tracked-sm">What you just did &mdash; the steps</h4>
       <ol>
@@ -493,9 +556,29 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
       <div class="daily">The last move is the one this game can't do for you: take the nearest checkpoint and break it down to <b>daily actions</b>. A goal you touch every day stops being a goal and starts being who you are.</div>
     </div>
     <p class="tagline">Most people never write the life they say they want.</p>
-    <p class="ddexplain"><b>The Dream Designer Blueprint</b> is the next step up from this game. Drift asks you for one goal. The Blueprint looks at the whole operating system underneath it &mdash; how you set goals, what you believe about your own follow-through, your daily practice, the people and inputs around you, and whether you finish what you start. You answer a set of questions, get a score out of 100, and land in one of four tiers &mdash; Drifter, Dreamer, Builder, or Designer &mdash; with specific guidance for the one you're actually in. It takes a few minutes and it tells you which part of the loop is breaking.</p>
+    <div class="ddsection">
+      <h4 class="tracked-sm">Next: The Dream Designer Blueprint</h4>
+      <p>This game gave you one goal, fully built. The Blueprint looks at the <b>machinery underneath</b> it &mdash; the reason most goals quietly die isn't the plan, it's the operating system running it.</p>
+      <p>It's a short assessment. You answer honestly across five areas, and it scores you out of 100:</p>
+      <ul>
+        <li><b>Goals</b> &mdash; do you write them down, picture them, say them out loud, look at them again?</li>
+        <li><b>Mindset &amp; belief</b> &mdash; do you actually believe you'll pull it off, and do you go again when you don't?</li>
+        <li><b>Daily practice</b> &mdash; is there a morning you keep, and a block of time the important work is safe in?</li>
+        <li><b>Environment &amp; influence</b> &mdash; do the people and inputs around you pull you forward or hold you level?</li>
+        <li><b>Action &amp; follow-through</b> &mdash; do you finish, do you track it, and how fast do you get back on?</li>
+      </ul>
+      <p>Your score puts you in one of four tiers, and each one gets its own guidance:</p>
+      <div class="tiers">
+        <div class="tier"><b>The Drifter</b><span>Life happens to you more than through you. Not a character flaw &mdash; an unmade decision.</span></div>
+        <div class="tier"><b>The Dreamer</b><span>You know what you want. It lives in your head, the one place a goal can't work from.</span></div>
+        <div class="tier"><b>The Builder</b><span>You set goals and return to them. What's missing is rhythm &mdash; the daily contact.</span></div>
+        <div class="tier"><b>The Designer</b><span>You're running the loop most people never start. Your work now is depth, not repair.</span></div>
+      </div>
+      <p class="ddwhy">It takes a few minutes, and it tells you the one part of the loop that's actually breaking &mdash; so the next goal you set doesn't need this much scaffolding to survive.</p>
+    </div>
     <div class="win-actions">
       <button class="cta tracked-sm" id="winPrint" type="button">Print / save PDF</button>
+      <button class="cta tracked-sm" id="winLink" type="button">Copy my plan link</button>
       <a class="cta tracked-sm" id="winCta" href="#" target="_blank" rel="noopener">
         The Dream Designer Blueprint &nbsp;&rarr;
       </a>
@@ -515,7 +598,6 @@ const CFG = {
   CONFRONT_AT : 10,    // seconds of drifting before the game says so out loud
   DRIFT_SPEED : 190,   // px/s the camera shoves you right whether you press anything or not
   PX_PER_M    : 8,     // world pixels per displayed "meter"
-  MAX_CP      : 8,
 };
 
 /* ===========================================================================
@@ -554,6 +636,8 @@ const S = {
   t : 0, deaths : 0, walkDeaths : 0,
   goal : "", goalDate : "",
   checkpoints : [],      // {text, date, steps:[{text,date}]}
+  why : "", firstAction : "", firstActionBy : "",
+  declarations : [],
   obstacles : [], things : [], people : [],   // named in worlds 5-7
   stage : "",            // world2..world8
   ballR : 12,            // grows with each power-up in Thing Land
@@ -760,20 +844,33 @@ function buildClimb(startX, startY, defs, extra){
   launchPad(startX, startY); clearProps(); spikes = []; flags = [];
   extra = extra || {};
   let x = startX + 200, y = Math.min(startY, 440);
-  let dir = 1, run = 0;
-  const RISE = 78, TIERS = Math.max(12, defs.length * 3 + 4);
+  let dir = 1, run = 0, legLen = 5;             // start with a long run to the right
+  const TIERS = Math.max(14, defs.length * 3 + 5);
   const flagAt = {};
   defs.forEach((d, i) => { flagAt[Math.min(TIERS - 1, 2 + i * 3)] = d; });
 
   for (let i = 0; i < TIERS; i++){
-    const bw = rnd(96, 132);
+    const bw = rnd(84, 140);
     plats.push({ x:x, y:y, w:bw, h:34, float:true });
     const d = flagAt[i];
     if (d) flags.push({ x:x + bw*0.5, y:y, kind:d.kind || "way", got:false, label:d.text, sub:d.sub });
+
+    // A rest ledge now and then, and the odd stepping stone off to the side —
+    // the climb should have texture, not a fixed rhythm.
+    if (i > 1 && Math.random() < 0.28){
+      plats.push({ x:x + dir * rnd(150, 210), y:y - rnd(28, 44), w:rnd(52, 74), h:22, float:true });
+    }
+
     run++;
-    if (run >= 3){ dir *= -1; run = 0; }
-    x += dir * (bw + rnd(58, 92));
-    y -= RISE;
+    if (run >= legLen){
+      dir *= -1; run = 0;
+      // Right-hand legs run long; the switchback left is short and quick.
+      legLen = dir > 0 ? rint(4, 6) : rint(2, 3);
+    }
+    // Mostly steady steps, occasionally a real leap you have to commit to.
+    const big = Math.random() < 0.2;
+    x += dir * (bw + (big ? rnd(120, 165) : rnd(52, 88)));
+    y -= big ? rnd(92, 112) : rnd(62, 84);
   }
   const hw = 300;
   plats.push({ x:x - hw*0.5, y:y + 10, w:hw, h:40, float:true });
@@ -1103,8 +1200,7 @@ function drawFlags(){
     ctx.save();
     ctx.strokeStyle = f.got ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.4)";
     ctx.lineWidth = goal ? 3 : 2;
-    if (goal){ ctx.shadowColor = "rgba(255,255,255,0.55)"; ctx.shadowBlur = 26; }
-    else if (f.got){ ctx.shadowColor = "rgba(255,255,255,0.5)"; ctx.shadowBlur = 14; }
+    if (f.got){ ctx.shadowColor = "rgba(255,255,255,0.55)"; ctx.shadowBlur = goal ? 26 : 14; }
     ctx.beginPath(); ctx.moveTo(f.x, f.y); ctx.lineTo(f.x, f.y - h); ctx.stroke();
     const fl = goal ? 54 : 32;
     ctx.beginPath();
@@ -1112,12 +1208,12 @@ function drawFlags(){
     ctx.lineTo(f.x + fl, f.y - h + fl * 0.32);
     ctx.lineTo(f.x, f.y - h + fl * 0.63);
     ctx.closePath();
-    ctx.fillStyle = f.got || goal ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.32)";
+    ctx.fillStyle = f.got ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.32)";
     ctx.fill();
     ctx.restore();
 
     if (f.label) flagText(f.label.toUpperCase(), f.x, f.y - h - 22, goal ? 15 : 12,
-                          goal ? "rgba(255,255,255,0.62)" : "rgba(255,255,255,0.44)");
+                          f.got ? "rgba(255,255,255,0.62)" : "rgba(255,255,255,0.34)");
     if (f.sub)   flagText(f.sub.toUpperCase(), f.x, f.y - h - 44, 11, "rgba(255,255,255,0.4)");
   }
 }
@@ -1243,9 +1339,11 @@ goalInput.addEventListener("keydown", e => {
   e.stopPropagation();
   if (e.key === "Enter"){
     const v = goalInput.value.trim();
-    if (v.length >= 3) commitGoal(v);
+    if (v.length < 3) return;
+    if (oneCfg){ const c = oneCfg; oneCfg = null; closeField(); c.val(v); c.then(); }
+    else commitGoal(v);
   } else if (e.key === "Escape"){
-    closeField();   // walking back out is allowed. It has to be.
+    if (!oneCfg) closeField();   // the goal prompt can be refused; follow-ups can't
   }
 });
 
@@ -1254,8 +1352,35 @@ function commitGoal(text){
   closeField();
   hideLevelUp();
   confront.style.display = "none";
-  S.phase = "turn"; S.turnT = 0; S.flashT = 1;
-  meter.classList.add("struck");
+  // The why lands here, not as its own level — goals die from weak reasons.
+  askOne({
+    top:"Your reason",
+    q:"What changes when that's true?",
+    hint:"The reason has to be bigger than the effort, or you'll trade it away.",
+    eg:"e.g. \u201cI stop lying awake doing math at 2am.\u201d",
+    ph:"because\u2026",
+    val:function(v){ S.why = v; },
+    then:function(){
+      S.phase = "turn"; S.turnT = 0; S.flashT = 1;
+      meter.classList.add("struck");
+    }
+  });
+}
+
+// A reusable single-question overlay, reusing the goal field's own markup.
+let oneCfg = null;
+function askOne(cfg){
+  oneCfg = cfg;
+  el("fieldTop").textContent = cfg.top || "";
+  el("fieldQ").textContent = cfg.q;
+  el("fieldHint").textContent = cfg.hint;
+  el("fieldEg").textContent = cfg.eg;
+  goalInput.placeholder = cfg.ph;
+  goalInput.value = "";
+  el("fieldRefuse").style.display = "none";
+  fieldOpen = true;
+  fieldO.classList.add("on");
+  setTimeout(function(){ goalInput.focus(); }, 60);
 }
 
 function finishTurn(){
@@ -1277,9 +1402,12 @@ function openCheckpoints(){
   const rows = el("cpRows");
   rows.innerHTML = "";
   if (!S.checkpoints.length) S.checkpoints = [{text:"",date:"",steps:[]},{text:"",date:"",steps:[]},{text:"",date:"",steps:[]}];
-  S.checkpoints.forEach((c, i) => rows.appendChild(cpRow(c, i)));
+  redrawCp();
   cpPanel.classList.add("on");
-  setTimeout(() => { const f = rows.querySelector("input"); if (f) f.focus(); }, 80);
+  setTimeout(function(){
+    const ins = el("cpRows").querySelectorAll("input");
+    if (ins.length) ins[ins.length - 1].focus();   // bottom row = checkpoint 1
+  }, 80);
 }
 function cpRow(c, i){
   const d = document.createElement("div");
@@ -1303,14 +1431,16 @@ function cpRow(c, i){
 }
 function redrawCp(){
   const rows = el("cpRows"); rows.innerHTML = "";
-  S.checkpoints.forEach((c, i) => rows.appendChild(cpRow(c, i)));
+  // Rendered highest-number-first so #1 lands at the bottom: the list builds
+  // upward toward the goal, the same direction the climb goes.
+  for (let i = S.checkpoints.length - 1; i >= 0; i--) rows.appendChild(cpRow(S.checkpoints[i], i));
 }
 function addCp(){
-  if (S.checkpoints.length >= CFG.MAX_CP) return;
   S.checkpoints.push({text:"",date:"",steps:[]});
   redrawCp();
   const inputs = el("cpRows").querySelectorAll("input");
-  inputs[inputs.length - 1].focus();
+  if (inputs.length) inputs[0].focus();            // the new one appears on top
+
 }
 el("cpAdd").addEventListener("click", addCp);
 el("cpDone").addEventListener("click", () => {
@@ -1336,14 +1466,80 @@ function launchWorld3(){
 /* ---- splash + skip ---- */
 const splashEl = el("splash"), minimap = el("minimap"), mctx = minimap.getContext("2d");
 let splashTimer = null;
+
+// A little sketch of what the next level is actually made of — same shapes the
+// level uses, so the splash previews the mechanic rather than decorating it.
+function drawSplashArt(n){
+  const c = el("splashArt"); if (!c) return;
+  const g = c.getContext("2d"), W = c.width, H = c.height;
+  g.clearRect(0,0,W,H);
+  g.strokeStyle = "rgba(255,255,255,.55)"; g.fillStyle = "rgba(255,255,255,.55)";
+  g.lineWidth = 2; g.shadowColor = "rgba(255,255,255,.35)"; g.shadowBlur = 8;
+  const ground = function(y, segs){
+    segs.forEach(function(sg){ g.beginPath(); g.moveTo(sg[0], y); g.lineTo(sg[1], y); g.stroke(); });
+  };
+  const ball = function(x, y){
+    g.save(); g.shadowBlur = 14; g.fillStyle = "#fff";
+    g.beginPath(); g.arc(x, y, 7, 0, 6.284); g.fill(); g.restore();
+  };
+  const flag = function(x, y, lit){
+    g.save(); g.globalAlpha = lit ? 1 : .45;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x, y-26); g.stroke();
+    g.beginPath(); g.moveTo(x, y-26); g.lineTo(x+13, y-21); g.lineTo(x, y-16); g.closePath(); g.fill();
+    g.restore();
+  };
+  const spike = function(x, y){
+    for (let i=0;i<3;i++){ g.beginPath(); g.moveTo(x+i*11, y); g.lineTo(x+5.5+i*11, y-10); g.lineTo(x+11+i*11, y); g.stroke(); }
+  };
+  if (n === 1){                                    // rolling hills
+    g.beginPath(); g.moveTo(20, 92);
+    for (let x=20;x<=340;x+=8) g.lineTo(x, 92 - Math.sin((x-20)/34)*13);
+    g.stroke(); ball(120, 92 - Math.sin(100/34)*13 - 8);
+  } else if (n === 2){                             // pits
+    ground(92, [[20,110],[150,240],[280,340]]); ball(70, 84); flag(320, 92, false);
+  } else if (n === 3){                             // sky lines + spikes
+    ground(96, [[20,120],[165,250],[290,340]]);
+    g.beginPath(); g.moveTo(140,52); g.lineTo(215,52); g.stroke();
+    g.strokeRect(255, 30, 34, 20);
+    spike(72, 96); flag(180, 52, false); flag(322, 96, false); ball(40, 88);
+  } else if (n === 4 || n === 8){                  // the climb
+    const st=[[40,100],[110,80],[180,60],[250,40],[180,22]];
+    st.forEach(function(b,i){ g.strokeRect(b[0], b[1], 44, 12); if(i===2||i===4) flag(b[0]+22, b[1], false); });
+    ball(62, 92);
+  } else if (n === 5){                             // birds
+    ground(96, [[20,130],[175,340]]);
+    [[95,40],[200,30],[280,52]].forEach(function(b){
+      g.beginPath(); g.moveTo(b[0]-12,b[1]+4); g.lineTo(b[0],b[1]-4); g.lineTo(b[0]+12,b[1]+4); g.stroke();
+    });
+    spike(210, 96); ball(50, 88); flag(322, 96, false);
+  } else if (n === 6){                             // power-up rings
+    ground(96, [[20,340]]);
+    [90,180,270].forEach(function(x){
+      g.beginPath(); g.arc(x, 50, 11, 0, 6.284); g.stroke();
+      g.beginPath(); g.arc(x, 50, 4, 0, 6.284); g.stroke();
+    });
+    ball(45, 88);
+  } else if (n === 7){                             // people
+    ground(96, [[20,340]]);
+    [110,200,290].forEach(function(x){
+      g.beginPath(); g.arc(x, 62, 6, 0, 6.284); g.stroke();
+      g.beginPath(); g.moveTo(x,68); g.lineTo(x,84); g.stroke();
+      g.beginPath(); g.moveTo(x,84); g.lineTo(x-7,96); g.moveTo(x,84); g.lineTo(x+7,96); g.stroke();
+      g.beginPath(); g.moveTo(x,73); g.lineTo(x-9,80); g.moveTo(x,73); g.lineTo(x+10,64); g.stroke();
+    });
+    ball(45, 88);
+  }
+  g.shadowBlur = 0;
+}
 function splash(n, name, line, then){
   el("splashLv").textContent = "Level " + n;
   el("splashNm").textContent = name;
   el("splashLn").textContent = line;
+  drawSplashArt(n);
   splashEl.classList.add("on");
-  S.phase = "splash";
   clearTimeout(splashTimer);
-  splashTimer = setTimeout(function(){ splashEl.classList.remove("on"); then(); }, 2400);
+  then();                                   // the level starts right away
+  splashTimer = setTimeout(function(){ splashEl.classList.remove("on"); }, 4800);
 }
 
 // Skip: jump straight to the next prompt without finishing the level. The
@@ -1370,7 +1566,6 @@ function openList(cfg){
   if (!lpStore.length) lpStore.push({text:""},{text:""},{text:""});
   drawList(cfg.placeholder);
   el("lpAdd").onclick = function(){
-    if (lpStore.length >= 8) return;
     lpStore.push({text:""}); drawList(cfg.placeholder);
     const ins = el("lpRows").querySelectorAll("input");
     ins[ins.length-1].focus();
@@ -1627,41 +1822,56 @@ function buildTree(target){
 // for a checkpoint, a dot for a step, so it survives being printed in mono.
 function buildCalendar(target){
   const events = {};
-  const put = (iso, glyph) => { if (!iso) return; (events[iso] = events[iso] || []).push(glyph); };
-  S.checkpoints.forEach(c => { put(c.date, "⚑"); c.steps.forEach(s => put(s.date, "·")); });
-  put(S.goalDate, "◆");
+  const put = (iso, glyph, label) => {
+    if (!iso) return;
+    (events[iso] = events[iso] || []).push({ g:glyph, label:label });
+  };
+  S.checkpoints.forEach(function(c){
+    put(c.date, "\u2691", c.text);
+    c.steps.forEach(function(st){ put(st.date, "\u00b7", st.text); });
+  });
+  put(S.goalDate, "\u25c6", S.goal);
 
+  const keys = Object.keys(events).sort();
   const today = new Date(); today.setHours(0,0,0,0);
-  const g = (S.goalDate || "").split("-").map(Number);
-  const end = S.goalDate ? new Date(g[0], g[1]-1, g[2]) : today;
-  let h = "";
-  let cur = new Date(today.getFullYear(), today.getMonth(), 1);
-  let guard = 0;
-  while (cur <= end && guard++ < 18){
-    const y = cur.getFullYear(), m = cur.getMonth();
+
+  // The agenda is what people actually read — dated, in order, with a
+  // countdown. The grids underneath are for shape, not detail.
+  let h = '<div class="agenda">';
+  keys.forEach(function(iso){
+    const pr = iso.split("-").map(Number);
+    const dd = Math.round((new Date(pr[0], pr[1]-1, pr[2]) - today) / 86400000);
+    events[iso].forEach(function(e){
+      h += '<div class="ln"><span class="dt">' + esc(fmtDate(iso)) + '</span>' +
+           '<span class="cd">' + (dd < 0 ? "past" : (dd === 0 ? "today" : dd + "d")) + '</span>' +
+           '<span>' + e.g + ' ' + esc(e.label) + '</span></div>';
+    });
+  });
+  h += '</div>';
+
+  // Only months that carry something get a grid.
+  const months = {};
+  keys.forEach(function(iso){ months[iso.slice(0,7)] = true; });
+  Object.keys(months).sort().forEach(function(ym){
+    const y = +ym.slice(0,4), m = +ym.slice(5,7) - 1;
     h += '<div class="mon"><h4 class="tracked-sm">' +
-         cur.toLocaleDateString(undefined,{month:"long",year:"numeric"}) + '</h4><div class="grid">';
+         new Date(y, m, 1).toLocaleDateString(undefined,{month:"long",year:"numeric"}) +
+         '</h4><div class="grid">';
     ["S","M","T","W","T","F","S"].forEach(function(d){ h += '<div class="dow">' + d + '</div>'; });
-    const first = new Date(y, m, 1).getDay();
-    const days = new Date(y, m+1, 0).getDate();
+    const first = new Date(y, m, 1).getDay(), days = new Date(y, m+1, 0).getDate();
     for (let i = 0; i < first; i++) h += '<div></div>';
     for (let d = 1; d <= days; d++){
       const iso = y + "-" + String(m+1).padStart(2,"0") + "-" + String(d).padStart(2,"0");
       const ev = events[iso];
       h += '<div class="day' + (ev ? ' mark' : '') + '">' + d +
-           (ev ? '<span class="g">' + ev.slice(0,3).join("") + '</span>' : '') + '</div>';
+           (ev ? '<span class="g">' + ev.map(function(e){return e.g;}).slice(0,3).join("") + '</span>' : '') + '</div>';
     }
     h += '</div></div>';
-    cur = new Date(y, m+1, 1);
-  }
-  h += '<div class="legend"><span>&#9670; goal</span><span>&#9873; checkpoint</span><span>&middot; step</span></div>';
+  });
+  h += '<div class="legend"><span>\u25c6 goal</span><span>\u2691 checkpoint</span><span>\u00b7 step</span></div>';
   target.innerHTML = h;
 }
 
-el("planBack").addEventListener("click", function(){
-  planPanel.classList.remove("on");
-  dtPanel.classList.add("on");
-});
 el("planDone").addEventListener("click", () => {
   planPanel.classList.remove("on");
   launchWorld4();
@@ -1710,7 +1920,68 @@ function reachedGoal(){
       store:S.people, next:launchWorld7 });
   });
   else if (S.stage === "world7") showLevelUp("Level up", "Master your plan", "Click", openReorder);
-  else win();
+  else askFirstAction();
+}
+
+// The last move before the summary: one thing they will actually do now.
+// A plan becomes motion here or it doesn't become motion at all.
+function askFirstAction(){
+  const soon = new Date(Date.now() + 2*86400000);
+  S.firstActionBy = soon.getFullYear() + "-" + String(soon.getMonth()+1).padStart(2,"0") + "-" + String(soon.getDate()).padStart(2,"0");
+  askOne({
+    top:"First move",
+    q:"What will you do in the next 48 hours?",
+    hint:"One thing. Small enough that there is no excuse not to.",
+    eg:"e.g. \u201cList every debt and what it costs me.\u201d",
+    ph:"the very next thing",
+    val:function(v){ S.firstAction = v; },
+    then:function(){ buildDeclarations(); win(); }
+  });
+}
+
+/* ---- declarations ---- */
+// Their own sentences are already declarations — the goal and every checkpoint
+// were written in the present tense on purpose. The library below only
+// supplements them, matched by keyword, never replacing their words.
+const DECL_LIB = [
+  { t:"I am a disciplined spirit, soul and body.",                          k:["discipline","quit","lazy","procrast","bored","consistent","habit"] },
+  { t:"I am the butler to my future self.",                                 k:["discipline","later","future","habit","put off"] },
+  { t:"I daily improve the person I am becoming.",                          k:["grow","better","improve","learn","become"] },
+  { t:"I develop my skills to meet the level of my goals.",                 k:["skill","learn","study","train","know","course","certif"] },
+  { t:"I am confident, courageous and qualified.",                          k:["confidence","scared","afraid","doubt","imposter","qualified","nervous"] },
+  { t:"I am enthusiastic, energetic and I smile.",                          k:["energy","tired","burn","motivat","mood"] },
+  { t:"I am fit, firm and in the best shape of my life.",                   k:["fit","weight","health","gym","body","workout","exercise","run"] },
+  { t:"I write my goals and review them three times a day.",               k:["goal","focus","forget","review","track"] },
+  { t:"I read, listen to and write down what moves me forward every day.", k:["read","learn","study","listen","write","journal"] },
+  { t:"I collaborate with others who are aligned with my purpose.",         k:["people","help","team","partner","alone","support","alliance"] },
+  { t:"My gift is making room for me and bringing me before great people.", k:["opportunit","network","audience","client","visib","known"] },
+  { t:"I call those things that be not as though they are.",                k:["faith","believe","vision","imagine","pray"] },
+  { t:"I align my will with God's will every day.",                         k:["god","faith","pray","spirit","purpose","calling"] },
+  { t:"I handle money with discipline and it multiplies.",                  k:["money","debt","save","income","budget","pay","financ","dollar","$"] },
+  { t:"I finish what I start.",                                             k:["finish","start","abandon","unfinished","follow through","quit"] },
+];
+function buildDeclarations(){
+  const own = [];
+  if (S.goal) own.push({ t:S.goal, own:true, on:true });
+  S.checkpoints.forEach(function(c){ if (c.text) own.push({ t:c.text, own:true, on:true }); });
+
+  // Score the library against everything they typed, take the best few.
+  const hay = [S.goal, S.why, S.firstAction]
+    .concat(S.obstacles.map(function(o){return o.text;}))
+    .concat(S.things.map(function(o){return o.text;}))
+    .concat(S.checkpoints.map(function(c){return c.text;}))
+    .join(" ").toLowerCase();
+  const scored = DECL_LIB.map(function(d){
+    let n = 0;
+    d.k.forEach(function(k){ if (hay.indexOf(k) !== -1) n++; });
+    return { t:d.t, own:false, on:n > 0, score:n };
+  }).sort(function(a,b){ return b.score - a.score; });
+
+  const picked = scored.filter(function(d){ return d.score > 0; }).slice(0, 5);
+  if (picked.length < 3){
+    scored.forEach(function(d){ if (picked.length < 3 && picked.indexOf(d) === -1){ d.on = true; picked.push(d); } });
+  }
+  S.declarations = own.concat(picked);
 }
 
 /* ---- win ---- */
@@ -1723,9 +1994,99 @@ function win(){
   el("winWhen").textContent = S.goalDate ? "By " + fmtDate(S.goalDate) : "";
   buildTree(el("winTree"));
   buildCalendar(el("winCal"));
+
+  el("winFirst").innerHTML = S.firstAction
+    ? '<span class="lbl tracked-sm">Do this first</span><div class="act">' + esc(S.firstAction) +
+      '</div><div class="by">by ' + esc(fmtDate(S.firstActionBy)) + '</div>' : "";
+  el("winWhy").innerHTML = S.why
+    ? '<span class="lbl tracked-sm">Why it matters</span>' + esc(S.why) : "";
+  renderDeclarations();
+  saveToUrl();
   el("winCta").href = CFG.DREAMDESIGNER_URL;
   winO.classList.add("on");
 }
+function renderDeclarations(){
+  if (!S.declarations.length){ el("winDecl").innerHTML = ""; return; }
+  let h = '<h4 class="tracked-sm">Your declarations &mdash; read them morning and night</h4><div class="decls">';
+  S.declarations.forEach(function(d, i){
+    h += '<div class="d ' + (d.on ? "on" : "off") + '" data-i="' + i + '">' +
+         '<span class="bx">' + (d.on ? "\u2713" : "") + '</span><span>' + esc(d.t) + '</span></div>';
+  });
+  h += '</div>';
+  el("winDecl").innerHTML = h;
+  el("winDecl").querySelectorAll(".d").forEach(function(node){
+    node.addEventListener("click", function(){
+      const d = S.declarations[+node.dataset.i];
+      d.on = !d.on; renderDeclarations(); saveToUrl();
+    });
+  });
+}
+
+/* ---- save to URL: the whole plan encoded in the link, no backend ---- */
+function saveToUrl(){
+  try {
+    const pack = {
+      g:S.goal, w:S.why, d:S.goalDate, a:S.firstAction, ab:S.firstActionBy,
+      c:S.checkpoints.map(function(c){ return [c.text, c.date, c.steps.map(function(s){ return [s.text, s.date]; })]; }),
+      o:S.obstacles.map(function(x){ return x.text; }),
+      t:S.things.map(function(x){ return x.text; }),
+      p:S.people.map(function(x){ return x.text; }),
+      dc:S.declarations.filter(function(x){ return x.on; }).map(function(x){ return x.t; }),
+    };
+    const enc = btoa(unescape(encodeURIComponent(JSON.stringify(pack))));
+    history.replaceState(null, "", "#p=" + enc);
+    try { localStorage.setItem("drift.plan", enc); } catch(e){}
+  } catch(e){}
+}
+function loadFromUrl(){
+  let enc = "";
+  if (location.hash.indexOf("#p=") === 0) enc = location.hash.slice(3);
+  else { try { enc = localStorage.getItem("drift.plan") || ""; } catch(e){} }
+  if (!enc) return false;
+  try {
+    const o = JSON.parse(decodeURIComponent(escape(atob(enc))));
+    if (!o || !o.g) return false;
+    S.goal = o.g; S.why = o.w || ""; S.goalDate = o.d || "";
+    S.firstAction = o.a || ""; S.firstActionBy = o.ab || "";
+    S.checkpoints = (o.c || []).map(function(c){
+      return { text:c[0], date:c[1], steps:(c[2]||[]).map(function(s){ return { text:s[0], date:s[1] }; }) };
+    });
+    S.obstacles = (o.o||[]).map(function(t){ return {text:t}; });
+    S.things    = (o.t||[]).map(function(t){ return {text:t}; });
+    S.people    = (o.p||[]).map(function(t){ return {text:t}; });
+    S.declarations = (o.dc||[]).map(function(t){ return { t:t, own:false, on:true }; });
+    return true;
+  } catch(e){ return false; }
+}
+
+el("winLink").addEventListener("click", function(){
+  saveToUrl();
+  const url = location.href;
+  const done = function(){
+    const b = el("winLink"); const old = b.textContent;
+    b.textContent = "Link copied";
+    setTimeout(function(){ b.textContent = old; }, 1800);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(done, done);
+  } else {
+    const ta = document.createElement("textarea");
+    ta.value = url; document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); } catch(e){}
+    document.body.removeChild(ta); done();
+  }
+});
+
+// A saved plan reopens straight to the summary — the game is the on-ramp, the
+// plan is the thing you come back for.
+addEventListener("load", function(){
+  if (loadFromUrl()){
+    titleO.classList.remove("on");
+    S.phase = "win";
+    win();
+  }
+});
+
 el("winPrint").addEventListener("click", () => window.print());
 el("winAgain").addEventListener("click", () => location.reload());
 
@@ -1745,6 +2106,7 @@ function start(){
   S.camX = 0; S.camY = 0; S.confronted = false;
   S.goal = ""; S.goalDate = ""; S.checkpoints = []; S.stage = "";
   S.obstacles = []; S.things = []; S.people = []; S.ballR = 12; S.freeCam = false;
+  S.why = ""; S.firstAction = ""; S.firstActionBy = ""; S.declarations = [];
   birds = []; orbs = []; folk = [];
   minimap.classList.remove("on");
   S.deaths = 0; S.walkDeaths = 0; S.t = 0;
@@ -1758,8 +2120,9 @@ function splashLater(n, name, line){
     el("splashLv").textContent = "Level " + n;
     el("splashNm").textContent = name;
     el("splashLn").textContent = line;
+    drawSplashArt(n);
     splashEl.classList.add("on");
-    setTimeout(function(){ splashEl.classList.remove("on"); }, 2000);
+    setTimeout(function(){ splashEl.classList.remove("on"); }, 4000);
   }, 40);
 }
 

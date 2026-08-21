@@ -1985,8 +1985,12 @@ function spreadDates(){
   const goalD = new Date(g[0], g[1]-1, g[2]);
   const span = Math.max(1, Math.round((goalD - today) / 86400000));
   const n = S.checkpoints.length;
+  // Divide the run into n equal legs, so the last checkpoint lands ON the goal
+  // date. Four checkpoints across a month is then genuinely weekly (7/14/21/28),
+  // not the 5-6 day spacing you get from squeezing them between today and the
+  // goal as n+1 slots.
   S.checkpoints.forEach((c, i) => {
-    if (!c.date) c.date = isoAddDays(today, Math.round(span * (i + 1) / (n + 1)));
+    if (!c.date) c.date = isoAddDays(today, Math.round(span * (i + 1) / n));
   });
 }
 function redrawDates(){
@@ -2238,7 +2242,13 @@ function buildDeclarations(){
 /* ---- win ---- */
 function win(){
   AUDIO.stop();
-  [523.25,659.25,783.99,1046.50].forEach(function(f,i){ setTimeout(function(){ AUDIO.note(f,0.42,0.30,"triangle"); }, i*185); });
+  AUDIO.boot();
+  AUDIO.phrase([
+    [261.63, 0.00, 2.60, 0.10], [392.00, 0.00, 2.60, 0.08],   // held root + fifth
+    [523.25, 0.00, 0.40, 0.26], [659.25, 0.30, 0.40, 0.26],
+    [783.99, 0.60, 0.40, 0.26], [1046.50, 0.90, 0.46, 0.28],
+    [783.99, 1.30, 0.34, 0.22], [1046.50, 1.58, 1.10, 0.30],  // lift, then land
+  ], 0.26, "triangle");
   S.phase = "win";
   hud.classList.remove("on");
   minimap.classList.remove("on");
@@ -2457,6 +2467,31 @@ const AUDIO = {
     this.master.connect(this.ctx.destination);
   },
 
+  // A sung note, placed precisely on the audio clock. `at` is an offset in
+  // seconds from now, so a whole phrase can be scheduled in one go and stay in
+  // time — setTimeout jitter is what made the old fanfare sound broken up.
+  voice:function(freq, at, dur, vol, type, detune){
+    if (!this.ctx || !this.on || !freq) return;
+    const t = this.ctx.currentTime + (at || 0);
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = type || "triangle";
+    o.frequency.setValueAtTime(freq, t);
+    if (detune) o.detune.setValueAtTime(detune, t);
+    const v = vol == null ? 0.28 : vol;
+    const atk = Math.min(0.055, dur * 0.25);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(v, t + atk);              // soft attack
+    g.gain.setValueAtTime(v, t + dur * 0.55);                 // let it sing
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);     // gentle release
+    o.connect(g); g.connect(this.master);
+    o.start(t); o.stop(t + dur + 0.03);
+  },
+  // Play a phrase: [freq, startOffset, duration] triples.
+  phrase:function(notes, vol, type){
+    const self = this;
+    notes.forEach(function(n){ self.voice(n[0], n[1], n[2], n[3] == null ? vol : n[3], type); });
+  },
+
   // one short square-wave note
   note:function(freq, dur, vol, type){
     if (!this.ctx || !this.on || !freq) return;
@@ -2485,23 +2520,27 @@ const AUDIO = {
 
   jump:   function(){ this.slide(300, 620, 0.13, 0.32); },
   land:   function(){ this.note(150, 0.05, 0.16); },
-  collect:function(){ this.note(660, 0.07, 0.4); setTimeout(()=>this.note(990, 0.10, 0.36), 70); },
+  collect:function(){ this.phrase([[659.25, 0, 0.10, 0.22], [987.77, 0.06, 0.16, 0.20]], 0.2, "triangle"); },
   flag:   function(){
-    const self = this;
-    [523.25, 783.99].forEach(function(f,i){
-      setTimeout(function(){ self.note(f, 0.16, 0.24, "triangle"); }, i * 110);
-    });
+    this.phrase([[523.25, 0, 0.20, 0.20], [783.99, 0.13, 0.30, 0.22]], 0.2, "triangle");
   },
   // do - mi - so - do, straight up the scale. Clean, not clever.
+  // do - mi - so - do, rising and resolving, over a soft held root and fifth.
   goal:   function(){
-    const self = this;
-    this.silence(1500);                            // let it ring on its own
-    [523.25, 659.25, 783.99, 1046.50].forEach(function(f,i){
-      setTimeout(function(){ self.note(f, 0.34, 0.30, "triangle"); }, i * 165);
-    });
+    this.boot();
+    this.silence(2100);
+    const C4=261.63, G4=392.00, C5=523.25, E5=659.25, G5=783.99, C6=1046.50;
+    this.phrase([
+      [C4, 0.00, 1.55, 0.10],   // pad underneath, holds the whole phrase
+      [G4, 0.00, 1.55, 0.07],
+      [C5, 0.00, 0.34, 0.26],   // the melody, slightly overlapping so it flows
+      [E5, 0.26, 0.34, 0.26],
+      [G5, 0.52, 0.34, 0.26],
+      [C6, 0.78, 0.80, 0.30],   // held, so it resolves instead of stopping
+    ], 0.26, "triangle");
   },
   die:    function(){ this.slide(320, 70, 0.28, 0.3); },
-  wave:   function(){ this.note(880, 0.06, 0.22); },
+  wave:   function(){ this.phrase([[880, 0, 0.14, 0.16]], 0.16, "triangle"); },
 
   // Each level gets its own short pattern. Same instrument, different mood —
   // aimless in the drift, urgent on the deadline, low and slow underground.

@@ -129,6 +129,12 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
   box-shadow:0 0 14px rgba(255,255,255,.7), 0 0 34px rgba(255,255,255,.22);
 }
 #title .sub{ margin-top:clamp(28px,6vw,48px); font-size:clamp(10px,1.8vw,12px); color:var(--ink-faint); }
+#resume{
+  display:none; margin:22px auto 0; background:none; border:1px solid var(--line);
+  border-radius:3px; color:var(--ink-faint); font-family:inherit; cursor:pointer;
+  font-size:clamp(9px,1.4vw,10px); padding:10px 16px;
+}
+#resume:hover{ border-color:rgba(255,255,255,.4); color:var(--ink); }
 
 /* --------------------------- Field (one prompt) --------------------------- */
 #field .ctx{ margin-bottom:clamp(12px,2.6vw,18px); color:var(--ink-faint); display:none; }
@@ -428,6 +434,7 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
     </div>
     <h1 class="tracked glow-text">Drift</h1>
     <p class="sub tracked-sm">Press any key</p>
+    <button id="resume" class="tracked-sm">Resume my saved plan</button>
   </div>
 </div>
 
@@ -2033,10 +2040,10 @@ function saveToUrl(){
     try { localStorage.setItem("drift.plan", enc); } catch(e){}
   } catch(e){}
 }
-function loadFromUrl(){
+function loadFromUrl(fromStorage){
   let enc = "";
-  if (location.hash.indexOf("#p=") === 0) enc = location.hash.slice(3);
-  else { try { enc = localStorage.getItem("drift.plan") || ""; } catch(e){} }
+  if (!fromStorage && location.hash.indexOf("#p=") === 0) enc = location.hash.slice(3);
+  else if (fromStorage){ try { enc = localStorage.getItem("drift.plan") || ""; } catch(e){} }
   if (!enc) return false;
   try {
     const o = JSON.parse(decodeURIComponent(escape(atob(enc))));
@@ -2075,15 +2082,31 @@ el("winLink").addEventListener("click", function(){
 // A saved plan reopens straight to the summary — the game is the on-ramp, the
 // plan is the thing you come back for.
 addEventListener("load", function(){
-  if (loadFromUrl()){
+  // A shared link opens straight to that plan.
+  if (loadFromUrl(false)){
     titleO.classList.remove("on");
     S.phase = "win";
     win();
+    return;
+  }
+  // A plan saved in this browser is only ever an offer — never an interception.
+  let saved = "";
+  try { saved = localStorage.getItem("drift.plan") || ""; } catch(e){}
+  if (saved){
+    const r = el("resume");
+    r.style.display = "block";
+    r.addEventListener("click", function(e){
+      e.stopPropagation();
+      if (loadFromUrl(true)){ titleO.classList.remove("on"); S.phase = "win"; win(); }
+    });
   }
 });
 
 el("winPrint").addEventListener("click", () => window.print());
-el("winAgain").addEventListener("click", () => location.reload());
+el("winAgain").addEventListener("click", function(){
+  try { localStorage.removeItem("drift.plan"); } catch(e){}
+  location.replace(location.pathname + location.search);   // drop #p= or it reloads the plan
+});
 
 /* ---- start ---- */
 function start(){

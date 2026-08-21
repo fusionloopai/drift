@@ -18,7 +18,7 @@
    like one product while these match.
 
    Nothing in this game is encoded by colour alone. Platforms are rectangles,
-   hazards are triangles, flags are flags. Shape carries every meaning.
+   flags are flags. Shape carries every meaning.
 --------------------------------------------------------------------------- */
 :root{
   --ink:#ffffff; --ink-soft:#a8a8ad; --ink-faint:#5c5c63;
@@ -66,20 +66,7 @@ canvas{ display:block; position:fixed; inset:0; z-index:1; }
                letter-spacing:0.12em; font-variant-numeric:tabular-nums; }
 #meter.struck .value{ text-decoration:line-through; color:var(--ink-faint); }
 
-/* The landscape actually repeats — the monoliths in drawBackdrop() really are
-   identical, every 520px, forever. This just says so out loud, a few times,
-   escalating, low in the frame so it never fights the HUD. */
-#recognize{
-  position:fixed; z-index:6; top:clamp(16px,3vw,32px); right:clamp(16px,3vw,32px);
-  max-width:min(280px,52vw);
-  text-align:right; pointer-events:none;
-  font-size:clamp(11px,1.8vw,14px); font-style:italic; color:var(--ink-faint);
-  line-height:1.4;
-  opacity:0; transition:opacity .7s ease;
-}
-#recognize.on{ opacity:.8; }
-
-/* The confrontation. Fires once, ~30s in. The world keeps scrolling under it —
+/* The confrontation. Fires once, ~20s in. The world keeps scrolling under it —
    nothing pauses for a realization, that's the whole point being made. */
 #confront{
   position:fixed; inset:0; z-index:6; pointer-events:none;
@@ -91,6 +78,7 @@ canvas{ display:block; position:fixed; inset:0; z-index:1; }
 #confront p{ opacity:0; transform:translateY(8px); transition:opacity .9s ease, transform .9s ease; }
 #confront .l1{ font-size:clamp(26px,6vw,50px); font-weight:200; }
 #confront .l2{ margin-top:clamp(14px,3vw,22px); font-size:clamp(13px,2.4vw,18px); font-weight:300; color:var(--ink-soft); }
+#confront .l3{ margin-top:clamp(10px,2vw,16px); font-size:clamp(13px,2.4vw,18px); font-weight:300; color:var(--ink-soft); }
 #confront p.on{ opacity:1; transform:translateY(0); }
 
 /* What used to be a hidden hotkey is now a stated invitation, framed the way a
@@ -136,6 +124,7 @@ canvas{ display:block; position:fixed; inset:0; z-index:1; }
 @keyframes titleDrift{ 0%,100%{ transform:translateX(-16px); } 50%{ transform:translateX(16px); } }
 #title .sub{ margin-top:clamp(28px,6vw,48px); font-size:clamp(10px,1.8vw,12px); color:var(--ink-faint); }
 
+#field .ctx{ margin-bottom:clamp(12px,2.6vw,18px); color:var(--ink-faint); display:none; }
 #field .q{ font-size:clamp(18px,4.4vw,34px); font-weight:300; line-height:1.35; }
 #field input{
   margin-top:clamp(28px,6vw,44px); width:100%;
@@ -161,20 +150,28 @@ canvas{ display:block; position:fixed; inset:0; z-index:1; }
 }
 #win .stats{
   margin-top:clamp(30px,6vw,48px); font-size:clamp(12px,2.1vw,15px);
-  font-weight:300; line-height:2; color:var(--ink-soft);
+  font-weight:300; line-height:1.6; color:var(--ink-soft); text-align:left;
+  max-width:52ch; margin-left:auto; margin-right:auto;
 }
+#win .stats .sub-row{ margin-top:16px; color:var(--ink); font-weight:400; }
+#win .stats .subsub-row{ margin-top:4px; margin-left:20px; color:var(--ink-soft); font-weight:300; font-size:0.92em; }
 #win .tagline{
   margin-top:clamp(30px,6vw,48px); padding-top:clamp(26px,5vw,40px);
   border-top:1px solid var(--line);
   font-size:clamp(11px,1.9vw,14px); font-weight:300; color:var(--ink-faint);
   font-style:italic; letter-spacing:0.03em;
 }
+#win .win-actions{
+  display:flex; gap:14px; justify-content:center; flex-wrap:wrap;
+  margin-top:clamp(24px,5vw,36px);
+}
 #win .cta{
-  display:inline-block; margin-top:clamp(24px,5vw,36px);
+  display:inline-block;
   padding:16px clamp(20px,4vw,34px);
   border:1px solid var(--line); border-radius:3px;
   background:var(--bg-raise); color:var(--ink-soft);
   font-size:clamp(9px,1.5vw,11px); text-decoration:none;
+  font-family:inherit; cursor:pointer;
   transition:border-color .2s ease, color .2s ease, box-shadow .2s ease;
 }
 #win .cta:hover{
@@ -186,6 +183,21 @@ canvas{ display:block; position:fixed; inset:0; z-index:1; }
   color:#2e2e34; font-family:inherit; font-size:clamp(9px,1.4vw,10px);
 }
 #win .again:hover{ color:var(--ink-faint); }
+
+/* Print: the whole point of the end screen is a goal tree someone can hold.
+   Hide everything else, force the summary to plain black-on-white. */
+@media print{
+  body *{ visibility:hidden; }
+  #win, #win *{ visibility:visible; }
+  #win{ position:static; opacity:1; background:#fff; color:#000; padding:24px; }
+  #win .goal{ color:#000; text-shadow:none; }
+  #win .stats{ color:#000; }
+  #win .stats .sub-row{ color:#000; }
+  #win .stats .subsub-row{ color:#222; }
+  #win .tagline{ color:#444; }
+  #win .win-actions, #win .again{ display:none; }
+  canvas, .glow-field, #hud, #confront, #levelUp{ display:none; }
+}
 </style>
 </head>
 <body>
@@ -200,11 +212,10 @@ canvas{ display:block; position:fixed; inset:0; z-index:1; }
   </div>
 </div>
 
-<div id="recognize"></div>
-
 <div id="confront">
   <p class="l1 tracked glow-text">This is drifting.</p>
   <p class="l2">No direction. Just motion.</p>
+  <p class="l3">No goals.</p>
 </div>
 
 <div id="levelUp">
@@ -223,32 +234,29 @@ canvas{ display:block; position:fixed; inset:0; z-index:1; }
 
 <div id="field" class="overlay">
   <div class="inner">
-    <p class="q">What do you actually want?</p>
+    <p class="ctx tracked-sm" id="fieldContext"></p>
+    <p class="q" id="fieldQ">What do you want 30 days from now?</p>
     <input id="goalInput" type="text" maxlength="72" autocomplete="off" autocapitalize="sentences"
            spellcheck="false" placeholder="say it plainly">
     <div class="keys tracked-sm">
-      <span><b>Enter</b> &nbsp;to write it</span>
-      <span class="refuse"><b>Esc</b> &nbsp;to keep drifting</span>
+      <span><b>Enter</b> &nbsp;<span id="fieldEnterHint">to write it</span></span>
+      <span class="refuse" id="fieldRefuse"><b>Esc</b> &nbsp;to keep drifting</span>
     </div>
-  </div>
-</div>
-
-<div id="worldcard" class="overlay">
-  <div class="inner">
-    <p class="sub tracked-sm" id="wcEyebrow">World 2</p>
-    <h1 class="tracked glow-text" id="wcTitle" style="font-size:clamp(32px,7vw,64px)">The Dreamer</h1>
-    <p class="sub" id="wcBlurb" style="margin-top:clamp(18px,4vw,28px); font-size:clamp(13px,2.2vw,17px); color:var(--ink-soft); font-weight:300; max-width:52ch; margin-left:auto; margin-right:auto;"></p>
   </div>
 </div>
 
 <div id="win" class="overlay">
   <div class="inner">
+    <p class="sub tracked-sm">Your 30 days</p>
     <p class="goal tracked glow-text" id="winGoal"></p>
     <div class="stats" id="winStats"></div>
     <p class="tagline">Most people never write the life they say they want.</p>
-    <a class="cta tracked-sm" id="winCta" href="#" target="_blank" rel="noopener">
-      The Dream Designer Blueprint &nbsp;&rarr;
-    </a>
+    <div class="win-actions">
+      <button class="cta tracked-sm" id="winPrint" type="button">Print your goals</button>
+      <a class="cta tracked-sm" id="winCta" href="#" target="_blank" rel="noopener">
+        The Dream Designer Blueprint &nbsp;&rarr;
+      </a>
+    </div>
     <button class="again tracked-sm" id="winAgain">Drift again</button>
   </div>
 </div>
@@ -264,9 +272,8 @@ const CFG = {
   // hook, the Blueprint is the gate that already captures the email.
   DREAMDESIGNER_URL : "https://dreamdesigner.lifesong.io",
 
-  CONFRONT_AT : 10,    // seconds of drifting before the game says so out loud
+  CONFRONT_AT : 20,    // seconds of drifting before the game says so out loud
   DRIFT_SPEED : 190,   // px/s the camera shoves you right, whether you press anything or not
-  WALK_LENGTH : 2600,  // px of designed path once you've decided where you're going
   PX_PER_M    : 8,     // world pixels per displayed "meter"
 };
 
@@ -302,43 +309,37 @@ resize();
 
 /* ===========================================================================
    STATE
-   phase: title -> drift -> (field) -> turn -> walk -> win
-   "field" is an overlay on top of drift, not a phase of its own, because you
-   are allowed to walk back out of it and keep drifting. That refusal matters.
+   phase: title -> drift -> (field) -> turn -> walk -> (breakdown) -> walk -> ... -> win
+   "field" and "breakdown" are overlays on top of drift/paused-walk, not phases
+   of their own for physics purposes — the frame loop only steps drift/walk/turn.
    =========================================================================== */
 const S = {
   phase      : "title",
   t          : 0,      // seconds spent drifting
   deaths     : 0,      // deaths during the drift. Counted, never shown, used at the end.
   walkDeaths : 0,
-  goal       : "",
+  goal30     : "",      // the 30-day goal, set at the turn
+  subs       : ["", ""],        // the 30-day goal broken into two
+  subsubs    : ["", "", "", ""],// each of those broken into two more
+  stage      : "",      // "world2" | "world3" | "world4" — which goal flag we're walking toward
   camX       : 0,
   camVel     : CFG.DRIFT_SPEED,
   flashT     : 0,      // white pulse timer, used on the turn
   turnT      : 0,
-  monoIdx    : 0,       // last monolith marker index the player has crossed
-  monoSeen   : new Set(),  // recognition thresholds already shown, so none repeat
-  confronted : false,   // the 30s cutscene fires exactly once
-  world      : 0,       // index into WORLDS — the world currently being walked
-  frags      : 0,       // fragments collected in the current world
-  fragsNeeded: 0,
-  streak     : 0,       // consecutive waypoints reached without dying, world 3
-  streakBest : 0,
+  confronted : false,   // the confrontation fires exactly once
   walkStart  : 0,
-  goalX      : 0,
-  lastCheck  : null,   // {x,y} last waypoint flag reached
+  lastCheck  : null,   // {x,y} last flag reached, where a walk-phase death sends you back
 };
 
 const player = { x:120, y:360, vx:0, vy:0, w:22, h:26, onGround:false, coyote:0, buffer:0, trail:[] };
 
 let plats  = [];   // {x,y,w,h}
-let spikes = [];   // {x,y,w}   drawn as a row of triangles — shape, not colour
-let flags  = [];   // {x,y,kind:"way"|"goal",got:false}
+let flags  = [];   // {x,y,kind:"way"|"goal",got:false,label?:string}
 let motes  = [];   // ambient drifting dust
 let genX   = 0;    // right edge of generated drift world
 let lastY  = 430;  // height of the last drift ledge, so runs can stay level
 
-const GRAV = 2000, JUMP = -690, RUN = 330, SPIKE_H = 15;
+const GRAV = 2000, JUMP = -690, RUN = 330;
 
 /* ===========================================================================
    INPUT
@@ -385,106 +386,55 @@ cv.addEventListener("mousedown",  () => { if (S.phase === "title") start(); });
 /* ===========================================================================
    WORLD GENERATION
    =========================================================================== */
-const RECOGNIZE = {
-  2 : "Same shape.",
-  3 : "Again.",
-  5 : "You\u2019ve seen this five times.",
-  8 : "Eight.",
-  13: "Thirteen. Still nothing new.",
-};
-
-const WORLDS = [
-  { key:"drifter", num:1, title:"The Drifter",
-    blurb:"Life is happening to you more than through you." },
-  { key:"dreamer", num:2, title:"The Dreamer",
-    blurb:"You know what you want. It lives in your head, which is the one place a goal cannot work from.",
-    frags:5 },
-  { key:"builder", num:3, title:"The Builder",
-    blurb:"You set goals and you return to them. What is missing is rhythm, the daily contact that turns a plan into an identity.",
-    streak:true },
-  { key:"designer", num:4, title:"The Designer",
-    blurb:"You are running the loop most people never start: written, seen, spoken, revisited." },
-];
-
-const rnd = (a,b) => a + Math.random() * (b - a);
+const rnd  = (a,b) => a + Math.random() * (b - a);
 const rint = (a,b) => Math.floor(rnd(a, b + 1));
 
-// Drift chunks. Deliberately competent and deliberately meaningless — always
-// survivable, never leading anywhere. Nothing here is a destination.
+// World 1, the drift itself: continuous ground, gentle bumps roughly the ball's
+// own height, nothing to jump over yet. No gaps, no hazards — just movement.
 function genDriftChunk(){
-  const flat = Math.random() < 0.58;                  // most of it is just... ground
-  const y = flat ? lastY : Math.max(360, Math.min(462, lastY + rnd(-58, 58)));
-  const w = rnd(230, 400);
+  const amp = 22;   // roughly the ball's own diameter
+  const y = Math.max(410, Math.min(454, lastY + rnd(-amp, amp)));
+  const w = rnd(260, 420);
   plats.push({ x:genX, y, w, h:BASE_H + 80 - y });
-
-  // A spike patch often enough to keep hands honest, never enough to wall you off.
-  if (Math.random() < 0.14 && w > 260){
-    const sw = rnd(38, 62);
-    spikes.push({ x: genX + rnd(60, w - sw - 50), y: y - SPIKE_H, w: sw });
-  }
-
   lastY = y;
-  genX += w + (flat ? 0 : rnd(70, 112));              // gap only when the ground steps
+  genX += w;   // always continuous — no gaps
 }
 
 function trimBehind(){
   const cut = S.camX - 900;
-  plats  = plats.filter(p => p.x + p.w > cut);
-  spikes = spikes.filter(s => s.x + s.w > cut);
+  plats = plats.filter(p => p.x + p.w > cut);
 }
 
-// The designed path. Built once, the moment a goal exists — finite, legible,
-// and ending in a flag with the player's own words on it.
-function buildWalkPath(startX, startY, length, fragCount){
-  length = length || CFG.WALK_LENGTH;
-  plats  = plats.filter(p => p.x + p.w < startX - 40);    // clear everything ahead
-  plats.push({ x:startX - 150, y:startY, w:330, h:BASE_H + 80 - startY });  // guaranteed launch pad
-  spikes = [];
-  flags  = [];
+// Worlds 2-4: the goal path. Each entry in flagDefs becomes one flag, and the
+// path rises one tier to reach it — a short climb of 2-3 jumps, then a flat
+// landing the flag stands on. More flags means more tiers means literally
+// higher, which is the point: each world climbs further than the last.
+function buildGoalPath(startX, startY, flagDefs){
+  plats = plats.filter(p => p.x + p.w < startX - 40);
+  plats.push({ x:startX - 150, y:startY, w:330, h:BASE_H + 80 - startY });
+  flags = [];
 
   let x = startX + 260;
-  let y = Math.min(startY, 440);
-  const end = startX + length;
-  const wayAt = [0.28, 0.56, 0.82].map(f => startX + length * f);
-  let wi = 0;
+  let y = startY;
+  const RISE = 46;
 
-  while (x < end){
-    const w = rnd(150, 250);
-    plats.push({ x, y, w, h:BASE_H + 80 - y });
-
-    if (wi < wayAt.length && x + w > wayAt[wi]){
-      flags.push({ x: x + w * 0.5, y, kind:"way", got:false });
-      wi++;
-    } else if (Math.random() < 0.62 && w > 160){
-      const sw = rnd(38, 62);
-      spikes.push({ x: x + rnd(50, w - sw - 40), y: y - SPIKE_H, w: sw });
+  flagDefs.forEach(def => {
+    const hops = rint(2, 3);
+    for (let h = 0; h < hops; h++){
+      const w = rnd(120, 190);
+      plats.push({ x, y, w, h:BASE_H + 80 - y });
+      x += w + rnd(85, 115);
+      if (h < hops - 1) y = Math.max(210, y - RISE * 0.55);
     }
+    y = Math.max(210, y - RISE);
+    const holdW = rnd(300, 420);
+    plats.push({ x, y, w:holdW, h:BASE_H + 80 - y });
 
-    // Fragments (World 2): scattered off the direct line, some requiring a
-    // real detour, so collecting all of them is a choice, not a formality.
-    if (fragCount && Math.random() < 0.5 && flags.filter(f=>f.kind==="frag").length < fragCount){
-      flags.push({ x: x + w * 0.5, y: y - rnd(50, 100), kind:"frag", got:false });
-    }
+    const fx = x + holdW * 0.5;
+    flags.push({ x:fx, y, kind: def.final ? "goal" : "way", got:false, label: def.text });
 
-    x += w + rnd(85, 145);
-    y = Math.max(250, Math.min(462, y + rnd(-72, 62)));
-  }
-
-  // Top up any fragments that didn't fit naturally, right before the flag.
-  if (fragCount){
-    let have = flags.filter(f=>f.kind==="frag").length;
-    let fx = x + 40;
-    while (have < fragCount){
-      flags.push({ x: fx, y: y - rnd(40, 80), kind:"frag", got:false });
-      fx += 90; have++;
-    }
-  }
-
-  // The flag stands on its own ground so arriving always reads as arriving.
-  const fy = 400;
-  plats.push({ x:end + 40, y:fy, w:340, h:BASE_H + 80 - fy });
-  S.goalX = end + 170;
-  flags.push({ x:S.goalX, y:fy, kind:"goal", got:false });
+    x += holdW;
+  });
 }
 
 function seedMotes(){
@@ -546,11 +496,6 @@ function physics(dt){
   // Death. In the drift it costs nothing at all — which is the point.
   let dead = player.y > worldBottom + 90;
   if (S.phase === "drift" && player.x + player.w < S.camX + 8) dead = true;
-  if (!dead){
-    for (const s of spikes){
-      if (aabb(player, { x:s.x, y:s.y, w:s.w, h:SPIKE_H })){ dead = true; break; }
-    }
-  }
   if (dead) die();
 }
 
@@ -560,7 +505,6 @@ function die(){
     respawnDrift();
   } else if (S.phase === "walk"){
     S.walkDeaths++;
-    S.streak = 0;
     const c = S.lastCheck || { x:S.walkStart, y:400 };
     player.x = c.x - player.w/2; player.y = c.y - player.h - 4;
   }
@@ -579,10 +523,6 @@ function respawnDrift(){
   }
   player.x = best.x + best.w/2;
   player.y = best.y - player.h - 6;
-
-  // Never set someone down on top of a hazard.
-  const pad = { x:player.x - 34, y:best.y - 40, w:player.w + 68, h:46 };
-  spikes = spikes.filter(s => !aabb(pad, { x:s.x, y:s.y, w:s.w, h:SPIKE_H }));
 }
 
 /* ===========================================================================
@@ -599,7 +539,6 @@ function draw(){
 
   drawBackdrop();
   drawPlatforms();
-  drawSpikes();
   drawFlags();
   drawPlayer();
 
@@ -657,51 +596,12 @@ function drawPlatforms(){
   }
 }
 
-function drawSpikes(){
-  ctx.save();
-  ctx.strokeStyle = "rgba(255,255,255,0.75)";
-  ctx.fillStyle = "#000";
-  ctx.lineWidth = 1.5;
-  for (const s of spikes){
-    if (s.x + s.w < S.camX - 60 || s.x > S.camX + viewW + 60) continue;
-    const n = Math.max(2, Math.round(s.w / 13)), tw = s.w / n;
-    for (let i = 0; i < n; i++){
-      const x = s.x + i * tw;
-      ctx.beginPath();
-      ctx.moveTo(x, s.y + SPIKE_H);
-      ctx.lineTo(x + tw / 2, s.y);
-      ctx.lineTo(x + tw, s.y + SPIKE_H);
-      ctx.closePath();
-      ctx.fill(); ctx.stroke();
-    }
-  }
-  ctx.restore();
-}
-
 function drawFlags(){
   for (const f of flags){
     if (f.x < S.camX - 120 || f.x > S.camX + viewW + 120) continue;
 
-    if (f.kind === "frag"){
-      ctx.save();
-      ctx.translate(f.x, f.y);
-      ctx.rotate(Math.PI / 4);
-      const r = 7;
-      if (!f.got){
-        ctx.shadowColor = "rgba(255,255,255,0.5)"; ctx.shadowBlur = 12;
-        ctx.strokeStyle = "rgba(255,255,255,0.7)"; ctx.lineWidth = 1.6;
-        ctx.strokeRect(-r, -r, r*2, r*2);
-      } else {
-        ctx.globalAlpha = 0.18;
-        ctx.strokeStyle = "rgba(255,255,255,0.4)"; ctx.lineWidth = 1;
-        ctx.strokeRect(-r, -r, r*2, r*2);
-      }
-      ctx.restore();
-      continue;
-    }
-
     const goal = f.kind === "goal";
-    const h = goal ? 118 : 60;
+    const h = goal ? 118 : 68;
     ctx.save();
     ctx.strokeStyle = f.got ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.4)";
     ctx.lineWidth = goal ? 3 : 2;
@@ -710,34 +610,34 @@ function drawFlags(){
 
     ctx.beginPath();
     ctx.moveTo(f.x, f.y - h);
-    ctx.lineTo(f.x + (goal ? 54 : 30), f.y - h + (goal ? 17 : 10));
-    ctx.lineTo(f.x, f.y - h + (goal ? 34 : 20));
+    ctx.lineTo(f.x + (goal ? 54 : 34), f.y - h + (goal ? 17 : 11));
+    ctx.lineTo(f.x, f.y - h + (goal ? 34 : 22));
     ctx.closePath();
-    ctx.fillStyle = f.got || goal ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.28)";
+    ctx.fillStyle = f.got || goal ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.32)";
     ctx.fill();
     ctx.restore();
 
-    // Your own words, on the thing you're walking toward.
-    if (goal && S.goal){
-      const txt = S.goal.toUpperCase();
+    // The goal that flag represents, written on the thing you're walking toward.
+    if (f.label){
+      const txt = f.label.toUpperCase();
       ctx.save();
       ctx.textAlign = "center";
-      ctx.fillStyle = "rgba(255,255,255,0.62)";
+      ctx.fillStyle = goal ? "rgba(255,255,255,0.62)" : "rgba(255,255,255,0.42)";
       if (ctx.letterSpacing !== undefined) ctx.letterSpacing = "3px";
 
-      let size = 15;
+      let size = goal ? 15 : 12;
       ctx.font = "300 " + size + "px Montserrat, sans-serif";
       const room = viewW - 56;
       const wide = ctx.measureText(txt).width;
       if (wide > room){
-        size = Math.max(9, size * room / wide);
+        size = Math.max(8, size * room / wide);
         ctx.font = "300 " + size.toFixed(1) + "px Montserrat, sans-serif";
       }
       const half = ctx.measureText(txt).width / 2 + 12;
       const tx = Math.min(Math.max(f.x, S.camX + half), S.camX + viewW - half);
 
-      ctx.shadowColor = "rgba(255,255,255,0.3)"; ctx.shadowBlur = 18;
-      ctx.fillText(txt, tx, f.y - h - 26);
+      ctx.shadowColor = "rgba(255,255,255,0.3)"; ctx.shadowBlur = 16;
+      ctx.fillText(txt, tx, f.y - h - 22);
       ctx.restore();
     }
   }
@@ -768,11 +668,17 @@ function drawPlayer(){
 /* ===========================================================================
    HUD + OVERLAYS
    =========================================================================== */
+function esc(s){
+  return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
 const el = id => document.getElementById(id);
 const hud = el("hud"), meter = el("meter"), meterValue = el("meterValue");
-const recognize = el("recognize"), confront = el("confront"), levelUp = el("levelUp");
-const confrontL1 = confront.querySelector(".l1"), confrontL2 = confront.querySelector(".l2");
-const titleO = el("title"), fieldO = el("field"), winO = el("win"), goalInput = el("goalInput");
+const confront = el("confront"), levelUp = el("levelUp");
+const confrontL1 = confront.querySelector(".l1"), confrontL2 = confront.querySelector(".l2"), confrontL3 = confront.querySelector(".l3");
+const titleO = el("title"), fieldO = el("field"), winO = el("win");
+const goalInput = el("goalInput"), fieldContext = el("fieldContext"), fieldQ = el("fieldQ");
+const fieldEnterHint = el("fieldEnterHint"), fieldRefuse = el("fieldRefuse");
 
 // The title overlay sits above the canvas (it has to, for "Press any key" to
 // render), which means it also intercepts every tap before the canvas ever
@@ -791,61 +697,44 @@ function updateHud(){
   if (S.phase === "drift"){
     meterValue.textContent = clock(S.t);
   } else if (S.phase === "walk"){
-    const w = WORLDS[S.world];
-    if (w.frags){
-      meterValue.textContent = S.frags + " / " + S.fragsNeeded;
-    } else if (w.streak){
-      meterValue.textContent = String(S.streak);
-    } else {
-      const left = Math.max(0, Math.round((S.goalX - (player.x + player.w/2)) / CFG.PX_PER_M));
-      meterValue.textContent = left + "m";
-    }
+    const next = flags.find(f => !f.got);
+    const left = next ? Math.max(0, Math.round((next.x - (player.x + player.w/2)) / CFG.PX_PER_M)) : 0;
+    meterValue.textContent = left + "m";
   }
 }
 
-let recognizeTimer = null;
-function showRecognize(text){
-  clearTimeout(recognizeTimer);
-  recognize.textContent = text;
-  recognize.classList.add("on");
-  recognizeTimer = setTimeout(() => recognize.classList.remove("on"), 2200);
-}
-
-// Every monolith at x = n*520 is the identical box drawn in drawBackdrop() —
-// so the moment the player's world x crosses into a new one, it is provably
-// the same shape they already passed. This just says so, a few times, and stops.
-function checkRecognition(){
-  const idx = Math.floor(player.x / 520);
-  if (idx <= S.monoIdx) return;
-  S.monoIdx = idx;
-  const count = S.monoIdx;              // marker 1 = first ever seen, no message
-  const msg = RECOGNIZE[count];
-  if (msg && !S.monoSeen.has(count)){
-    S.monoSeen.add(count);
-    showRecognize(msg);
-  }
-}
-
-// The 30-second confrontation. The world keeps scrolling under it on purpose —
-// nothing pauses for a realization. Fires once, then leaves the level-up panel up.
+// The confrontation: three lines, 20s in, fires once. The world keeps scrolling
+// under it on purpose — nothing pauses for a realization. Ends on the level-up
+// invitation, which is the only way out.
 function runConfrontation(){
   S.confronted = true;
   confront.classList.add("dim");
   setTimeout(() => confrontL1.classList.add("on"), 700);
   setTimeout(() => confrontL2.classList.add("on"), 2100);
+  setTimeout(() => confrontL3.classList.add("on"), 4100);
   setTimeout(() => {
     confrontL1.classList.remove("on");
     confrontL2.classList.remove("on");
+    confrontL3.classList.remove("on");
     confront.classList.remove("dim");
-  }, 4600);
-  setTimeout(() => levelUp.classList.add("on"), 5300);
+  }, 6600);
+  setTimeout(() => levelUp.classList.add("on"), 7300);
 }
 
 function openField(){
   fieldOpen = true;
-  recognize.classList.remove("on");
   fieldO.classList.add("on");
   goalInput.value = "";
+  fieldContext.style.display = "none";   // callers that need context set it after this
+  if (S.phase === "breakdown"){
+    fieldEnterHint.textContent = "to continue";
+    fieldRefuse.style.display = "none";
+  } else {
+    fieldEnterHint.textContent = "to write it";
+    fieldRefuse.style.display = "";
+    fieldQ.textContent = "What do you want 30 days from now?";
+    goalInput.placeholder = "say it plainly";
+  }
   setTimeout(() => goalInput.focus(), 60);
 }
 function closeField(){
@@ -854,19 +743,58 @@ function closeField(){
   goalInput.blur();
 }
 
+// Sequential goal-collection queue, used for every breakdown step after the
+// first goal. Each step asks one question, stores one answer, then the next
+// step (or the world it unlocks) begins.
+let queue = [];
+let queueStep = null;
+let afterQueue = null;
+
+function pushStep(context, prompt, placeholder, onValue){
+  queue.push({ context, prompt, placeholder, onValue });
+}
+function runQueue(onDone){
+  afterQueue = onDone;
+  advanceQueue();
+}
+function advanceQueue(){
+  if (!queue.length){
+    const done = afterQueue; afterQueue = null;
+    if (done) done();
+    return;
+  }
+  queueStep = queue.shift();
+  S.phase = "breakdown";
+  openField();
+  fieldQ.textContent = queueStep.prompt;
+  goalInput.placeholder = queueStep.placeholder || "";
+  if (queueStep.context){
+    fieldContext.textContent = queueStep.context;
+    fieldContext.style.display = "block";
+  }
+}
+
 goalInput.addEventListener("keydown", e => {
   e.stopPropagation();
   if (e.key === "Enter"){
     const v = goalInput.value.trim();
-    if (v.length >= 2) commit(v);
+    if (v.length < 2) return;
+    if (S.phase === "drift"){
+      commit(v);
+    } else if (S.phase === "breakdown"){
+      closeField();
+      const step = queueStep; queueStep = null;
+      if (step && step.onValue) step.onValue(v);
+      advanceQueue();
+    }
   } else if (e.key === "Escape"){
-    closeField();   // walking back out is allowed. It has to be.
+    if (S.phase === "drift") closeField();   // walking back out is allowed here. It has to be.
   }
 });
 
 // The turn. Everything the game has been withholding arrives here at once.
 function commit(text){
-  S.goal = text;
+  S.goal30 = text;
   closeField();
   S.phase = "turn";
   S.turnT = 0;
@@ -875,91 +803,99 @@ function commit(text){
   levelUp.classList.remove("on");
   levelUp.style.display = "none";
   confront.style.display = "none";
-  recognize.style.display = "none";
 }
 
 function finishTurn(){
   const ly = Math.min(Math.max(player.y + player.h, 300), 462);
   S.walkStart = player.x;
-  S.world = 0;
-  const w = WORLDS[0];
-  buildWalkPath(player.x, ly, CFG.WALK_LENGTH, w.frags || 0);
+  S.stage = "world2";
+  buildGoalPath(player.x, ly, [{ text:S.goal30, final:true }]);
   player.y  = ly - player.h - 2;
   player.vy = 0;
   S.lastCheck = { x:player.x + player.w/2, y:ly };
-  S.frags = 0; S.fragsNeeded = w.frags || 0; S.streak = 0;
   meter.classList.remove("struck");
-  meter.querySelector(".label").textContent = w.frags ? "Fragments" : (w.streak ? "Streak" : "Distance to flag");
+  meter.querySelector(".label").textContent = "Distance to flag";
   S.phase = "walk";
 }
 
-// Between worlds: a brief card (DreamDesigner's own tier copy), then the next
-// walk launches from wherever the player is standing — momentum carries through.
-const worldcardO = el("worldcard");
-function nextWorld(){
-  S.world++;
-  const w = WORLDS[S.world];
-  el("wcEyebrow").textContent = "World " + w.num;
-  el("wcTitle").textContent = w.title;
-  el("wcBlurb").textContent = w.blurb;
-  S.phase = "worldcard";
-  hud.classList.remove("on");
-  worldcardO.classList.add("on");
-  setTimeout(() => {
-    worldcardO.classList.remove("on");
-    hud.classList.add("on");
-    const ly = Math.min(Math.max(player.y + player.h, 300), 462);
-    S.walkStart = player.x;
-    buildWalkPath(player.x, ly, CFG.WALK_LENGTH, w.frags || 0);
-    player.y  = ly - player.h - 2;
-    player.vy = 0;
-    S.lastCheck = { x:player.x + player.w/2, y:ly };
-    S.frags = 0; S.fragsNeeded = w.frags || 0; S.streak = 0;
-    meter.querySelector(".label").textContent = w.frags ? "Fragments" : (w.streak ? "Streak" : "Distance to flag");
-    S.phase = "walk";
-  }, 2600);
+function launchFrom(flagDefs, stage){
+  const ly = Math.min(Math.max(player.y + player.h, 300), 462);
+  S.walkStart = player.x;
+  S.stage = stage;
+  buildGoalPath(player.x, ly, flagDefs);
+  player.y  = ly - player.h - 2;
+  player.vy = 0;
+  S.lastCheck = { x:player.x + player.w/2, y:ly };
+  S.phase = "walk";
+}
+
+// Reached the 30-day goal flag. Break it into two smaller goals, then climb
+// toward both of them plus a final confirmation of the 30-day goal itself.
+function afterWorld2(){
+  queue = [];
+  const ctx30 = "YOUR 30-DAY GOAL: " + S.goal30.toUpperCase();
+  pushStep(ctx30, "Break it into two smaller goals. First:", "smaller goal one", v => { S.subs[0] = v; });
+  pushStep(ctx30, "Second:", "smaller goal two", v => { S.subs[1] = v; });
+  runQueue(() => launchFrom(
+    [{ text:S.subs[0], final:false }, { text:S.subs[1], final:false }, { text:S.goal30, final:true }],
+    "world3"
+  ));
+}
+
+// Reached the two sub-goals and the 30-day goal again. Split each sub-goal
+// into two smaller steps, then climb toward all four.
+function afterWorld3(){
+  queue = [];
+  const ctxA = "BREAKING DOWN: " + S.subs[0].toUpperCase();
+  const ctxB = "BREAKING DOWN: " + S.subs[1].toUpperCase();
+  pushStep(ctxA, "First smaller step:",  "step one", v => { S.subsubs[0] = v; });
+  pushStep(ctxA, "Second smaller step:", "step two", v => { S.subsubs[1] = v; });
+  pushStep(ctxB, "First smaller step:",  "step one", v => { S.subsubs[2] = v; });
+  pushStep(ctxB, "Second smaller step:", "step two", v => { S.subsubs[3] = v; });
+  runQueue(() => launchFrom(
+    [
+      { text:S.subsubs[0], final:false },
+      { text:S.subsubs[1], final:false },
+      { text:S.subsubs[2], final:false },
+      { text:S.subsubs[3], final:true  },
+    ],
+    "world4"
+  ));
 }
 
 function win(){
   S.phase = "win";
   hud.classList.remove("on");
-  el("winGoal").textContent = S.goal;
+  el("winGoal").textContent = S.goal30;
 
-  const walked = Math.round(CFG.WALK_LENGTH * WORLDS.length / CFG.PX_PER_M);
-  const deathLine = S.deaths === 0
-    ? "You never died out there. You never got anywhere either."
-    : "You died " + S.deaths + (S.deaths === 1 ? " time" : " times") + ". It didn't matter.";
-  const walkDeathLine = S.walkDeaths === 0
-    ? "Not once after that."
-    : "You fell " + S.walkDeaths + (S.walkDeaths === 1 ? " time" : " times") + " once it mattered — and got back up every time.";
-
-  el("winStats").innerHTML =
-      "<div>You drifted for " + clock(S.t) + ".</div>"
-    + "<div>" + deathLine + "</div>"
-    + "<div>Then you walked " + walked + " meters through four worlds, and it did.</div>"
-    + "<div>" + walkDeathLine + "</div>"
-    + "<div>Best streak: " + S.streakBest + ".</div>";
+  let html = "";
+  for (let i = 0; i < 2; i++){
+    html += "<div class='sub-row'>&rarr; " + esc(S.subs[i]) + "</div>";
+    html += "<div class='subsub-row'>&middot; " + esc(S.subsubs[i*2]) + "</div>";
+    html += "<div class='subsub-row'>&middot; " + esc(S.subsubs[i*2 + 1]) + "</div>";
+  }
+  el("winStats").innerHTML = html;
 
   el("winCta").href = CFG.DREAMDESIGNER_URL;
   winO.classList.add("on");
 }
 
+el("winPrint").addEventListener("click", () => window.print());
 el("winAgain").addEventListener("click", () => location.reload());
 
 function start(){
   titleO.classList.remove("on");
   hud.classList.add("on");
   S.phase = "drift";
-  plats = []; spikes = []; flags = [];
+  plats = []; flags = [];
   genX = 0;
   plats.push({ x:-200, y:430, w:700, h:BASE_H + 80 - 430 });   // opening ground
-  genX = 520;
+  genX = 500;
   lastY = 430;
   seedMotes();
   player.x = 120; player.y = 380; player.vx = 0; player.vy = 0; player.trail = [];
   S.camX = 0;
-  S.monoIdx = 0; S.monoSeen.clear(); S.confronted = false;
-  S.world = 0; S.frags = 0; S.fragsNeeded = 0; S.streak = 0; S.streakBest = 0; S.walkDeaths = 0;
+  S.confronted = false;
 }
 
 /* ===========================================================================
@@ -979,7 +915,6 @@ function frame(now){
     while (genX < S.camX + viewW + 700) genDriftChunk();
     trimBehind();
     if (!fieldOpen) physics(dt);
-    if (!fieldOpen) checkRecognition();
     if (S.t > CFG.CONFRONT_AT && !S.confronted) runConfrontation();
 
   } else if (S.phase === "turn"){
@@ -1000,22 +935,17 @@ function frame(now){
 
     for (const f of flags){
       if (f.got) continue;
-      const near = f.kind === "frag"
-        ? Math.abs((player.x + player.w/2) - f.x) < 20 && Math.abs((player.y + player.h/2) - f.y) < 20
-        : Math.abs((player.x + player.w/2) - f.x) < 26 && Math.abs((player.y + player.h) - f.y) < 90;
+      const near = Math.abs((player.x + player.w/2) - f.x) < 26 && Math.abs((player.y + player.h) - f.y) < 90;
       if (!near) continue;
-
-      if (f.kind === "frag"){
-        f.got = true; S.frags++;
-      } else if (f.kind === "way"){
-        f.got = true; S.lastCheck = { x:f.x, y:f.y }; S.streak++;
-        if (S.streak > S.streakBest) S.streakBest = S.streak;
-      } else if (S.frags >= S.fragsNeeded){
-        f.got = true;
-        S.world < WORLDS.length - 1 ? nextWorld() : win();
+      f.got = true;
+      if (f.kind === "way"){
+        S.lastCheck = { x:f.x, y:f.y };
       } else {
-        showRecognize("Not yet.");
+        if (S.stage === "world2") afterWorld2();
+        else if (S.stage === "world3") afterWorld3();
+        else win();
       }
+      break;
     }
   }
 

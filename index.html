@@ -993,7 +993,7 @@ function buildObstacleLand(startX, startY, obstacles, goalText){
 // one collected makes the light bigger.
 function buildThingLand(startX, startY, things, goalText){
   launchPad(startX, startY); clearProps(); spikes = []; flags = [];
-  const GY = 430, HIGH = 268, LOW = 468;
+  const GY = 430, HIGH = 168, DEEP = 700;
   let x = startX + 240;
 
   // Supplies alternate: one up in the air, the next down in a dip. You climb
@@ -1005,15 +1005,42 @@ function buildThingLand(startX, startY, things, goalText){
     x += w + rnd(105, 140);
 
     if (up){
-      plats.push({ x:x, y:GY - 92, w:150, h:12, float:true });
-      plats.push({ x:x + 200, y:HIGH, w:130, h:34, float:true });
-      orbs.push({ x:x + 265, y:HIGH - 42, label:th.text, got:false });
-      x += 200 + 130 + rnd(120, 160);
-      plats.push({ x:x - 300, y:GY, w:270, h:BASE_H + 80 - GY });
+      // climb: four blocks stepping up, the supply at the top
+      let cy = GY - 86;
+      for (let k = 0; k < 4; k++){
+        plats.push({ x:x, y:cy, w:rnd(112, 140), h:26, float:true });
+        x += rnd(150, 185);
+        cy = Math.max(HIGH, cy - 78);
+      }
+      orbs.push({ x:x - 60, y:cy - 44, label:th.text, got:false });
+      // and back down the other side
+      let dy = cy;
+      for (let k = 0; k < 3; k++){
+        dy = Math.min(GY - 60, dy + 92);
+        plats.push({ x:x, y:dy, w:rnd(112, 140), h:26, float:true });
+        x += rnd(140, 175);
+      }
+      plats.push({ x:x, y:GY, w:280, h:BASE_H + 80 - GY });
+      x += 280 + rnd(100, 135);
     } else {
-      plats.push({ x:x, y:LOW, w:240, h:BASE_H + 80 - LOW });
-      orbs.push({ x:x + 120, y:LOW - 46, label:th.text, got:false });
-      x += 240 + rnd(105, 140);
+      // descend: drop down a shaft, the supply at the bottom, climb back out
+      let dy = GY + 70;
+      for (let k = 0; k < 3; k++){
+        plats.push({ x:x, y:dy, w:rnd(120, 150), h:24, float:true });
+        x += rnd(130, 165);
+        dy = Math.min(DEEP, dy + 84);
+      }
+      plats.push({ x:x, y:DEEP, w:250, h:26, float:true });
+      orbs.push({ x:x + 125, y:DEEP - 44, label:th.text, got:false });
+      x += 250 + rnd(90, 120);
+      let uy = DEEP;
+      for (let k = 0; k < 4; k++){
+        uy = Math.max(GY, uy - 84);
+        plats.push({ x:x, y:uy, w:rnd(118, 148), h:24, float:true });
+        x += rnd(140, 172);
+      }
+      plats.push({ x:x, y:GY, w:270, h:BASE_H + 80 - GY });
+      x += 270 + rnd(100, 130);
     }
 
     const w2 = rnd(190, 250);
@@ -1034,17 +1061,31 @@ function buildThingLand(startX, startY, things, goalText){
 // People Land: the people they named, standing on the path. Reach every one.
 function buildPeopleLand(startX, startY, people, goalText){
   launchPad(startX, startY); clearProps(); spikes = []; flags = [];
-  const GY = 430;
-  let x = startX + 240;
-  people.forEach(function(pe){
-    const w = rnd(230, 300);
-    plats.push({ x:x, y:GY, w:w, h:BASE_H + 80 - GY });
-    folk.push({ x:x + w*0.5, y:GY, label:pe.text, got:false, wave:0 });
-    x += w + rnd(95, 125);
+  const GY = 430, UP = 250;
+  let x = startX + 230;
+
+  // a short run along the bottom, then the climb up to the upper storey
+  plats.push({ x:x, y:GY, w:240, h:BASE_H + 80 - GY });
+  x += 240 + rnd(100, 130);
+  let cy = GY - 84;
+  for (let k = 0; k < 3; k++){
+    plats.push({ x:x, y:cy, w:rnd(118, 145), h:26, float:true });
+    x += rnd(148, 180);
+    cy = Math.max(UP, cy - 84);
+  }
+
+  // the upper storey itself — flat and continuous, everyone standing on it
+  people.forEach(function(pe, i){
+    const w = rnd(250, 320);
+    plats.push({ x:x, y:UP, w:w, h:30, float:true });
+    folk.push({ x:x + w*0.5, y:UP, label:pe.text, got:false, wave:0 });
+    x += w + (i === people.length - 1 ? rnd(90, 120) : rnd(95, 125));
   });
+
+  // and the flag is up there with them
   const holdW = 380;
-  plats.push({ x:x, y:GY, w:holdW, h:BASE_H + 80 - GY });
-  flags.push({ x:x + holdW*0.5, y:GY, kind:"goal", got:false, label:goalText });
+  plats.push({ x:x, y:UP, w:holdW, h:30, float:true });
+  flags.push({ x:x + holdW*0.5, y:UP, kind:"goal", got:false, label:goalText });
   setFloor();
 }
 
@@ -1890,7 +1931,7 @@ function launchWorld5(){
 function launchWorld6(){
   splash(6, "Supplies Land", "Every ring is something you said you'd need \u2014 high and low.", function(){
     const ly = 430;
-    S.walkStart = player.x; S.stage = "world6"; S.showMap = ("world6" === "world6" || "world6" === "world9"); S.freeCam = false; S.descend = false;
+    S.walkStart = player.x; S.stage = "world6"; S.showMap = true; S.freeCam = true; S.descend = true;
     buildThingLand(player.x, ly, S.things, S.goal);
     player.y = ly - player.h - 2; player.vy = 0;
     S.lastCheck = { x:player.x + player.w/2, y:ly };
@@ -1901,7 +1942,7 @@ function launchWorld6(){
 function launchWorld7(){
   splash(7, "People Land", "Nobody gets there alone. Go and meet them.", function(){
     const ly = 430;
-    S.walkStart = player.x; S.stage = "world7"; S.showMap = ("world7" === "world6" || "world7" === "world9"); S.freeCam = false; S.descend = false;
+    S.walkStart = player.x; S.stage = "world7"; S.showMap = true; S.freeCam = true; S.descend = false;
     buildPeopleLand(player.x, ly, S.people, S.goal);
     player.y = ly - player.h - 2; player.vy = 0;
     S.lastCheck = { x:player.x + player.w/2, y:ly };

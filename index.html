@@ -910,9 +910,10 @@ let plats  = [];   // {x,y,w,h,float?}  float = one-way sky platform / block
 let spikes = [];   // {x,y,w}
 let flags  = [];   // {x,y,kind:"way"|"goal",got,label,sub?}
 let motes  = [];
-let birds  = [];   // {x,y,baseY,amp,phase,vx,label} — Obstacle Land
+let birds  = [];   // {x,y,baseY,amp,phase,vx,label,obId} — Obstacle Land
 let orbs   = [];   // {x,y,label,got}               — Thing Land power-ups
 let folk   = [];   // {x,y,label,got,wave}          — People Land
+let tools  = [];   // {x,y,label,got,obId}          — Obstacle Land: your written response, waiting to be picked up
 let genX   = 0, lastY = 430;
 
 const GRAV = 2000, JUMP = -740, RUN = 330, SPIKE_H = 15;
@@ -1014,7 +1015,7 @@ function trimBehind(){
   spikes = spikes.filter(s => s.x + s.w > cut);
 }
 
-function clearProps(){ birds = []; orbs = []; folk = []; }
+function clearProps(){ birds = []; orbs = []; folk = []; tools = []; }
 function launchPad(startX, startY){
   plats = plats.filter(p => p.x + p.w < startX - 40);
   plats.push({ x:startX - 150, y:startY, w:330, h:BASE_H + 80 - startY });
@@ -1157,12 +1158,15 @@ function buildClimb(startX, startY, defs, extra){
 }
 
 // Obstacle Land: ground and pits, plus birds that patrol — each one carrying
-// the name of something the player said would get in the way.
+// the name of something the player said would get in the way. Whatever they
+// wrote as their response sits on the ground in front of it — a tool, shaped
+// like a shield, that a player has to actually go pick up. Grab it before the
+// bird reaches you and the bird's gone: the plan beat the distraction.
 function buildObstacleLand(startX, startY, obstacles, goalText){
   launchPad(startX, startY); clearProps(); spikes = []; flags = [];
   const GY = 430;
   let x = startX + 240;
-  obstacles.forEach(function(ob){
+  obstacles.forEach(function(ob, obId){
     for (let k = 0; k < 2; k++){
       const w = rnd(160, 220);
       plats.push({ x:x, y:GY, w:w, h:BASE_H + 80 - GY });
@@ -1170,10 +1174,13 @@ function buildObstacleLand(startX, startY, obstacles, goalText){
         const sw = rnd(34, 52);
         spikes.push({ x:x + rnd(36, w - sw - 26), y:GY - SPIKE_H, w:sw });
       }
+      if (k === 0 && ob.response && ob.response.trim().length >= 3){
+        tools.push({ x:x + w * 0.5, y:GY - 46, label:ob.response, got:false, obId:obId });
+      }
       x += w + rnd(95, 130);
     }
     birds.push({ x:x - 150, y:0, baseY:GY - rnd(90, 150), amp:rnd(18, 34), phase:rnd(0, 6.28),
-                 vx:rnd(26, 46) * (Math.random() < 0.5 ? -1 : 1), label:ob.text });
+                 vx:rnd(26, 46) * (Math.random() < 0.5 ? -1 : 1), label:ob.text, obId:obId });
 
     // A checkpoint past every obstacle — getting hit by a bird shouldn't cost
     // you the whole level, and this is the one level built to hit you.
@@ -1425,6 +1432,36 @@ function respawnDrift(){
 /* ===========================================================================
    RENDER
    =========================================================================== */
+// Every level past the first gets a light wash of its own colour — the ground
+// the ball actually falls on, the hazards, the flags. World 1 stays pure
+// black-and-white; it's the only stretch with no goal yet. Colour is always
+// decorative here, never the only signal — shape still carries the meaning
+// (platforms are rectangles, hazards are triangles, flags are flags).
+const LEVEL_THEME = {
+  world2:    [245,221,110],  // Goal Land — yellow
+  world3:    [127,224,138],  // Checkpoint Land — green
+  world4:    [111,179,224],  // Deadline Land — blue
+  world5:    [192,138,82],   // Obstacle Land — brown
+  world6:    [125,252,107],  // Supplies Land — neon green, the brightest one
+  world7:    [240,168,96],   // People Land — orange
+  world8dec: [185,138,224],  // Declaration Land — purple
+  world9:    [95,214,214],   // End Land — aqua
+};
+function themeRGB(){ return LEVEL_THEME[S.stage] || null; }
+// Full-strength level colour, or white if this level has none (world 1).
+function themeColor(alpha){
+  const c = themeRGB();
+  if (!c) return "rgba(255,255,255," + alpha + ")";
+  return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + alpha + ")";
+}
+// A softer, whiter version — flags are "the colour of the level, but slightly."
+function themeColorSoft(alpha){
+  const c = themeRGB();
+  if (!c) return "rgba(255,255,255," + alpha + ")";
+  const r = Math.round((c[0] + 255) / 2), g = Math.round((c[1] + 255) / 2), b = Math.round((c[2] + 255) / 2);
+  return "rgba(" + r + "," + g + "," + b + "," + alpha + ")";
+}
+
 function draw(){
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, cv.width, cv.height);
@@ -1438,6 +1475,7 @@ function draw(){
   drawPlatforms();
   drawSpikes();
   drawBirds();
+  drawTools();
   drawOrbs();
   drawFolk();
   drawFlags();
@@ -1488,8 +1526,8 @@ function drawPlatforms(){
     ctx.lineWidth = 1;
     ctx.strokeRect(p.x + 0.5, p.y + 0.5, p.w - 1, depth);
     ctx.save();
-    ctx.shadowColor = "rgba(255,255,255,0.5)"; ctx.shadowBlur = 14;
-    ctx.strokeStyle = "rgba(255,255,255,0.62)"; ctx.lineWidth = 2;
+    ctx.shadowColor = themeColor(0.5); ctx.shadowBlur = 14;
+    ctx.strokeStyle = themeColor(0.62); ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + p.w, p.y); ctx.stroke();
     ctx.restore();
   }
@@ -1497,7 +1535,7 @@ function drawPlatforms(){
 
 function drawSpikes(){
   ctx.save();
-  ctx.strokeStyle = "rgba(255,255,255,0.75)";
+  ctx.strokeStyle = themeColor(0.75);
   ctx.fillStyle = "#000";
   ctx.lineWidth = 1.5;
   for (const s of spikes){
@@ -1522,8 +1560,8 @@ function drawBirds(){
   ctx.save();
   for (const b of birds){
     if (b.x < S.camX - 120 || b.x > S.camX + viewW + 120) continue;
-    ctx.strokeStyle = "rgba(255,255,255,0.8)"; ctx.lineWidth = 2;
-    ctx.shadowColor = "rgba(255,255,255,0.45)"; ctx.shadowBlur = 10;
+    ctx.strokeStyle = themeColor(0.8); ctx.lineWidth = 2;
+    ctx.shadowColor = themeColor(0.45); ctx.shadowBlur = 10;
     const w = 13, f = Math.sin(b.phase * 3) * 4;
     ctx.beginPath();
     ctx.moveTo(b.x - w, b.y + f); ctx.lineTo(b.x, b.y - 5); ctx.lineTo(b.x + w, b.y + f);
@@ -1541,17 +1579,41 @@ function drawOrbs(){
     ctx.save();
     ctx.lineWidth = 2;
     if (!o.got){
-      ctx.shadowColor = "rgba(255,255,255,0.7)"; ctx.shadowBlur = 16;
-      ctx.strokeStyle = "rgba(255,255,255,0.85)";
+      ctx.shadowColor = themeColor(0.7); ctx.shadowBlur = 16;
+      ctx.strokeStyle = themeColor(0.85);
       ctx.beginPath(); ctx.arc(o.x, o.y, 10, 0, 6.284); ctx.stroke();
       ctx.beginPath(); ctx.arc(o.x, o.y, 4, 0, 6.284); ctx.stroke();
     } else {
-      ctx.globalAlpha = 0.2; ctx.strokeStyle = "rgba(255,255,255,0.5)";
+      ctx.globalAlpha = 0.2; ctx.strokeStyle = themeColor(0.5);
       ctx.beginPath(); ctx.arc(o.x, o.y, 10, 0, 6.284); ctx.stroke();
     }
     ctx.restore();
     if (o.label) flagText(o.label.toUpperCase(), o.x, o.y - 26, 10,
       o.got ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.5)");
+  }
+}
+
+// Tools: a diamond-shaped shield — the response written for one obstacle,
+// waiting on the ground so it can be picked up before the bird carrying that
+// obstacle's name reaches you. A different shape from the orbs on purpose.
+function drawTools(){
+  for (const t of tools){
+    if (t.x < S.camX - 120 || t.x > S.camX + viewW + 120) continue;
+    ctx.save();
+    ctx.translate(t.x, t.y);
+    ctx.rotate(Math.PI / 4);
+    ctx.lineWidth = 2;
+    if (!t.got){
+      ctx.shadowColor = themeColor(0.7); ctx.shadowBlur = 16;
+      ctx.strokeStyle = themeColor(0.9);
+      ctx.strokeRect(-9, -9, 18, 18);
+    } else {
+      ctx.globalAlpha = 0.2; ctx.strokeStyle = themeColor(0.5);
+      ctx.strokeRect(-9, -9, 18, 18);
+    }
+    ctx.restore();
+    if (t.label) flagText(t.label.toUpperCase(), t.x, t.y - 26, 10,
+      t.got ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.55)");
   }
 }
 
@@ -1563,9 +1625,9 @@ function drawFolk(){
     if (near) f.wave = Math.min(1, f.wave + 0.06); else f.wave = Math.max(0, f.wave - 0.06);
     const t = f.wave, ang = -0.5 - Math.sin(performance.now()/160) * 0.5 * t;
     ctx.save();
-    ctx.strokeStyle = f.got ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.5)";
+    ctx.strokeStyle = f.got ? themeColor(0.85) : themeColor(0.5);
     ctx.lineWidth = 2;
-    if (f.got){ ctx.shadowColor = "rgba(255,255,255,0.5)"; ctx.shadowBlur = 12; }
+    if (f.got){ ctx.shadowColor = themeColor(0.5); ctx.shadowBlur = 12; }
     const bx = f.x, by = f.y - 34;
     ctx.beginPath(); ctx.arc(bx, by, 6, 0, 6.284); ctx.stroke();          // head
     ctx.beginPath(); ctx.moveTo(bx, by + 6); ctx.lineTo(bx, by + 22); ctx.stroke();   // body
@@ -1586,9 +1648,9 @@ function drawFlags(){
     const h = goal ? 118 : 62;
 
     ctx.save();
-    ctx.strokeStyle = f.got ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.4)";
+    ctx.strokeStyle = f.got ? themeColorSoft(0.85) : themeColorSoft(0.4);
     ctx.lineWidth = goal ? 3 : 2;
-    if (f.got){ ctx.shadowColor = "rgba(255,255,255,0.55)"; ctx.shadowBlur = goal ? 26 : 14; }
+    if (f.got){ ctx.shadowColor = themeColorSoft(0.55); ctx.shadowBlur = goal ? 26 : 14; }
     ctx.beginPath(); ctx.moveTo(f.x, f.y); ctx.lineTo(f.x, f.y - h); ctx.stroke();
     const fl = goal ? 54 : 32;
     ctx.beginPath();
@@ -1596,7 +1658,7 @@ function drawFlags(){
     ctx.lineTo(f.x + fl, f.y - h + fl * 0.32);
     ctx.lineTo(f.x, f.y - h + fl * 0.63);
     ctx.closePath();
-    ctx.fillStyle = f.got ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.32)";
+    ctx.fillStyle = f.got ? themeColorSoft(0.9) : themeColorSoft(0.32);
     ctx.fill();
     ctx.restore();
 
@@ -1731,7 +1793,7 @@ function autoGrow(node){
 // your answer to it is worth the most, because that's the part almost nobody does.
 const PTS = {
   goal:150, why:120, checkpoint:60, date:30, step:40,
-  obstacle:50, response:90, supply:35, person:35, declaration:25,
+  obstacle:50, response:90, supply:35, person:35, declaration:25, defeat:60,
   flag:10, clean:100, firstAction:120,
 };
 function addPoints(kind, key, n){
@@ -2868,7 +2930,7 @@ function start(){
   S.obstacles = []; S.things = []; S.people = []; S.ballR = 12; S.freeCam = false; S.showMap = false; S.diff = 0;
   S.why = ""; S.firstAction = ""; S.firstActionBy = ""; S.declarations = []; S.descend = false;
   S.points = 0; S.scored = {}; S.leveldeaths = 0;
-  birds = []; orbs = []; folk = [];
+  birds = []; orbs = []; folk = []; tools = [];
   minimap.classList.remove("on");
   S.deaths = 0; S.walkDeaths = 0; S.t = 0;
 }
@@ -2879,6 +2941,38 @@ function start(){
    this is a game about a light drifting in silence, and the music should never
    be the loudest thing in the room.
    =========================================================================== */
+// Note-name lookup (equal temperament) used only to author the level songs
+// below in TRACKS — readable note names instead of bare frequencies.
+const N = {
+  C2:65.41, D2:73.42, E2:82.41, F2:87.31, G2:98.00, A2:110.00, Bb2:116.54, B2:123.47,
+  C3:130.81, Db3:138.59, D3:146.83, Eb3:155.56, E3:164.81, F3:174.61, Gb3:185.00, G3:196.00, Ab3:207.65, A3:220.00, Bb3:233.08, B3:246.94,
+  C4:261.63, Db4:277.18, D4:293.66, Eb4:311.13, E4:329.63, F4:349.23, Gb4:369.99, G4:392.00, Ab4:415.30, A4:440.00, Bb4:466.16, B4:493.88,
+  C5:523.25, Db5:554.37, D5:587.33, Eb5:622.25, E5:659.25, F5:698.46, Gb5:739.99, G5:783.99, Ab5:830.61, A5:880.00, Bb5:932.33, B5:987.77,
+  C6:1046.50, D6:1174.66, E6:1318.51, F6:1396.91, G6:1567.98,
+};
+// One 16-step bar: melody notes, an optional bass note underneath, and the
+// waveform for this bar (triangle reads soft, square reads bright/hooky —
+// varying it between verse and chorus is most of what keeps a bar from
+// sounding like the same tap over and over). 0 is a rest.
+function bar(mel, bas, wave){
+  return {
+    n:    mel.map(function(k){ return k ? N[k] : 0; }),
+    bass: (bas || []).map(function(k){ return k ? N[k] : 0; }),
+    w:    mel.map(function(){ return wave || "square"; }),
+  };
+}
+// Stitch bars into a full song. Every level track below is built the same
+// way: verse, chorus, second verse, chorus again, bridge, chorus one last
+// time — a real song shape instead of one bar looping forever.
+function song(){
+  const parts = Array.prototype.slice.call(arguments);
+  return {
+    n:    [].concat.apply([], parts.map(function(p){ return p.n;    })),
+    bass: [].concat.apply([], parts.map(function(p){ return p.bass; })),
+    w:    [].concat.apply([], parts.map(function(p){ return p.w;    })),
+  };
+}
+
 const AUDIO = {
   ctx:null, master:null, mode:"all", timer:null, step:0, track:null, holdUntil:0,
   get on(){ return this.mode !== "off"; },
@@ -2982,30 +3076,122 @@ const AUDIO = {
   die:    function(){ this.slide(320, 70, 0.28, 0.3); },
   wave:   function(){ this.phrase([[880, 0, 0.14, 0.16]], 0.16, "triangle"); },
 
-  // Each level gets its own short pattern. Same instrument, different mood —
-  // aimless in the drift, urgent on the deadline, low and slow underground.
-  // The score climbs with the game: aimless and sparse in the drift, steadier
-  // once there's a goal, faster and brighter through the middle, then End Land
-  // drops into a minor key — the last climb should feel like it costs something.
+  // Each level gets its own full song, not one bar on a loop: two verses, a
+  // chorus that comes back the same way every time (that's what makes it a
+  // chorus), and a bridge that breaks the pattern once before the last
+  // chorus lands. Verses lean triangle (softer, sits under you), choruses
+  // lean square (brighter, the hook) — alternating the waveform is what
+  // keeps a long loop from just sounding like the same tap, over and over.
+  // The score still climbs with the game: aimless and sparse in the drift,
+  // steadier once there's a goal, faster and brighter through the middle,
+  // then End Land drops into a minor key — the last climb should feel like
+  // it costs something.
   TRACKS:{
-    // 1 Motion — no key, no pulse. Wandering.
-    world1:{ ms:660, v:0.09, n:[220,0,262,0,196,0,0,0,220,0,175,0,0,0,0,0] },
+    // 1 Motion — no key, no pulse, no bass. Wandering.
+    world1: (function(){
+      const v1 = bar(["A3",0,"C4",0,"G3",0,0,0,"A3",0,"F3",0,0,0,0,0], [], "triangle");
+      const v2 = bar(["D3",0,"F3",0,0,"A3",0,0,"E3",0,0,"C4",0,0,0,0], [], "triangle");
+      const c  = bar(["A3",0,0,"C4",0,0,"E3",0,0,"D3",0,0,"C4",0,0,0], [], "triangle");
+      const br = bar(["F3",0,0,0,0,"D3",0,0,0,0,"C3",0,0,0,0,0],       [], "triangle");
+      return Object.assign({ ms:660, v:0.09 }, song(v1, c, v2, c, br, c));
+    })(),
     // 2 Goal — a pulse arrives, major, still calm.
-    world2:{ ms:520, v:0.10, n:[262,0,330,0,392,0,330,0,262,0,196,0,262,0,0,0] },
+    world2: (function(){
+      const v1 = bar(["C4",0,"E4",0,"G4",0,"E4",0,"C4",0,"G3",0,"C4",0,0,0],
+                      ["C3",0,0,0,"G3",0,0,0,"C3",0,0,0,"G3",0,0,0], "triangle");
+      const v2 = bar(["E4",0,"G4",0,"C5",0,"G4",0,"E4",0,"D4",0,"C4",0,0,0],
+                      ["C3",0,0,0,"G3",0,0,0,"F3",0,0,0,"G3",0,0,0], "triangle");
+      const c  = bar(["G4",0,"C5",0,"G4",0,"E4",0,"C4",0,"E4",0,"G4",0,0,0],
+                      ["C3",0,0,0,"C3",0,0,0,"F3",0,0,0,"G3",0,0,0], "square");
+      const br = bar(["A4",0,0,"G4",0,0,"F4",0,0,"E4",0,0,"D4",0,0,0],
+                      ["A3",0,0,0,0,0,"F3",0,0,0,0,0,"G3",0,0,0], "triangle");
+      return Object.assign({ ms:520, v:0.10 }, song(v1, c, v2, c, br, c));
+    })(),
     // 3 Checkpoint — same key, more movement.
-    world3:{ ms:450, v:0.11, n:[330,392,0,440,0,392,330,0,294,330,0,392,440,0,392,0] },
-    // 4 Deadline — quicker, a clock behind it.
-    world4:{ ms:330, v:0.115, n:[392,0,392,440,494,0,440,392,349,392,440,0,494,0,440,0] },
+    world3: (function(){
+      const v1 = bar(["E4","G4",0,"A4",0,"G4","E4",0,"D4","E4",0,"G4","A4",0,"G4",0],
+                      ["C3",0,0,0,"G3",0,0,0,"C3",0,0,0,"G3",0,0,0], "triangle");
+      const v2 = bar(["G4","A4",0,"C5",0,"A4","G4",0,"F4","G4",0,"A4","C5",0,"A4",0],
+                      ["F3",0,0,0,"G3",0,0,0,"F3",0,0,0,"G3",0,0,0], "triangle");
+      const c  = bar(["C5",0,"A4","G4",0,"E4","D4",0,"C5",0,"A4","G4",0,"E4","D4",0],
+                      ["C3",0,0,0,"F3",0,0,0,"G3",0,0,0,"C3",0,0,0], "square");
+      const br = bar(["A4",0,"F4",0,"D4",0,"E4",0,"G4",0,"E4",0,"C4",0,0,0],
+                      ["A3",0,0,0,"F3",0,0,0,"D3",0,0,0,"G3",0,0,0], "triangle");
+      return Object.assign({ ms:450, v:0.11 }, song(v1, c, v2, c, br, c));
+    })(),
+    // 4 Deadline — quicker, a clock ticking under all of it.
+    world4: (function(){
+      const v1 = bar(["G4",0,"A4",0,"B4",0,"A4",0,"G4",0,"F4",0,"G4",0,0,0],
+                      ["C3",0,"C3",0,"C3",0,"C3",0,"C3",0,"C3",0,"C3",0,"C3",0], "square");
+      const v2 = bar(["B4",0,"C5",0,"D5",0,"C5",0,"B4",0,"A4",0,"B4",0,0,0],
+                      ["F3",0,"F3",0,"F3",0,"F3",0,"C3",0,"C3",0,"C3",0,"C3",0], "square");
+      const c  = bar(["D5",0,"C5","B4",0,"A4","G4",0,"D5",0,"C5","B4",0,"A4","G4",0],
+                      ["C3",0,"C3",0,"G2",0,"G2",0,"C3",0,"C3",0,"G2",0,"G2",0], "square");
+      const br = bar(["G4",0,0,0,"F4",0,0,0,"E4",0,0,0,"D4",0,0,0],
+                      ["C3",0,0,0,"F3",0,0,0,"G3",0,0,0,"C3",0,0,0], "triangle");
+      return Object.assign({ ms:330, v:0.115 }, song(v1, c, v2, c, br, c));
+    })(),
     // 5 Obstacle — tightens, semitone shadow in it.
-    world5:{ ms:310, v:0.12, n:[349,370,392,0,349,0,311,0,349,370,392,440,392,0,370,0] },
+    world5: (function(){
+      const v1 = bar(["F4","Gb4",0,"G4",0,"F4","Eb4",0,"F4","Gb4",0,"G4","A4",0,"G4",0],
+                      ["F3",0,0,0,"Eb3",0,0,0,"F3",0,0,0,"Gb3",0,0,0], "triangle");
+      const v2 = bar(["G4","Ab4",0,"A4",0,"G4","F4",0,"G4","Ab4",0,"A4","Bb4",0,"A4",0],
+                      ["G3",0,0,0,"F3",0,0,0,"G3",0,0,0,"Ab3",0,0,0], "triangle");
+      const c  = bar(["F4","G4","Ab4","G4","F4","Eb4","F4",0,"F4","G4","Ab4","G4","F4","Eb4","F4",0],
+                      ["F3",0,0,0,"Ab3",0,0,0,"Gb3",0,0,0,"F3",0,0,0], "square");
+      const br = bar(["Eb4",0,0,"D4",0,0,"Db4",0,0,"C4",0,0,0,0,0,0],
+                      ["Eb3",0,0,0,0,0,"Db3",0,0,0,0,0,"C3",0,0,0], "triangle");
+      return Object.assign({ ms:310, v:0.12 }, song(v1, c, v2, c, br, c));
+    })(),
     // 6 Supplies — the brightest, bouncing.
-    world6:{ ms:290, v:0.12, n:[440,523,659,523,440,523,587,0,440,523,659,880,659,523,440,0] },
+    world6: (function(){
+      const v1 = bar(["A4","C5","E4","C5","A4","G4","E4",0,"A4","C5","E4","C5","A4","G4","E4",0],
+                      ["A3",0,0,0,"C3",0,0,0,"A3",0,0,0,"G3",0,0,0], "square");
+      const v2 = bar(["C5","E5","G5","E5","C5","B4","G4",0,"C5","E5","G5","E5","C5","B4","G4",0],
+                      ["C3",0,0,0,"E3",0,0,0,"C3",0,0,0,"G3",0,0,0], "square");
+      const c  = bar(["A4","C5","E5","A5","E5","C5","A4",0,"A4","C5","E5","A5","E5","C5","A4",0],
+                      ["A3",0,0,0,"A3",0,0,0,"F3",0,0,0,"G3",0,0,0], "square");
+      const br = bar(["E5",0,"D5",0,"C5",0,"B4",0,"A4",0,"G4",0,"A4",0,0,0],
+                      ["F3",0,0,0,"E3",0,0,0,"D3",0,0,0,"E3",0,0,0], "triangle");
+      return Object.assign({ ms:290, v:0.12 }, song(v1, c, v2, c, br, c));
+    })(),
     // 7 People — warm, full, the high point.
-    world7:{ ms:300, v:0.125, n:[392,494,587,494,392,587,698,587,494,587,698,880,698,587,494,0] },
-    // 8 Declaration — the descent. Low, slow, one note at a time.
-    world8dec:{ ms:600, v:0.115, n:[147,0,131,0,0,0,110,0,131,0,110,0,98,0,0,0] },
+    world7: (function(){
+      const v1 = bar(["G4","B4","D5","B4","G4","D5","F5",0,"G4","B4","D5","B4","G4","D5","F5",0],
+                      ["G3",0,0,0,"D3",0,0,0,"G3",0,0,0,"C3",0,0,0], "triangle");
+      const v2 = bar(["B4","D5","G5","D5","B4","C5","A4",0,"B4","D5","G5","D5","B4","C5","A4",0],
+                      ["C3",0,0,0,"G3",0,0,0,"D3",0,0,0,"G3",0,0,0], "triangle");
+      const c  = bar(["D5","F5","A5","F5","D5","B4","D5",0,"D5","F5","A5","F5","D5","B4","D5",0],
+                      ["G3",0,0,0,"D3",0,0,0,"G3",0,0,0,"D3",0,0,0], "square");
+      const br = bar(["C5",0,0,"B4",0,0,"A4",0,0,"G4",0,0,0,0,0,0],
+                      ["C3",0,0,0,"G3",0,0,0,"D3",0,0,0,"G3",0,0,0], "triangle");
+      return Object.assign({ ms:300, v:0.125 }, song(v1, c, v2, c, br, c));
+    })(),
+    // 8 Declaration — the descent. Low, slow, one note at a time — bass
+    // mostly stays out of its own way here.
+    world8dec: (function(){
+      const v1 = bar(["D3",0,0,0,"C3",0,0,0,"A2",0,0,0,"C3",0,0,0],
+                      [0,0,0,0,0,0,0,0,"A2",0,0,0,0,0,0,0], "triangle");
+      const v2 = bar(["C3",0,0,0,"Bb2",0,0,0,"G2",0,0,0,"A2",0,0,0],
+                      [0,0,0,0,0,0,0,0,"G2",0,0,0,0,0,0,0], "triangle");
+      const c  = bar(["A2",0,0,"C3",0,0,"D3",0,0,"C3",0,0,"A2",0,0,0],
+                      ["A2",0,0,0,0,0,0,0,"D2",0,0,0,0,0,0,0], "triangle");
+      const br = bar(["G2",0,0,0,0,0,0,0,"E2",0,0,0,0,0,0,0],
+                      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], "triangle");
+      return Object.assign({ ms:600, v:0.115 }, song(v1, c, v2, c, br, c));
+    })(),
     // 9 End — minor, driving, dangerous. A minor with a flat second leaning on it.
-    world9:{ ms:250, v:0.13, n:[440,523,659,523,440,415,440,0,523,659,784,659,523,466,440,0] },
+    world9: (function(){
+      const v1 = bar(["A4","C5","E5","C5","A4","Ab4","A4",0,"A4","C5","E5","C5","A4","Ab4","A4",0],
+                      ["A3",0,0,0,"Bb3",0,0,0,"A3",0,0,0,"Bb3",0,0,0], "square");
+      const v2 = bar(["C5","E5","G5","E5","C5","Bb4","A4",0,"C5","E5","G5","E5","C5","Bb4","A4",0],
+                      ["F3",0,0,0,"G3",0,0,0,"F3",0,0,0,"E3",0,0,0], "square");
+      const c  = bar(["E5","G5","A5","G5","E5","D5","E5",0,"E5","G5","A5","G5","E5","D5","E5",0],
+                      ["A3",0,0,0,"A3",0,0,0,"Bb3",0,0,0,"A3",0,0,0], "square");
+      const br = bar(["A4",0,"Ab4",0,"G4",0,"F4",0,"E4",0,"Eb4",0,"D4",0,0,0],
+                      ["A3",0,0,0,0,0,"F3",0,0,0,0,0,"D3",0,0,0], "triangle");
+      return Object.assign({ ms:250, v:0.13 }, song(v1, c, v2, c, br, c));
+    })(),
   },
 
   // Keep the level track off for a moment so a fanfare isn't fighting it.
@@ -3024,9 +3210,16 @@ const AUDIO = {
     const self = this;
     this.timer = setInterval(function(){
       if (self.mode !== "all") return;
-      const f = t.n[self.step % t.n.length];
+      const i = self.step % t.n.length;
+      const f = t.n[i], w = (t.w && t.w[i]) || "square";
       self.step++;
-      if (f) self.note(f, t.ms/1000 * 0.75, t.v, "square");
+      if (f) self.note(f, t.ms/1000 * 0.75, t.v, w);
+      // A quiet bass note underneath gives the loop something to hang on to
+      // instead of every step landing as an isolated tap.
+      if (t.bass && t.bass.length){
+        const bf = t.bass[i % t.bass.length];
+        if (bf) self.note(bf, t.ms/1000 * 0.92, t.v * 0.55, "triangle");
+      }
     }, t.ms);
   },
   stop:function(){ if (this.timer){ clearInterval(this.timer); this.timer = null; } this.track = null; },
@@ -3103,6 +3296,19 @@ function frame(now){
       b.x += b.vx * dt;
       b.y = b.baseY + Math.sin(b.phase) * b.amp;
       if (Math.abs(b.x - pcx) < 40 && Math.abs(b.y - pcy) < 26){ die(); break; }
+    }
+    // tools: the response you wrote for that obstacle, sitting on the ground
+    // ahead of the bird carrying it. Pick it up and the bird's defeated.
+    for (const to of tools){
+      if (to.got) continue;
+      if (Math.abs(to.x - pcx) < 24 && Math.abs(to.y - pcy) < 28){
+        to.got = true;
+        for (let bi = birds.length - 1; bi >= 0; bi--){
+          if (birds[bi].obId === to.obId){ birds.splice(bi, 1); break; }
+        }
+        AUDIO.collect(); addPoints("defeat", "defeat-" + to.label);
+        S.lastCheck = { x:to.x, y:groundUnder(to.x, to.y) };
+      }
     }
     for (const o of orbs){
       if (o.got) continue;

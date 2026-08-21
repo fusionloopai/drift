@@ -299,11 +299,11 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 .reorder .row.goalrow{ margin-bottom:14px; }
 .reorder .row.goalrow input{ color:var(--ink); font-size:clamp(14px,2.6vw,18px); border-bottom-color:rgba(255,255,255,.3); }
 .reorder .row.step input{ color:var(--ink-soft); font-size:clamp(12px,2.1vw,14px); }
-.reorder .row .mv{
+.row .mv{
   flex:0 0 auto; width:26px; height:26px; border:1px solid var(--line); border-radius:3px;
   background:none; color:var(--ink-faint); cursor:pointer; font-family:inherit; font-size:11px; line-height:1;
 }
-.reorder .row .mv:hover{ border-color:rgba(255,255,255,.4); color:var(--ink); }
+.row .mv:hover{ border-color:rgba(255,255,255,.4); color:var(--ink); }
 
 #win .firstbox{
   margin-top:clamp(20px,4vw,30px); padding:16px 18px;
@@ -1399,6 +1399,8 @@ function cpRow(c, i){
   d.className = "row";
   d.innerHTML = '<span class="num">' + (i + 1) + '</span>' +
     '<input type="text" maxlength="90" placeholder="I have&hellip;">' +
+    '<button class="mv" title="Move up">&uarr;</button>' +
+    '<button class="mv" title="Move down">&darr;</button>' +
     '<button class="kill" title="Remove">&times;</button>';
   const inp = d.querySelector("input");
   inp.value = c.text;
@@ -1407,6 +1409,19 @@ function cpRow(c, i){
     e.stopPropagation();
     if (e.key === "Enter"){ e.preventDefault(); addCp(); }
   });
+
+  // This list renders reversed so #1 sits at the bottom and the ladder builds
+  // upward. So "move up" on screen means a HIGHER index in the array, and the
+  // arrows have to be flipped to match what the eye expects.
+  const swap = function(a, b){
+    if (b < 0 || b >= S.checkpoints.length) return;
+    const t = S.checkpoints[a]; S.checkpoints[a] = S.checkpoints[b]; S.checkpoints[b] = t;
+    redrawCp();
+  };
+  const mv = d.querySelectorAll(".mv");
+  mv[0].addEventListener("click", function(){ swap(i, i + 1); });   // visually up
+  mv[1].addEventListener("click", function(){ swap(i, i - 1); });   // visually down
+
   d.querySelector(".kill").addEventListener("click", () => {
     if (S.checkpoints.length <= 1) return;
     S.checkpoints.splice(S.checkpoints.indexOf(c), 1);

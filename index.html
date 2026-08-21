@@ -290,6 +290,9 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
   padding:10px 4px; margin-top:14px;
 }
 .backbtn:hover{ color:var(--ink); }
+.reorder .row.goalrow{ margin-bottom:14px; }
+.reorder .row.goalrow input{ color:var(--ink); font-size:clamp(14px,2.6vw,18px); border-bottom-color:rgba(255,255,255,.3); }
+.reorder .row.step input{ color:var(--ink-soft); font-size:clamp(12px,2.1vw,14px); }
 .reorder .row .mv{
   flex:0 0 auto; width:26px; height:26px; border:1px solid var(--line); border-radius:3px;
   background:none; color:var(--ink-faint); cursor:pointer; font-family:inherit; font-size:11px; line-height:1;
@@ -520,7 +523,7 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 <div id="roPanel" class="overlay panel reorder">
   <div class="inner">
     <p class="head">Master the plan.</p>
-    <p class="why">Last pass. Anything out of order? Move it. A plan you have actually looked at twice is a different thing from one you wrote once.</p>
+    <p class="why">Last pass &mdash; everything you wrote, in one place. Anything out of order? Move it. A plan you have actually looked at twice is a different thing from one you wrote once.</p>
     <div class="rows" id="roRows"></div>
     <div><button class="cta tracked-sm" id="roDone">Lock it in &nbsp;&rarr;</button></div>
   </div>
@@ -655,7 +658,7 @@ let flags  = [];   // {x,y,kind:"way"|"goal",got,label,sub?}
 let motes  = [];
 let birds  = [];   // {x,y,baseY,amp,phase,vx,label} — Obstacle Land
 let orbs   = [];   // {x,y,label,got}               — Thing Land power-ups
-let folk   = [];   // {x,y,label,got,wave}          — Coop Land
+let folk   = [];   // {x,y,label,got,wave}          — People Land
 let genX   = 0, lastY = 430;
 
 const GRAV = 2000, JUMP = -740, RUN = 330, SPIKE_H = 15;
@@ -926,8 +929,8 @@ function buildThingLand(startX, startY, things, goalText){
   setFloor();
 }
 
-// Coop Land: the people they named, standing on the path. Reach every one.
-function buildCoopLand(startX, startY, people, goalText){
+// People Land: the people they named, standing on the path. Reach every one.
+function buildPeopleLand(startX, startY, people, goalText){
   launchPad(startX, startY); clearProps(); spikes = []; flags = [];
   const GY = 430;
   let x = startX + 240;
@@ -1606,24 +1609,41 @@ function openReorder(){
 }
 function drawReorder(){
   const rows = el("roRows"); rows.innerHTML = "";
+
+  // The goal sits at the top as the thing everything below is aiming at.
+  const gd = document.createElement("div");
+  gd.className = "row goalrow";
+  gd.innerHTML = '<span class="num">&#9670;</span><input type="text" readonly>';
+  gd.querySelector("input").value = S.goal + (S.goalDate ? "  \u2014  " + fmtDate(S.goalDate) : "");
+  rows.appendChild(gd);
+
+  const swap = function(arr, a, b){ const t = arr[a]; arr[a] = arr[b]; arr[b] = t; drawReorder(); };
+
   S.checkpoints.forEach(function(c, i){
     const d = document.createElement("div");
     d.className = "row";
     d.innerHTML = '<span class="num">' + (i+1) + '</span>' +
       '<input type="text" maxlength="90"><button class="mv">&uarr;</button><button class="mv">&darr;</button>';
     const inp = d.querySelector("input");
-    inp.value = c.text + (c.date ? "  —  " + fmtDate(c.date) : "");
+    inp.value = c.text + (c.date ? "  \u2014  " + fmtDate(c.date) : "");
     inp.readOnly = true;
     const btns = d.querySelectorAll(".mv");
-    btns[0].addEventListener("click", function(){
-      if (i === 0) return;
-      const t = S.checkpoints[i-1]; S.checkpoints[i-1] = c; S.checkpoints[i] = t; drawReorder();
-    });
-    btns[1].addEventListener("click", function(){
-      if (i === S.checkpoints.length - 1) return;
-      const t = S.checkpoints[i+1]; S.checkpoints[i+1] = c; S.checkpoints[i] = t; drawReorder();
-    });
+    btns[0].addEventListener("click", function(){ if (i > 0) swap(S.checkpoints, i, i-1); });
+    btns[1].addEventListener("click", function(){ if (i < S.checkpoints.length - 1) swap(S.checkpoints, i, i+1); });
     rows.appendChild(d);
+
+    // Steps under this checkpoint, movable within it.
+    c.steps.forEach(function(st, j){
+      const sd = document.createElement("div");
+      sd.className = "row step";
+      sd.innerHTML = '<span class="num">&middot;</span>' +
+        '<input type="text" readonly><button class="mv">&uarr;</button><button class="mv">&darr;</button>';
+      sd.querySelector("input").value = st.text + (st.date ? "  \u2014  " + fmtDate(st.date) : "");
+      const sb = sd.querySelectorAll(".mv");
+      sb[0].addEventListener("click", function(){ if (j > 0) swap(c.steps, j, j-1); });
+      sb[1].addEventListener("click", function(){ if (j < c.steps.length - 1) swap(c.steps, j, j+1); });
+      rows.appendChild(sd);
+    });
   });
 }
 el("roDone").addEventListener("click", function(){
@@ -1655,10 +1675,10 @@ function launchWorld6(){
   });
 }
 function launchWorld7(){
-  splash(7, "Coop Land", "Nobody gets there alone. Go and meet them.", function(){
+  splash(7, "People Land", "Nobody gets there alone. Go and meet them.", function(){
     const ly = 430;
     S.walkStart = player.x; S.stage = "world7"; S.freeCam = false;
-    buildCoopLand(player.x, ly, S.people, S.goal);
+    buildPeopleLand(player.x, ly, S.people, S.goal);
     player.y = ly - player.h - 2; player.vy = 0;
     S.lastCheck = { x:player.x + player.w/2, y:ly };
     setMeterLabel("Distance to goal");

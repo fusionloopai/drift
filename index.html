@@ -340,7 +340,7 @@ let motes  = [];   // ambient drifting dust
 let genX   = 0;    // right edge of generated drift world
 let lastY  = 430;  // height of the last drift ledge, so runs can stay level
 
-const GRAV = 2000, JUMP = -690, RUN = 330, SPIKE_H = 15;
+const GRAV = 2000, JUMP = -740, RUN = 330, SPIKE_H = 15;
 
 /* ===========================================================================
    INPUT
@@ -429,28 +429,34 @@ function buildWorld2Path(startX, startY, goalText){
   flags  = [];
 
   let x = startX + 260;
-  const LOWER_Y = Math.min(startY, 430), UPPER_Y = LOWER_Y - 140;
+  const LOWER_Y = Math.min(startY, 430), UPPER_Y = LOWER_Y - 88;
 
-  // The main (lower) level.
-  for (let i = 0; i < 8; i++){
+  // The main (lower) level. A quiet checkpoint circle partway through means
+  // a death here doesn't send you all the way back to the very start.
+  for (let i = 0; i < 4; i++){
     const w = rnd(140, 220);
     plats.push({ x, y:LOWER_Y, w, h:BASE_H + 80 - LOWER_Y });
     if (Math.random() < 0.35 && w > 160){
       const sw = rnd(36, 58);
       spikes.push({ x: x + rnd(40, w - sw - 30), y:LOWER_Y - SPIKE_H, w: sw });
     }
+    if (i === 1) flags.push({ x: x + w * 0.5, y:LOWER_Y, kind:"circle", got:false });
     x += w + rnd(80, 130);
   }
 
   // The jump up onto the new, higher level — the one real turning point.
+  // Landing here is its own checkpoint — you never have to re-clear this jump.
   {
+    x += rnd(60, 90);
     const w = rnd(160, 220);
     plats.push({ x, y:UPPER_Y, w, h:BASE_H + 80 - UPPER_Y });
+    flags.push({ x: x + w * 0.5, y:UPPER_Y, kind:"circle", got:false });
     x += w;
   }
 
-  // The upper level — where the goal actually lives.
-  for (let i = 0; i < 6; i++){
+  // The upper level — where the goal actually lives. One more checkpoint
+  // partway across, since it's still a real distance to the flag from here.
+  for (let i = 0; i < 3; i++){
     x += rnd(85, 120);
     const w = rnd(140, 210);
     plats.push({ x, y:UPPER_Y, w, h:BASE_H + 80 - UPPER_Y });
@@ -458,6 +464,7 @@ function buildWorld2Path(startX, startY, goalText){
       const sw = rnd(36, 58);
       spikes.push({ x: x + rnd(40, w - sw - 30), y:UPPER_Y - SPIKE_H, w: sw });
     }
+    if (i === 1) flags.push({ x: x + w * 0.5, y:UPPER_Y, kind:"circle", got:false });
     x += w;
   }
 

@@ -115,24 +115,20 @@ canvas{ display:block; position:fixed; inset:0; z-index:1; }
   background:linear-gradient(90deg, #0d0d0d 0%, #1b1b1b 22%, #c0c0c0 50%, #1b1b1b 78%, #0d0d0d 100%);
   -webkit-background-clip:text; background-clip:text; color:transparent;
 }
-#titleBall{
-  position:relative;
-  width:13px; height:13px; border-radius:50%; background:#fff;
+/* A tiny canvas draws the real directional trail (same fading-circle math as
+   drawPlayer(), scaled down); the ball itself stays a plain div positioned
+   by the same JS loop, so the two never drift out of sync. */
+#titleBallWrap{
+  position:relative; width:140px; height:36px;
   margin:0 auto clamp(22px,4.5vw,36px);
-  box-shadow:0 0 20px rgba(255,255,255,.85), 0 0 56px rgba(255,255,255,.35);
-  animation:titleDrift 3.6s ease-in-out infinite;
 }
-/* The light stream — the same trail the ball leaves in-game, echoed here so
-   the title screen previews the mechanic before a single key is pressed. */
-#titleBall::after{
-  content:"";
-  position:absolute; top:50%; left:50%; z-index:-1;
-  width:120px; height:3px;
+#titleCv{ position:absolute; inset:0; }
+#titleBall{
+  position:absolute; top:18px; left:70px;
+  width:13px; height:13px; border-radius:50%; background:#fff;
   transform:translate(-50%,-50%);
-  background:linear-gradient(90deg, transparent 0%, rgba(255,255,255,.45) 50%, transparent 100%);
-  filter:blur(3px);
+  box-shadow:0 0 20px rgba(255,255,255,.85), 0 0 56px rgba(255,255,255,.35);
 }
-@keyframes titleDrift{ 0%,100%{ transform:translateX(-16px); } 50%{ transform:translateX(16px); } }
 #title .sub{ margin-top:clamp(28px,6vw,48px); font-size:clamp(10px,1.8vw,12px); color:var(--ink-faint); }
 
 #field .ctx{ margin-bottom:clamp(12px,2.6vw,18px); color:var(--ink-faint); display:none; }
@@ -239,7 +235,10 @@ canvas{ display:block; position:fixed; inset:0; z-index:1; }
 
 <div id="title" class="overlay on">
   <div class="inner">
-    <div id="titleBall"></div>
+    <div id="titleBallWrap">
+      <canvas id="titleCv" width="140" height="36"></canvas>
+      <div id="titleBall"></div>
+    </div>
     <h1 class="tracked glow-text">Drift</h1>
     <p class="sub tracked-sm">Press any key</p>
   </div>
@@ -1114,6 +1113,40 @@ function frame(now){
 
 levelUp.addEventListener("click", () => { if (S.phase === "drift" && !fieldOpen) openField(); });
 requestAnimationFrame(frame);
+
+// The title screen's own ball, with a real directional trail — a position
+// history, same fade math as drawPlayer(), just smaller. Whichever way the
+// ball is currently heading, the trail only ever appears behind it, because
+// it's genuinely where the ball just was, not a decorative streak.
+const titleCv = document.getElementById("titleCv");
+const titleBall = document.getElementById("titleBall");
+const tctx = titleCv.getContext("2d");
+let titleTrail = [];
+function titleBallFrame(now){
+  if (S.phase === "title"){
+    const cx = 70, cy = 18, amp = 16, period = 3.6;
+    const x = cx + amp * Math.sin((now / 1000) * (2 * Math.PI / period));
+    titleTrail.unshift({ x, y:cy });
+    if (titleTrail.length > 14) titleTrail.pop();
+
+    tctx.clearRect(0, 0, titleCv.width, titleCv.height);
+    for (let i = titleTrail.length - 1; i > 0; i--){
+      const t = titleTrail[i];
+      tctx.globalAlpha = (1 - i / titleTrail.length) * 0.16;
+      tctx.fillStyle = "#fff";
+      tctx.beginPath(); tctx.arc(t.x, t.y, 5.5 * (1 - i / titleTrail.length), 0, 6.284); tctx.fill();
+    }
+    tctx.globalAlpha = 1;
+
+    titleBall.style.left = x + "px";
+    titleBall.style.top = cy + "px";
+  } else if (titleTrail.length){
+    titleTrail = [];
+    tctx.clearRect(0, 0, titleCv.width, titleCv.height);
+  }
+  requestAnimationFrame(titleBallFrame);
+}
+requestAnimationFrame(titleBallFrame);
 </script>
 </body>
 </html>

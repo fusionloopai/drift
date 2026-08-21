@@ -3039,19 +3039,18 @@ const AUDIO = {
   },
 
   jump:   function(){ this.slide(300, 620, 0.13, 0.32); },
-  // The moment the goal becomes real and the drift ends. Rises and settles.
+  // The moment the goal becomes real and the drift ends. One soft chord that
+  // swells and settles — not a run of notes, this isn't a fanfare.
   turn:   function(){
     this.boot();
-    this.silence(2600);
-    const F3=174.61, A3=220.00, C4=261.63, F4=349.23, A4=440.00, C5=523.25, F5=698.46;
+    this.silence(2200);
+    const F3=174.61, A3=220.00, C4=261.63, F4=349.23;
     this.phrase([
-      [F3, 0.00, 2.30, 0.10], [C4, 0.00, 2.30, 0.075],   // held bed underneath
-      [F4, 0.00, 0.42, 0.24],
-      [A4, 0.34, 0.42, 0.24],
-      [C5, 0.68, 0.42, 0.24],
-      [F5, 1.02, 1.05, 0.26],                             // lands and rings out
-      [A3, 1.02, 1.05, 0.09],
-    ], 0.24, "triangle");
+      [F3, 0.00, 1.90, 0.08],
+      [A3, 0.00, 1.90, 0.06],
+      [C4, 0.00, 1.90, 0.06],
+      [F4, 0.05, 1.70, 0.09],
+    ], 0.08, "triangle");
   },
   land:   function(){ this.note(150, 0.05, 0.16); },
   collect:function(){ this.phrase([[659.25, 0, 0.10, 0.22], [987.77, 0.06, 0.16, 0.20]], 0.2, "triangle"); },

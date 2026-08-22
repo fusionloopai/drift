@@ -475,10 +475,28 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
 #win .cardlbl{ font-size:clamp(11px,2vw,13px); color:var(--ink-faint); margin-bottom:clamp(12px,2.4vw,18px); }
 #win .trophy{ color:var(--ink-soft); }
 #win .trophy svg{ width:clamp(46px,8vw,64px); height:auto; filter:drop-shadow(0 0 18px rgba(255,255,255,.28)); }
+/* The wordmark stretches to the same width as the cards below it — JS sets
+   letter-spacing at runtime so "Drift" spans edge to edge at any width. */
 #win .wordmark{
+  width:100%; white-space:nowrap;
   font-size:clamp(40px,9vw,74px); font-weight:200;
   background:linear-gradient(90deg,#0d0d0d 0%,#1b1b1b 22%,#c0c0c0 50%,#1b1b1b 78%,#0d0d0d 100%);
   -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+/* The same bouncing-ball-with-trail flourish as the title screen, sized to
+   the wordmark's own full width. */
+#win .wmBallWrap{ position:relative; width:100%; height:44px; margin:0 auto clamp(6px,1.4vw,10px); }
+#win .wmBallWrap canvas{ position:absolute; inset:0; }
+#win .wmGlow{
+  position:absolute; top:22px; left:50%; width:110px; height:110px;
+  transform:translate(-50%,-50%); pointer-events:none;
+  background:radial-gradient(circle, rgba(255,255,255,.10) 0%, rgba(255,255,255,.04) 30%, transparent 62%);
+}
+#win .wmBall{
+  position:absolute; top:22px; left:50%;
+  width:12px; height:12px; border-radius:50%; background:#fff;
+  transform:translate(-50%,-50%);
+  box-shadow:0 0 14px rgba(255,255,255,.7), 0 0 34px rgba(255,255,255,.22);
 }
 #winScene{ display:block; width:min(460px,82vw); height:auto; margin:clamp(4px,1.2vw,10px) auto 0; }
 #win .congrats{ margin-top:clamp(10px,2vw,16px); font-size:clamp(30px,6.6vw,54px); font-weight:200; }
@@ -766,6 +784,11 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
 
 <div id="win" class="overlay">
   <div class="inner">
+    <div class="wmBallWrap" id="winBallWrap">
+      <canvas id="winBallCv"></canvas>
+      <div class="wmGlow" id="winGlow"></div>
+      <div class="wmBall" id="winBall"></div>
+    </div>
     <p class="wordmark tracked" id="winMark">Drift</p>
 
     <section class="card hero">
@@ -951,7 +974,7 @@ const keys = Object.create(null);
 let touchL = false, touchR = false, touchJump = false;
 
 addEventListener("keydown", e => {
-  if (S.phase === "title"){ start(); e.preventDefault(); return; }
+  if (S.phase === "title") return;   // the title screen only starts from the button
   if (e.key === "Escape"){
     if (S.phase === "drift"){ fieldOpen ? closeField() : askGoal(); e.preventDefault(); }
     return;
@@ -976,12 +999,11 @@ function touchAt(list){
   if (touchJump) player.buffer = 0.11;
 }
 cv.addEventListener("touchstart", e => {
-  if (S.phase === "title"){ start(); return; }
+  if (S.phase === "title") return;   // the title screen only starts from the button
   touchAt(e.touches); e.preventDefault();
 }, {passive:false});
 cv.addEventListener("touchmove", e => { touchAt(e.touches); e.preventDefault(); }, {passive:false});
 cv.addEventListener("touchend",  e => { touchAt(e.touches); }, {passive:false});
-cv.addEventListener("mousedown", () => { if (S.phase === "title") start(); });
 
 // Visible controls for touch. They set the same flags the screen-zone handler
 // does, so both paths work and neither has to know about the other.
@@ -1178,27 +1200,28 @@ function buildClimb(startX, startY, defs, extra){
 }
 
 // Obstacle Land: ground and pits, plus birds that patrol — each one carrying
-// the name of something the player said would get in the way. Whatever they
-// wrote as their response sits on the ground in front of it — a tool, shaped
-// like a shield, that a player has to actually go pick up. Grab it before the
-// bird reaches you and the bird's gone: the plan beat the distraction.
+// the name of something the player said would get in the way. You meet the
+// bird first, the way an obstacle actually shows up before you're ready for
+// it — then the tool, shaped like a shield, sits close behind it, not the
+// far end of the level. Grab it before the bird reaches you and the bird's
+// gone: the plan beat the distraction.
 function buildObstacleLand(startX, startY, obstacles, goalText){
   launchPad(startX, startY); clearProps(); spikes = []; flags = [];
   const GY = 430;
   let x = startX + 240;
   obstacles.forEach(function(ob, obId){
-    // The tool sits on the first stretch of ground...
+    // The bird meets you first...
     const w0 = rnd(160, 220);
     plats.push({ x:x, y:GY, w:w0, h:BASE_H + 80 - GY });
-    if (ob.response && ob.response.trim().length >= 3){
-      tools.push({ x:x + w0 * 0.5, y:GY - 46, label:ob.response, got:false, obId:obId });
-    }
-    x += w0 + rnd(70, 100);   // a tight gap — the bird is right behind it
+    birds.push({ x:x + 50, y:0, baseY:GY - rnd(90, 150), amp:rnd(18, 34), phase:rnd(0, 6.28),
+                 vx:rnd(46, 76) * (Math.random() < 0.5 ? -1 : 1), label:ob.text, obId:obId });
 
-    // ...and its bird is close enough behind that picking up the tool and
-    // meeting the bird read as the same beat, not two unrelated encounters.
-    birds.push({ x:x + 40, y:0, baseY:GY - rnd(90, 150), amp:rnd(18, 34), phase:rnd(0, 6.28),
-                 vx:rnd(26, 46) * (Math.random() < 0.5 ? -1 : 1), label:ob.text, obId:obId });
+    // ...and the tool that answers it sits close behind, on the same
+    // stretch of ground — not something you found before you needed it.
+    if (ob.response && ob.response.trim().length >= 3){
+      tools.push({ x:x + w0 * 0.72, y:GY - 46, label:ob.response, got:false, obId:obId });
+    }
+    x += w0 + rnd(70, 100);
 
     const w1 = rnd(160, 220);
     plats.push({ x:x, y:GY, w:w1, h:BASE_H + 80 - GY });
@@ -1392,12 +1415,12 @@ function buildFinalLand(startX, startY, cps, obstacles, things, people, goalText
   obstacles.forEach(function(ob, obId){
     const w0 = rnd(160, 210);
     plats.push({ x:x, y:GY, w:w0, h:BASE_H + 80 - GY });
+    birds.push({ x:x + 50, y:0, baseY:GY - rnd(90, 140), amp:rnd(18, 32), phase:rnd(0, 6.28),
+                 vx:rnd(44, 72) * (Math.random() < 0.5 ? -1 : 1), label:ob.text, obId:obId });
     if (ob.response && ob.response.trim().length >= 3){
-      tools.push({ x:x + w0 * 0.5, y:GY - 46, label:ob.response, got:false, obId:obId });
+      tools.push({ x:x + w0 * 0.72, y:GY - 46, label:ob.response, got:false, obId:obId });
     }
     x += w0 + rnd(70, 100);
-    birds.push({ x:x + 40, y:0, baseY:GY - rnd(90, 140), amp:rnd(18, 32), phase:rnd(0, 6.28),
-                 vx:rnd(26, 44) * (Math.random() < 0.5 ? -1 : 1), label:ob.text, obId:obId });
     const w1 = rnd(160, 210);
     plats.push({ x:x, y:GY, w:w1, h:BASE_H + 80 - GY });
     if (Math.random() < 0.4){
@@ -1943,8 +1966,9 @@ const titleO = el("title"), fieldO = el("field"), winO = el("win");
 const cpPanel = el("cpPanel"), dtPanel = el("dtPanel"), planPanel = el("planPanel");
 const goalInput = el("goalInput");
 
-titleO.addEventListener("touchstart", e => { start(); e.preventDefault(); }, {passive:false});
-titleO.addEventListener("click", () => start());
+// The title screen only starts from the button — no tap/click/keypress
+// anywhere else on the page, so "Resume my saved plan" and the Dream
+// Designer link can be touched without also launching the game underneath.
 el("playBtn").addEventListener("click", function(e){ e.stopPropagation(); start(); });
 
 let fieldOpen = false;
@@ -2935,7 +2959,32 @@ function win(){
   saveToUrl();
   el("winCta").href = CFG.DREAMDESIGNER_URL;
   winO.classList.add("on");
+  sizeWinBall();
+  stretchWinWordmark();
 }
+
+// The wordmark stretches to the same width as the cards below it — measured
+// at runtime so it lines up exactly, at any viewport width.
+function stretchWinWordmark(){
+  const mark = el("winMark"), card = document.querySelector("#win .card");
+  if (!mark || !card) return;
+  mark.style.letterSpacing = "0px";
+  const naturalW = mark.getBoundingClientRect().width;
+  const targetW = card.getBoundingClientRect().width;
+  const gaps = Math.max(1, mark.textContent.trim().length - 1);
+  const extra = Math.max(0, targetW - naturalW) / gaps;
+  mark.style.letterSpacing = extra.toFixed(2) + "px";
+}
+function sizeWinBall(){
+  const wrap = el("winBallWrap"), cv = el("winBallCv");
+  if (!wrap || !cv) return;
+  const w = Math.round(wrap.clientWidth), h = Math.round(wrap.clientHeight);
+  if (w && cv.width !== w) cv.width = w;
+  if (h && cv.height !== h) cv.height = h;
+}
+addEventListener("resize", function(){
+  if (S.phase === "win"){ sizeWinBall(); stretchWinWordmark(); }
+});
 // The last picture: the ball standing on the summit next to the flag it
 // planted, drawn with the same shapes the game itself uses.
 function drawWinScene(){
@@ -3575,6 +3624,43 @@ function titleBallFrame(now){
   requestAnimationFrame(titleBallFrame);
 }
 requestAnimationFrame(titleBallFrame);
+
+/* ---- the win screen's own ball: same trail-and-halo, spanning the wordmark's
+   full width instead of a fixed 220px box ---- */
+const winBallCv = document.getElementById("winBallCv");
+const winBallEl = document.getElementById("winBall");
+const winGlowEl = document.getElementById("winGlow");
+const wctx = winBallCv.getContext("2d");
+let winTrail = [];
+function winBallFrame(now){
+  if (S.phase === "win" && winBallCv.width > 0){
+    const cx = winBallCv.width / 2, cy = winBallCv.height / 2;
+    const amp = Math.max(24, winBallCv.width / 2 - 22), period = 4.2;
+    const x = cx + amp * Math.sin((now / 1000) * (2 * Math.PI / period));
+    winTrail.unshift({ x:x, y:cy });
+    if (winTrail.length > 40) winTrail.pop();
+
+    wctx.clearRect(0, 0, winBallCv.width, winBallCv.height);
+    for (let i = winTrail.length - 1; i > 0; i--){
+      const t = winTrail[i];
+      const k = 1 - i / winTrail.length;
+      wctx.globalAlpha = k * 0.16;
+      wctx.fillStyle = "#fff";
+      wctx.shadowColor = "rgba(255,255,255,0.6)";
+      wctx.shadowBlur = 5 * k;
+      wctx.beginPath(); wctx.arc(t.x, t.y, 5 * k, 0, 6.284); wctx.fill();
+    }
+    wctx.globalAlpha = 1; wctx.shadowBlur = 0;
+
+    winBallEl.style.left = x + "px"; winBallEl.style.top = cy + "px";
+    winGlowEl.style.left = x + "px"; winGlowEl.style.top = cy + "px";
+  } else if (winTrail.length){
+    winTrail = [];
+    wctx.clearRect(0, 0, winBallCv.width, winBallCv.height);
+  }
+  requestAnimationFrame(winBallFrame);
+}
+requestAnimationFrame(winBallFrame);
 </script>
 </body>
 </html>

@@ -140,16 +140,20 @@ canvas#c{ display:block; position:fixed; inset:0; z-index:1; }
 #title .sub{ margin-top:clamp(28px,6vw,48px); font-size:clamp(10px,1.8vw,12px); color:var(--ink-faint); }
 #title .tagline2{ margin-top:clamp(14px,3vw,20px); font-size:clamp(10px,1.9vw,13px); color:var(--ink-soft); }
 #playBtn{ margin-top:clamp(26px,5vw,38px); padding:15px clamp(28px,5vw,42px); }
-#title .howto{
+/* The controls page — its own screen between the title and the game, so the
+   landing page stays just the title and the invitation to play. */
+#controls .head{ margin-top:clamp(18px,3.6vw,26px); }
+#controls .howto{
   margin:clamp(26px,5vw,38px) auto 0; max-width:min(520px,90vw);
   border:1px solid var(--line); border-radius:5px; background:var(--bg-raise);
   padding:clamp(14px,3vw,20px); text-align:left;
 }
-#title .ht{ display:flex; gap:12px; align-items:flex-start; margin-bottom:10px; font-size:clamp(10px,1.8vw,12.5px); color:var(--ink-soft); font-weight:400; line-height:1.65; }
-#title .ht:last-of-type{ margin-bottom:0; }
-#title .htk{ flex:0 0 auto; width:62px; color:var(--ink-faint); font-size:9px; padding-top:2px; }
-#title .ht b{ color:var(--ink); font-weight:500; }
-#title .htnote{ margin-top:12px; padding-top:10px; border-top:1px solid var(--line); font-size:clamp(9px,1.6vw,11px); color:var(--ink-faint); font-style:italic; }
+#controls .ht{ display:flex; gap:12px; align-items:flex-start; margin-bottom:10px; font-size:clamp(10px,1.8vw,12.5px); color:var(--ink-soft); font-weight:400; line-height:1.65; }
+#controls .ht:last-of-type{ margin-bottom:0; }
+#controls .htk{ flex:0 0 auto; width:62px; color:var(--ink-faint); font-size:9px; padding-top:2px; }
+#controls .ht b{ color:var(--ink); font-weight:500; }
+#controls .htnote{ margin-top:12px; padding-top:10px; border-top:1px solid var(--line); font-size:clamp(9px,1.6vw,11px); color:var(--ink-faint); font-style:italic; }
+#controlsNext{ margin-top:clamp(26px,5vw,38px); }
 #resume{
   display:none; margin:22px auto 0; background:none; border:1px solid var(--line);
   border-radius:3px; color:var(--ink-faint); font-family:inherit; cursor:pointer;
@@ -598,6 +602,17 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
     <h1 class="tracked glow-text">Drift</h1>
     <p class="tagline2 tracked-sm">Goals. Gamified.</p>
     <button id="playBtn" class="cta tracked-sm">Play Game</button>
+    <button id="resume" class="tracked-sm">Resume my saved plan</button>
+    <a id="ddSkip" href="#" target="_blank" rel="noopener">
+      <span class="q">Rather build the blueprint first?</span>
+      <span class="go">Go to the Dream Designer Blueprint &nbsp;&rarr;</span>
+    </a>
+  </div>
+</div>
+
+<div id="controls" class="overlay panel">
+  <div class="inner">
+    <p class="head">How to move</p>
     <div class="howto">
       <div class="ht">
         <span class="htk tracked-sm">Keyboard</span>
@@ -609,11 +624,7 @@ body.touch #skipBtn{ right:auto; left:50%; transform:translateX(-50%); bottom:ca
       </div>
       <p class="htnote">A mouse won't move the ball &mdash; use the keys on a computer, or the buttons on a phone or tablet.</p>
     </div>
-    <button id="resume" class="tracked-sm">Resume my saved plan</button>
-    <a id="ddSkip" href="#" target="_blank" rel="noopener">
-      <span class="q">Rather build the blueprint first?</span>
-      <span class="go">Go to the Dream Designer Blueprint &nbsp;&rarr;</span>
-    </a>
+    <button id="controlsNext" class="cta tracked-sm">Next &nbsp;&rarr;</button>
   </div>
 </div>
 
@@ -1962,14 +1973,25 @@ function esc(s){
 const hud = el("hud"), meter = el("meter"), meterValue = el("meterValue");
 const confront = el("confront"), levelUp = el("levelUp");
 const confrontL1 = confront.querySelector(".l1"), confrontL2 = confront.querySelector(".l2"), confrontL3 = confront.querySelector(".l3");
-const titleO = el("title"), fieldO = el("field"), winO = el("win");
+const titleO = el("title"), controlsO = el("controls"), fieldO = el("field"), winO = el("win");
 const cpPanel = el("cpPanel"), dtPanel = el("dtPanel"), planPanel = el("planPanel");
 const goalInput = el("goalInput");
 
 // The title screen only starts from the button — no tap/click/keypress
 // anywhere else on the page, so "Resume my saved plan" and the Dream
 // Designer link can be touched without also launching the game underneath.
-el("playBtn").addEventListener("click", function(e){ e.stopPropagation(); start(); });
+// Play Game hands off to a controls page first; the game itself only starts
+// once the player has actually seen how to move.
+el("playBtn").addEventListener("click", function(e){
+  e.stopPropagation();
+  titleO.classList.remove("on");
+  controlsO.classList.add("on");
+});
+el("controlsNext").addEventListener("click", function(e){
+  e.stopPropagation();
+  controlsO.classList.remove("on");
+  start();
+});
 
 let fieldOpen = false;
 function anyPanelOpen(){
